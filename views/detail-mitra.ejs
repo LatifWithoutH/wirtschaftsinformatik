@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Tambah di bagian atas, sebelum judul -->
+  <p style="color: #666; font-size: 14px;">
+    <strong>Kode Mitra:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;"><%= mitra.kode_mitra %></code>
+  </p>
+  <h1>📋 <%= mitra.nama_instansi %></h1>
+  <title>Detail: <%= mitra.nama_instansi %></title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #fff; }
+    .card h3 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+    
+    .info-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px 15px; }
+    .info-grid strong { color: #555; }
+    
+    .status-badge { 
+      display: inline-block; 
+      padding: 4px 12px; 
+      border-radius: 20px; 
+      color: white; 
+      font-size: 12px; 
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    
+    .doc-item { 
+      margin: 15px 0; 
+      padding: 12px; 
+      background: #f9f9f9; 
+      border-radius: 6px; 
+      border-left: 4px solid #007bff;
+    }
+    .doc-item strong { display: block; margin-bottom: 8px; color: #333; }
+    
+    .btn { 
+      padding: 6px 12px; 
+      background: #007bff; 
+      color: white; 
+      text-decoration: none; 
+      border-radius: 4px; 
+      display: inline-block; 
+      margin-right: 5px; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 13px;
+    }
+    .btn:hover { background: #0056b3; }
+    .btn-success { background: #28a745; }
+    .btn-success:hover { background: #218838; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    
+    .upload-form { margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .upload-form input[type="file"] { flex: 1; min-width: 200px; }
+    
+    .back-link { color: #007bff; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>📋 <%= mitra.nama_instansi %></h1>
+  <p><a href="/mitra" class="back-link">← Kembali ke Dashboard</a></p>
+  
+  <!-- 📇 Informasi Kontak -->
+  <div class="card">
+    <h3>📇 Informasi Kontak</h3>
+    <div class="info-grid">
+      <strong>Nama Kontak</strong><div><%= mitra.nama_kontak || '-' %></div>
+      <strong>Jabatan</strong><div><%= mitra.jabatan || '-' %></div>
+      <strong>Nomor HP</strong><div><%= mitra.no_hp_kontak || '-' %></div>
+      <strong>Email Fakultas</strong><div><%= mitra.email_fakultas || '-' %></div>
+      <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
+    </div>
+  </div>
+  
+  <!-- 📅 Masa Kerja Sama -->
+  <div class="card">
+    <h3>📅 Masa Kerja Sama</h3>
+    <div class="info-grid">
+      <strong>Tanggal Mulai</strong><div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID') %></div>
+      <strong>Tanggal Berakhir</strong><div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID') %></div>
+      <strong>Sisa Waktu</strong><div>
+        <%= mitra.sisa_hari %> hari 
+        <span class="status-badge" style="background:<%= mitra.color %>"><%= mitra.status %></span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 📎 Dokumen Legalitas + Upload -->
+  <div class="card">
+    <h3>📎 Dokumen Legalitas</h3>
+    
+    <% ['mou', 'moa', 'ia', 'pks'].forEach(jenis => {
+         const label = jenis.toUpperCase();
+         const fieldName = 'file_' + jenis;
+         const fileUrl = mitra[fieldName];
+    %>
+      <div class="doc-item">
+        <strong>📄 <%= label %></strong>
+        
+        <% if (fileUrl) { %>
+          <p style="margin: 8px 0; color: #28a745;">
+            ✅ Sudah diupload
+          </p>
+          <p>
+            <a href="<%= fileUrl %>" target="_blank" class="btn btn-sm">👁️ Preview PDF</a>
+            <a href="<%= fileUrl %>" download class="btn btn-sm btn-success">⬇️ Download</a>
+          </p>
+        <% } else { %>
+          <p style="margin: 8px 0; color: #999;">Belum diupload</p>
+        <% } %>
+        
+        <!-- Form Upload Terpisah (bukan nested) -->
+        <form method="POST" action="/mitra/<%= mitra.id %>/upload" enctype="multipart/form-data" class="upload-form">
+          <input type="hidden" name="jenis_file" value="<%= jenis %>">
+          <input type="file" name="file_pdf" accept=".pdf" required>
+          <button type="submit" class="btn btn-sm">Upload <%= label %></button>
+        </form>
+      </div>
+    <% }) %>
+  </div>
+  
+  <!-- Tombol Edit -->
+  <p>
+    <a href="/mitra/<%= mitra.id %>/edit" class="btn">✏️ Edit Data Mitra</a>
+  </p>
+</body>
+</html>

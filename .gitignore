@@ -1,0 +1,72 @@
+# 🔐 ENVIRONMENT VARIABLES (WAJIB!)
+.env
+.env.local
+.env.*.local
+*.env
+
+# 📦 Node.js & NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+*.tgz
+
+# 🗄️ Database Lokal (kalau pakai SQLite nanti)
+*.sqlite
+*.sqlite3
+*.db
+database.sqlite
+
+# 📁 Uploads & User Files (jangan commit file user!)
+public/uploads/
+!public/uploads/.gitkeep
+
+# 🖥️ OS & System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.swp
+*.swo
+
+# 💻 IDE & Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# 🧪 Testing & Coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# 📦 Build Output (jika nanti ada build step)
+dist/
+build/
+public/dist/
+
+# 🔐 Sensitive Files
+*.pem
+*.key
+*.crt
+*.p12
+secrets.json
+config/secret.*
+
+# 📚 Documentation (opsional: kalau mau private)
+docs/private/
+*.pdf
+!Rancangan\ Proyek\ SI\ Mitra\ DUDIKA\ UNIBA\ Surakarta.pdf
+
+# 🗑️ Temporary & Cache
+.tmp/
+temp/
+.cache/
+*.bak
+*.backup
+
+# 🚫 Supabase CLI (kalau pakai)
+.supabase/

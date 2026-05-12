@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - SI Mitra DUDIKA</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background: #f5f5f5; }
+    
+    .status { 
+      padding: 4px 10px; 
+      border-radius: 12px; 
+      color: white; 
+      font-size: 12px; 
+      font-weight: bold;
+    }
+    
+    .btn { 
+      padding: 6px 12px; 
+      background: #007bff; 
+      color: white; 
+      text-decoration: none; 
+      border-radius: 4px; 
+      display: inline-block;
+    }
+    .btn:hover { background: #0056b3; }
+    
+    /* Link ke detail: biru, underline saat hover */
+    .link-detail { 
+      color: #007bff; 
+      text-decoration: none; 
+      font-weight: 500;
+    }
+    .link-detail:hover { 
+      text-decoration: underline; 
+      color: #0056b3;
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      display: inline-block;
+      transition: background 0.3s;
+    }
+    
+    .btn-sm:hover {
+      background: #0056b3;
+      text-decoration: none;
+      color: white;
+    }
+    
+    /* Hilangkan cursor pointer dari row */
+    tbody tr {
+      cursor: default;
+    }
+    
+    tbody tr:hover {
+      background: #f9f9f9;
+    }
+    
+    tr:hover { background: #f9f9f9; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>📊 Dashboard Mitra DUDIKA</h1>
+  <a href="/mitra/tambah" class="btn">+ Tambah Mitra</a>
+  
+  <table>
+    <thead>
+      <tr>
+		<th>Kode</th>
+        <th>Instansi</th>
+        <th>Kontak</th>
+        <th>Email Fakultas</th>
+        <th>Berakhir</th>
+        <th>Sisa Hari</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% mitra.forEach(m => { %>
+        <tr style="cursor: default;">
+          <!-- Kolom Kode dengan Tombol Detail -->
+          <td>
+            <!--<strong style="color: #007bff; font-size: 13px;"><%= m.kode_mitra %></strong>-->
+            
+            <a href="/mitra/<%= m.id %>" class="btn btn-sm" style="margin-top: 5px; display: inline-block;">
+              🔍 Detail
+            </a>
+          </td>
+          
+          <!-- Kolom Instansi (hanya teks, bukan link) -->
+          <td><strong><%= m.nama_instansi %></strong></td>
+          
+          <!-- Kolom Kontak -->
+          <td>
+            <%= m.nama_kontak || '-' %>
+            <br>
+            <small style="color: #666;">📞 <%= m.no_hp_kontak || '-' %></small>
+          </td>
+          
+          <!-- Kolom Email Fakultas -->
+          <td>
+            <a href="mailto:<%= m.email_fakultas %>" style="color: #007bff; text-decoration: none;">
+              <%= m.email_fakultas || '-' %>
+            </a>
+          </td>
+          
+          <!-- Kolom Tanggal Berakhir -->
+          <td><%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID') %></td>
+          
+          <!-- Kolom Sisa Hari -->
+          <td style="font-weight: bold; color: <%= m.color %>;">
+            <%= m.sisa_hari %> hari
+          </td>
+          
+          <!-- Kolom Status -->
+          <td>
+            <span class="status" style="background:<%= m.color %>">
+              <%= m.status %>
+            </span>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  
+  <% if (mitra.length === 0) { %>
+    <p style="margin-top: 30px; color: #666;">
+      💡 Belum ada data mitra. 
+      <a href="/mitra/tambah">Tambah mitra pertama</a> untuk mulai mengelola kerja sama.
+    </p>
+  <% } %>
+</body>
+</html>

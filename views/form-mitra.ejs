@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= action === 'tambah' ? 'Tambah' : 'Edit' %> Mitra</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+    button { margin-top: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .required { color: red; }
+  </style>
+</head>
+<body>
+  <h1><%= action === 'tambah' ? '➕ Tambah' : '✏️ Edit' %> Mitra</h1>
+  
+  <form method="POST" action="/mitra">
+    <label>Nama Instansi <span class="required">*</span></label>
+    <input type="text" name="nama_instansi" required value="<%= mitra?.nama_instansi || '' %>">
+
+    <label>Nama Kontak</label>
+    <input type="text" name="nama_kontak" value="<%= mitra?.nama_kontak || '' %>">
+
+    <label>Jabatan</label>
+    <input type="text" name="jabatan" value="<%= mitra?.jabatan || '' %>">
+
+    <label>Alamat</label>
+    <textarea name="alamat" rows="3"><%= mitra?.alamat || '' %></textarea>
+
+    <label>Nomor HP Kontak <span class="required">*</span></label>
+    <input type="text" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxx">
+
+    <label>Email Fakultas Bertanggung Jawab <span class="required">*</span></label>
+    <input type="email" name="email_fakultas" required value="<%= mitra?.email_fakultas || '' %>" placeholder="fti@uniba.ac.id">
+
+    <label>Tanggal Mulai Kerja Sama <span class="required">*</span></label>
+    <input type="date" name="tanggal_mulai" required value="<%= mitra?.tanggal_mulai || '' %>">
+
+    <label>Tanggal Berakhir Kerja Sama <span class="required">*</span></label>
+    <input type="date" name="tanggal_berakhir" required value="<%= mitra?.tanggal_berakhir || '' %>">
+
+    <button type="submit">💾 Simpan Data</button>
+  </form>
+  
+  <p style="margin-top: 20px;"><a href="/mitra">← Kembali ke Dashboard</a></p>
+  
+  <p style="font-size: 12px; color: #666; margin-top: 30px;">
+    💡 <strong>Catatan:</strong> Upload dokumen (MoU/MoA/IA/PKS) dilakukan setelah data mitra disimpan, di halaman Detail.
+  </p>
+</body>
+</html>
