@@ -1,140 +1,543 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Dashboard - SI Mitra DUDIKA</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SI Mitra DUDIKA UNIBA</title>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-    th { background: #f5f5f5; }
+    :root {
+      --uniba-blue: #003366;
+      --uniba-gold: #FFD700;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --expired: #6c757d;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --sidebar-width: 260px;
+    }
     
-    .status { 
-      padding: 4px 10px; 
-      border-radius: 12px; 
-      color: white; 
-      font-size: 12px; 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      background: linear-gradient(180deg, var(--uniba-blue), #002244);
+      color: white;
+      padding: 30px 20px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    
+    .sidebar-header {
+      text-align: center;
+      padding-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 30px;
+    }
+    
+    .sidebar-header .logo { font-size: 2rem; margin-bottom: 10px; }
+    .sidebar-header h2 { font-size: 1.1rem; font-weight: 600; }
+    .sidebar-header p { font-size: 0.85rem; opacity: 0.8; margin-top: 5px; }
+    
+    .nav-menu { list-style: none; }
+    .nav-menu li { margin-bottom: 8px; }
+    .nav-menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s;
+      font-size: 0.95rem;
+    }
+    .nav-menu a:hover, .nav-menu a.active {
+      background: rgba(255,255,255,0.1);
+      transform: translateX(5px);
+    }
+    .nav-menu a.active {
+      background: var(--uniba-gold);
+      color: var(--uniba-blue);
+      font-weight: 600;
+    }
+    
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 30px;
+      min-height: 100vh;
+    }
+    
+    /* Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .page-header h1 {
+      color: var(--uniba-blue);
+      font-size: 1.8rem;
+    }
+    
+    .page-header .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .page-header .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--uniba-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: bold;
+      color: white;
+      font-size: 1.1rem;
     }
     
-    .btn { 
-      padding: 6px 12px; 
-      background: #007bff; 
-      color: white; 
-      text-decoration: none; 
-      border-radius: 4px; 
-      display: inline-block;
+    .page-header .user-details {
+      text-align: right;
     }
-    .btn:hover { background: #0056b3; }
     
-    /* Link ke detail: biru, underline saat hover */
-    .link-detail { 
-      color: #007bff; 
-      text-decoration: none; 
+    .page-header .user-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--dark);
+    }
+    
+    .page-header .user-role {
+      font-size: 0.8rem;
+      color: #666;
+      text-transform: uppercase;
+    }
+    
+    .page-header .user-fakultas {
+      font-size: 0.75rem;
+      color: var(--uniba-blue);
       font-weight: 500;
     }
-    .link-detail:hover { 
-      text-decoration: underline; 
-      color: #0056b3;
+    
+    .page-header .logout-link {
+      font-size: 0.8rem;
+      color: var(--danger);
+      text-decoration: none;
+      margin-left: 10px;
+      font-weight: 500;
     }
-
-    .btn-sm {
-      padding: 4px 10px;
-      font-size: 12px;
-      background: #007bff;
+    .page-header .logout-link:hover { text-decoration: underline; }
+    
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+      transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 25px rgba(0,0,0,0.12);
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+    }
+    
+    .stat-card.total::before { background: var(--uniba-blue); }
+    .stat-card.active::before { background: var(--success); }
+    .stat-card.warning::before { background: var(--warning); }
+    .stat-card.danger::before { background: var(--danger); }
+    .stat-card.expired::before { background: var(--expired); }
+    
+    .stat-card .stat-icon { font-size: 2.5rem; margin-bottom: 15px; }
+    .stat-card .stat-label { font-size: 0.9rem; color: #666; margin-bottom: 8px; }
+    .stat-card .stat-value { font-size: 2rem; font-weight: 700; color: var(--dark); }
+    .stat-card .stat-change { font-size: 0.85rem; margin-top: 8px; color: #666; }
+    
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    
+    .chart-card h3 {
+      color: var(--uniba-blue);
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+    
+    /* Alert List */
+    .alert-section {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+    
+    .alert-section h3 {
+      color: var(--uniba-blue);
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .alert-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      border-radius: 8px;
+      border-left: 4px solid;
+      background: #f8f9fa;
+      transition: transform 0.2s;
+    }
+    
+    .alert-item:hover { transform: translateX(5px); }
+    .alert-item.critical { border-left-color: var(--danger); background: #fff5f5; }
+    .alert-item.warning { border-left-color: var(--warning); background: #fffbeb; }
+    
+    .alert-item .mitra-info h4 {
+      font-size: 1rem;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    
+    .alert-item .mitra-info p {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    
+    .alert-item .days-left {
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+    
+    .alert-item.critical .days-left { background: var(--danger); color: white; }
+    .alert-item.warning .days-left { background: var(--warning); color: #333; }
+    
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      background: var(--uniba-blue);
       color: white;
       text-decoration: none;
-      border-radius: 4px;
-      display: inline-block;
-      transition: background 0.3s;
+      border-radius: 8px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
     }
     
-    .btn-sm:hover {
-      background: #0056b3;
-      text-decoration: none;
+    .btn:hover {
+      background: #002244;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,51,102,0.3);
+    }
+    
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: #218838; }
+    
+    .btn-warning { background: var(--warning); color: #333; }
+    .btn-warning:hover { background: #e0a800; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s;
+      }
+      .sidebar.active { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1001;
+      background: var(--uniba-blue);
       color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
     }
     
-    /* Hilangkan cursor pointer dari row */
-    tbody tr {
-      cursor: default;
-    }
-    
-    tbody tr:hover {
-      background: #f9f9f9;
-    }
-    
-    tr:hover { background: #f9f9f9; cursor: pointer; }
+    @media (max-width: 768px) { .mobile-toggle { display: block; } }
   </style>
 </head>
 <body>
-  <h1>📊 Dashboard Mitra DUDIKA</h1>
-  <a href="/mitra/tambah" class="btn">+ Tambah Mitra</a>
+  <!-- Mobile Toggle -->
+  <button class="mobile-toggle" onclick="toggleSidebar()">☰ Menu</button>
   
-  <table>
-    <thead>
-      <tr>
-		<th>Kode</th>
-        <th>Instansi</th>
-        <th>Kontak</th>
-        <th>Email Fakultas</th>
-        <th>Berakhir</th>
-        <th>Sisa Hari</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% mitra.forEach(m => { %>
-        <tr style="cursor: default;">
-          <!-- Kolom Kode dengan Tombol Detail -->
-          <td>
-            <!--<strong style="color: #007bff; font-size: 13px;"><%= m.kode_mitra %></strong>-->
-            
-            <a href="/mitra/<%= m.id %>" class="btn btn-sm" style="margin-top: 5px; display: inline-block;">
-              🔍 Detail
-            </a>
-          </td>
-          
-          <!-- Kolom Instansi (hanya teks, bukan link) -->
-          <td><strong><%= m.nama_instansi %></strong></td>
-          
-          <!-- Kolom Kontak -->
-          <td>
-            <%= m.nama_kontak || '-' %>
-            <br>
-            <small style="color: #666;">📞 <%= m.no_hp_kontak || '-' %></small>
-          </td>
-          
-          <!-- Kolom Email Fakultas -->
-          <td>
-            <a href="mailto:<%= m.email_fakultas %>" style="color: #007bff; text-decoration: none;">
-              <%= m.email_fakultas || '-' %>
-            </a>
-          </td>
-          
-          <!-- Kolom Tanggal Berakhir -->
-          <td><%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID') %></td>
-          
-          <!-- Kolom Sisa Hari -->
-          <td style="font-weight: bold; color: <%= m.color %>;">
-            <%= m.sisa_hari %> hari
-          </td>
-          
-          <!-- Kolom Status -->
-          <td>
-            <span class="status" style="background:<%= m.color %>">
-              <%= m.status %>
-            </span>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">🎓</div>
+      <h2>UNIBA Surakarta</h2>
+      <p>SI Mitra DUDIKA</p>
+    </div>
+    
+    <ul class="nav-menu">
+      <li><a href="/dashboard" class="active">📊 Dashboard</a></li>
+      <li><a href="/mitra">📋 Daftar Mitra</a></li>
+      <% if (user && user.role === 'humas') { %>
+        <li><a href="/mitra/tambah">➕ Tambah Mitra</a></li>
+      <% } %>
+      <% if (user && user.role === 'humas') { %>
+        <li><a href="/test-alert">🧪 Test Alert</a></li>
+      <% } %>
+      <li><a href="/" target="_blank">🔗 Homepage</a></li>
+    </ul>
+  </aside>
   
-  <% if (mitra.length === 0) { %>
-    <p style="margin-top: 30px; color: #666;">
-      💡 Belum ada data mitra. 
-      <a href="/mitra/tambah">Tambah mitra pertama</a> untuk mulai mengelola kerja sama.
-    </p>
-  <% } %>
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>📊 Dashboard Overview</h1>
+      
+      <!-- ✅ USER INFO DINAMIS -->
+      <% if (user) { %>
+        <div class="user-info">
+          <div class="user-avatar"><%= user.email?.charAt(0).toUpperCase() || 'U' %></div>
+          <div class="user-details">
+            <div class="user-name"><%= user.email?.split('@')[0] || 'User' %></div>
+            <div class="user-role"><%= user.role %></div>
+            <% if (user.fakultas_id) { %>
+              <div class="user-fakultas">🎓 <%= user.fakultas_id.toUpperCase() %></div>
+            <% } %>
+          </div>
+          <a href="/logout" class="logout-link">Logout</a>
+        </div>
+      <% } else { %>
+        <a href="/login" class="btn">🔐 Login</a>
+      <% } %>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label">Total Mitra</div>
+        <div class="stat-value"><%= stats.total %></div>
+        <div class="stat-change">Semua mitra terdaftar</div>
+      </div>
+      
+      <div class="stat-card active">
+        <div class="stat-icon">🟢</div>
+        <div class="stat-label">Mitra Aktif</div>
+        <div class="stat-value"><%= stats.aktif %></div>
+        <div class="stat-change">> 30 hari lagi</div>
+      </div>
+      
+      <div class="stat-card warning">
+        <div class="stat-icon">🟡</div>
+        <div class="stat-label">Akan Berakhir</div>
+        <div class="stat-value"><%= stats.akan_berakhir %></div>
+        <div class="stat-change">8-30 hari lagi</div>
+      </div>
+      
+      <div class="stat-card danger">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-label">Segera Berakhir</div>
+        <div class="stat-value"><%= stats.segera_berakhir %></div>
+        <div class="stat-change">≤ 7 hari lagi</div>
+      </div>
+      
+      <div class="stat-card expired">
+        <div class="stat-icon">⚫</div>
+        <div class="stat-label">Expired</div>
+        <div class="stat-value"><%= stats.expired %></div>
+        <div class="stat-change">Perlu perpanjangan</div>
+      </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📈 Status Mitra</h3>
+        <canvas id="statusChart"></canvas>
+      </div>
+      
+      <div class="chart-card">
+        <h3>📊 Distribusi Status</h3>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Alert Section -->
+    <% if (segeraBerakhir && segeraBerakhir.length > 0) { %>
+      <div class="alert-section">
+        <h3>⚠️ Peringatan: Mitra Segera Berakhir</h3>
+        <div class="alert-list">
+          <% segeraBerakhir.forEach(m => { %>
+            <div class="alert-item <%= m.sisa_hari <= 7 ? 'critical' : 'warning' %>">
+              <div class="mitra-info">
+                <h4><%= m.nama_instansi %></h4>
+                <p>📞 <%= m.no_hp_kontak || '-' %> | ✉️ <%= m.email_fakultas || '-' %></p>
+              </div>
+              <div class="days-left">
+                <%= m.sisa_hari %> hari lagi
+              </div>
+            </div>
+          <% }) %>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="/mitra" class="btn">Lihat Semua Mitra</a>
+          <% if (user && user.role === 'humas') { %>
+            <a href="/mitra/tambah" class="btn btn-success">Tambah Mitra Baru</a>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <% if (user && user.role === 'humas') { %>
+        <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
+        <a href="/test-alert" class="btn btn-warning">🧪 Test Email Alert</a>
+      <% } %>
+      <a href="/mitra" class="btn">📋 Lihat Semua</a>
+    </div>
+  </main>
+  
+  <script>
+    // Mobile Sidebar Toggle
+    function toggleSidebar() {
+      document.querySelector('.sidebar').classList.toggle('active');
+    }
+    
+    // Status Bar Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Total', 'Aktif', 'Akan Berakhir', 'Segera Berakhir', 'Expired'],
+        datasets: [{
+          label: 'Jumlah Mitra',
+          data: [
+            <%= stats.total %>,
+            <%= stats.aktif %>,
+            <%= stats.akan_berakhir %>,
+            <%= stats.segera_berakhir %>,
+            <%= stats.expired %>
+          ],
+          backgroundColor: [
+            '#003366', '#28a745', '#ffc107', '#dc3545', '#6c757d'
+          ],
+          borderRadius: 8,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+    
+    // Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Aktif', 'Akan Berakhir', 'Segera Berakhir', 'Expired'],
+        datasets: [{
+          data: [
+            <%= stats.aktif %>,
+            <%= stats.akan_berakhir %>,
+            <%= stats.segera_berakhir %>,
+            <%= stats.expired %>
+          ],
+          backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } }
+        }
+      }
+    });
+  </script>
 </body>
 </html>

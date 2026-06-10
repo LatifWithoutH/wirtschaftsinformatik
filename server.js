@@ -4,6 +4,8 @@ const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(express.json());
@@ -11,6 +13,30 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', './views');
+
+// 🔹 Session Config
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'uniba-dudika-secret-2026',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000 
+  }
+}));
+
+// 🔹 Middleware: Proteksi Route berdasarkan Role
+function requireAuth(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.session.user) return res.redirect('/login');
+    if (allowedRoles.length && !allowedRoles.includes(req.session.user.role)) {
+      return res.status(403).send('❌ Akses ditolak: Role tidak memiliki izin');
+    }
+    next();
+  };
+}
 
 // ✅ Inisialisasi Supabase
 const supabase = createClient(
@@ -127,36 +153,125 @@ cron.schedule('0 8 * * *', async () => {
   }
 }, { scheduled: true, timezone: "Asia/Jakarta" });
 
-// 🔹 HOME
-app.get('/', (req, res) => res.send('✅ SI Mitra DUDIKA terhubung ke Supabase!'));
+// 🔹 HOME → Redirect ke Dashboard
+app.get('/', (req, res) => res.redirect('/dashboard'));
 
-// 🔹 DASHBOARD
-app.get('/mitra', async (req, res) => {
+// 🔹 LOGIN ROUTES
+app.get('/login', (req, res) => {
+  if (req.session.user) return res.redirect('/dashboard');
+  res.render('login', { error: null });
+});
+
+app.post('/login', async (req, res) => {
   try {
-    const { data: mitraList, error } = await supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
-    if (error) throw error;
-    const today = new Date();
-    const mitraDenganStatus = mitraList.map(mitra => {
-      const endDate = new Date(mitra.tanggal_berakhir);
-      const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-      let status, color;
-      if (diffDays <= 7) { status = 'Segera Berakhir'; color = 'red'; }
-      else if (diffDays <= 30) { status = 'Akan Berakhir'; color = 'orange'; }
-      else { status = 'Aktif'; color = 'green'; }
-      return { ...mitra, sisa_hari: diffDays, status, color };
-    });
-    res.render('dashboard', { mitra: mitraDenganStatus });
+    const { email, password } = req.body;
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !user) return res.render('login', { error: '❌ Email tidak ditemukan' });
+
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.render('login', { error: '❌ Password salah' });
+
+    req.session.user = { id: user.id, email: user.email, role: user.role, fakultas_id: user.fakultas_id };
+    res.redirect('/dashboard');
   } catch (err) {
-    console.error('❌ Error fetch mitra:', err.message);
-    res.status(500).send('Gagal memuat data mitra');
+    console.error('Login error:', err);
+    res.render('login', { error: '❌ Terjadi kesalahan sistem' });
   }
 });
 
-// 🔹 FORM Tambah Mitra
-app.get('/mitra/tambah', (req, res) => res.render('form-mitra', { mitra: null, action: 'tambah' }));
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/login'));
+});
 
-// 🔹 POST Simpan Data Mitra + Generate kode_mitra
-app.post('/mitra', async (req, res) => {
+// 🔹 DASHBOARD MODERN (Stats + Charts) — ✅ TAMBAH user & FILTER FAKULTAS
+app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+  try {
+    const today = new Date();
+    
+    // 🔹 Query dengan filter fakultas untuk admin_fakultas
+    let query = supabase.from('mitra').select('*');
+    if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
+      query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
+    }
+    
+    const { data: allMitra, error } = await query;
+    if (error) throw error;
+    
+    const stats = { total: 0, aktif: 0, akan_berakhir: 0, segera_berakhir: 0, expired: 0 };
+    const segeraBerakhir = [];
+    
+    (allMitra || []).forEach(mitra => {
+      const endDate = new Date(mitra.tanggal_berakhir);
+      if (isNaN(endDate.getTime())) return; // Skip invalid date
+      
+      const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
+      if (diffDays < 0) stats.expired++;
+      else if (diffDays <= 7) { stats.segera_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays }); }
+      else if (diffDays <= 30) { stats.akan_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays }); }
+      else stats.aktif++;
+    });
+    stats.total = (allMitra || []).length;
+    segeraBerakhir.sort((a,b) => a.sisa_hari - b.sisa_hari);
+    
+    // ✅ KIRIM user ke view
+    res.render('dashboard', { stats, segeraBerakhir, user: req.session.user });
+  } catch (err) {
+    console.error('❌ Error dashboard:', err.message);
+    res.status(500).send('Gagal memuat dashboard. Silakan coba lagi.');
+  }
+});
+
+// 🔹 DAFTAR MITRA (Tabel Improved) — ✅ TAMBAH user & FILTER FAKULTAS
+app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+  try {
+    const today = new Date();
+    
+    // 🔹 Query dengan filter fakultas untuk admin_fakultas
+    let query = supabase
+      .from('mitra')
+      .select('*')
+      .order('tanggal_berakhir', { ascending: true });
+    
+    if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
+      query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
+    }
+    
+    const { data: mitraList, error } = await query;
+    if (error) throw error;
+
+    const mitraDenganStatus = (mitraList || []).map(mitra => {
+      const endDate = new Date(mitra.tanggal_berakhir);
+      if (isNaN(endDate.getTime())) return { ...mitra, sisa_hari: 0, status: 'Invalid', color: '#999', badgeClass: 'expired' };
+      
+      const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
+      let status, color, badgeClass;
+      if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; badgeClass = 'expired'; }
+      else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; badgeClass = 'danger'; }
+      else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; badgeClass = 'warning'; }
+      else { status = 'Aktif'; color = '#28a745'; badgeClass = 'active'; }
+      return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
+    });
+
+    // ✅ KIRIM user ke view
+    res.render('mitra-table', { mitra: mitraDenganStatus, user: req.session.user });
+  } catch (err) {
+    console.error('❌ Error table view:', err.message);
+    res.status(500).send('Gagal memuat daftar mitra. Silakan coba lagi.');
+  }
+});
+
+// 🔹 FORM Tambah Mitra — ✅ HANYA HUMAS
+app.get('/mitra/tambah', requireAuth('humas'), (req, res) => 
+  res.render('form-mitra', { mitra: null, action: 'tambah', user: req.session.user })
+);
+
+// 🔹 POST Simpan Data Mitra + Generate kode_mitra — ✅ HANYA HUMAS
+app.post('/mitra', requireAuth('humas'), async (req, res) => {
   try {
     const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
     const { count } = await supabase.from('mitra').select('*', { count: 'exact', head: true });
@@ -166,59 +281,83 @@ app.post('/mitra', async (req, res) => {
     res.redirect('/mitra');
   } catch (err) {
     console.error('❌ Error insert mitra:', err.message);
-    res.status(500).send('Gagal menyimpan data');
+    res.status(500).send('Gagal menyimpan data. Silakan coba lagi.');
   }
 });
 
-// 🔹 UPLOAD PDF
-app.post('/mitra/:id/upload', upload.single('file_pdf'), async (req, res) => {
+// 🔹 UPLOAD PDF — ✅ HUMAS & ADMIN FAKULTAS (dengan filter backend)
+app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.single('file_pdf'), async (req, res) => {
   try {
     const { id } = req.params;
     const { jenis_file } = req.body;
+    
+    // 🔹 Cek: admin_fakultas hanya bisa upload untuk mitra fakultas sendiri
+    if (req.session.user.role === 'admin_fakultas') {
+      const { data: mitra, error: checkError } = await supabase
+        .from('mitra')
+        .select('email_fakultas')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+        return res.status(403).send('❌ Anda hanya dapat mengupload dokumen untuk mitra fakultas Anda');
+      }
+    }
+    
     if (!req.file) throw new Error('File tidak ditemukan');
     if (!['mou', 'moa', 'ia', 'pks'].includes(jenis_file)) throw new Error('Jenis file tidak valid');
+    
     const fileName = `mitra-${id}-${jenis_file}-${Date.now()}.pdf`;
     const { error: uploadError } = await supabase.storage.from('dokumen-mitra').upload(fileName, req.file.buffer, { contentType: 'application/pdf', upsert: true });
     if (uploadError) throw uploadError;
+    
     const { data: { publicUrl } } = supabase.storage.from('dokumen-mitra').getPublicUrl(fileName);
     const fieldName = `file_${jenis_file}`;
     const { error: dbError } = await supabase.from('mitra').update({ [fieldName]: publicUrl }).eq('id', id);
     if (dbError) throw dbError;
+    
     console.log(`✅ Upload sukses: ${jenis_file.toUpperCase()} untuk mitra ${id}`);
     res.redirect(`/mitra/${id}`);
   } catch (err) {
     console.error('❌ Error upload:', err.message);
-    res.status(500).send(`Gagal upload: ${err.message}`);
+    res.status(500).send('Gagal upload. Silakan coba lagi.');
   }
 });
 
-// 🔹 DETAIL MITRA
-app.get('/mitra/:id', async (req, res) => {
+// 🔹 DETAIL MITRA — ✅ TAMBAH user & FILTER FAKULTAS UNTUK EDIT
+app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔍 Mencari mitra dengan ID:', id);
+    
     const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
-    if (error) { console.error('❌ Supabase Error:', error); return res.status(500).send(`❌ Database Error: ${error.message}`); }
+    if (error) { console.error('❌ Supabase Error:', error); return res.status(500).send('❌ Database Error. Silakan coba lagi.'); }
     if (!mitra) { console.warn('⚠️ Mitra tidak ditemukan untuk ID:', id); return res.status(404).send('❌ Mitra tidak ditemukan'); }
+    
     console.log('✅ Data mitra ditemukan:', mitra.nama_instansi);
     const today = new Date();
     const endDate = new Date(mitra.tanggal_berakhir);
     if (isNaN(endDate.getTime())) { console.error('❌ Invalid date:', mitra.tanggal_berakhir); return res.status(500).send('❌ Format tanggal_berakhir tidak valid'); }
+    
     const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
     let status, color;
-    if (diffDays <= 7) { status = 'Segera Berakhir'; color = 'red'; }
-    else if (diffDays <= 30) { status = 'Akan Berakhir'; color = 'orange'; }
-    else { status = 'Aktif'; color = 'green'; }
+    if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; }
+    else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; }
+    else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; }
+    else { status = 'Aktif'; color = '#28a745'; }
+    
     console.log(`📊 Status: ${status} (${diffDays} hari)`);
-    res.render('detail-mitra', { mitra: { ...mitra, sisa_hari: diffDays, status, color } });
+    
+    // ✅ KIRIM user ke view
+    res.render('detail-mitra', { mitra: { ...mitra, sisa_hari: diffDays, status, color }, user: req.session.user });
   } catch (err) {
     console.error('💥 Unexpected Error:', err);
-    res.status(500).send(`💥 Gagal memuat detail mitra: ${err.message}`);
+    res.status(500).send('Gagal memuat detail mitra. Silakan coba lagi.');
   }
 });
 
-// 🔹 Redirect by Kode Mitra
-app.get('/mitra/kode/:kode', async (req, res) => {
+// 🔹 Redirect by Kode Mitra — ✅ TAMBAH AUTH
+app.get('/mitra/kode/:kode', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const { kode } = req.params;
     const { data: mitra, error } = await supabase.from('mitra').select('id').eq('kode_mitra', kode.toUpperCase()).single();
@@ -227,28 +366,59 @@ app.get('/mitra/kode/:kode', async (req, res) => {
   } catch (err) { res.status(404).send('❌ Mitra dengan kode tersebut tidak ditemukan'); }
 });
 
-// 🔹 FORM Edit & UPDATE (Opsional)
-app.get('/mitra/:id/edit', async (req, res) => {
+// 🔹 FORM Edit — ✅ HUMAS & ADMIN FAKULTAS (dengan filter backend)
+app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // 🔹 Cek: admin_fakultas hanya bisa edit mitra fakultas sendiri
+    if (req.session.user.role === 'admin_fakultas') {
+      const { data: mitra, error: checkError } = await supabase
+        .from('mitra')
+        .select('email_fakultas')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+        return res.status(403).send('❌ Anda hanya dapat mengedit mitra fakultas Anda');
+      }
+    }
+    
     const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
     if (error || !mitra) return res.status(404).send('Mitra tidak ditemukan');
-    res.render('form-mitra', { mitra, action: 'edit' });
-  } catch (err) { res.status(500).send('Gagal memuat form edit'); }
+    
+    // ✅ KIRIM user ke view
+    res.render('form-mitra', { mitra, action: 'edit', user: req.session.user });
+  } catch (err) { res.status(500).send('Gagal memuat form edit. Silakan coba lagi.'); }
 });
 
-app.post('/mitra/:id/update', async (req, res) => {
+// 🔹 UPDATE Data Mitra — ✅ HUMAS & ADMIN FAKULTAS (dengan filter backend)
+app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // 🔹 Cek: admin_fakultas hanya bisa update mitra fakultas sendiri
+    if (req.session.user.role === 'admin_fakultas') {
+      const { data: mitra, error: checkError } = await supabase
+        .from('mitra')
+        .select('email_fakultas')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+        return res.status(403).send('❌ Anda hanya dapat mengupdate mitra fakultas Anda');
+      }
+    }
+    
     const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
     const { error } = await supabase.from('mitra').update({ nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir }).eq('id', id);
     if (error) throw error;
     res.redirect(`/mitra/${id}`);
-  } catch (err) { console.error('❌ Error update:', err.message); res.status(500).send('Gagal update data'); }
+  } catch (err) { console.error('❌ Error update:', err.message); res.status(500).send('Gagal update data. Silakan coba lagi.'); }
 });
 
-// 🔹 ROUTE: /test-alert — SUPER DEBUG
-app.get('/test-alert', async (req, res) => {
+// 🔹 ROUTE: /test-alert — SUPER DEBUG (Opsional, bisa diproteksi)
+app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   console.log('🧪 [SUPER DEBUG] Memulai test alert...');
   try {
     const today = new Date();
@@ -264,15 +434,15 @@ app.get('/test-alert', async (req, res) => {
     console.log(`📅 Rentang alert: ${todayStr} s/d ${maxDateStr}`);
     
     const { data: allMitra, error } = await supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
-    if (error) { console.error('❌ Query error:', error); return res.status(500).send(`❌ Database error: ${error.message}`); }
+    if (error) { console.error('❌ Query error:', error); return res.status(500).send('❌ Database error. Silakan coba lagi.'); }
     
-    const inRange = allMitra?.filter(m => {
+    const inRange = (allMitra || []).filter(m => {
       const endDate = new Date(m.tanggal_berakhir);
       const sisa = Math.ceil((endDate - today) / (1000*60*60*24));
       return sisa >= 0 && sisa <= 30;
-    }) || [];
+    });
     
-    let html = `<!DOCTYPE html><html><head><title>🔍 Super Debug</title><style>
+    let html = `<!DOCTYPE html><html><head><title>🔍 Test Alert Manual</title><style>
       body{font-family:monospace;padding:20px;background:#f9f9f9}.header{background:#007bff;color:white;padding:15px;border-radius:8px;margin-bottom:20px}
       .summary{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #28a745}
       table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden}
@@ -280,45 +450,30 @@ app.get('/test-alert', async (req, res) => {
       .match{background:#d4edda}.nomatch{background:#f8d7da}.code{background:#f0f0f0;padding:2px 6px;border-radius:3px}
       .btn{padding:8px 16px;background:#007bff;color:white;text-decoration:none;border-radius:4px;display:inline-block;margin:5px 0}
     </style></head><body>
-      <div class="header"><h2>🔍 Super Debug - Test Alert SI Mitra DUDIKA</h2>
+      <div class="header"><h2>🧪 Test Alert Manual - SI Mitra DUDIKA</h2>
       <p>Server Time: <strong>${new Date().toLocaleString('id-ID')}</strong></p>
-      <p>Rentang Alert: <code>${todayStr}</code> s/d <code>${maxDateStr}</code> (30 hari ke depan)</p></div>
+      <p>Rentang: <code>${todayStr}</code> s/d <code>${maxDateStr}</code> (30 hari ke depan)</p></div>
       <div class="summary"><strong>📊 Ringkasan:</strong><br>
-      • Total mitra: <strong>${allMitra?.length || 0}</strong><br>
-      • Dalam rentang alert: <strong>${inRange.length}</strong><br>
-      • Tepat 30/14/7 hari: <strong>${inRange.filter(m => [30,14,7].includes(Math.ceil((new Date(m.tanggal_berakhir)-today)/(1000*60*60*24)))).length}</strong></div>
-      <h3>🗄️ Semua Data Mitra</h3><table><thead><tr><th>ID</th><th>Kode</th><th>Instansi</th><th>Email</th><th>Berakhir</th><th>Sisa</th><th>Status</th><th>File</th></tr></thead><tbody>`;
+      • Total mitra: <strong>${(allMitra||[]).length}</strong><br>
+      • Dalam rentang: <strong>${inRange.length}</strong></div>
+      <h3>🗄️ Mitra dalam Rentang</h3><table><thead><tr><th>Kode</th><th>Instansi</th><th>Email</th><th>Berakhir</th><th>Sisa</th><th>Aksi</th></tr></thead><tbody>`;
     
-    allMitra?.forEach(mitra => {
+    inRange.forEach(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
       const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
-      const isInRange = diffDays >= 0 && diffDays <= 30;
-      const isExact = [30,14,7].includes(diffDays);
-      let status, color;
-      if (diffDays <= 7) { status = '🔴 Segera'; color = '#dc3545'; }
-      else if (diffDays <= 30) { status = '🟡 Akan'; color = '#ffc107'; }
-      else if (diffDays < 0) { status = '⚫ Expired'; color = '#6c757d'; }
-      else { status = '🟢 Aktif'; color = '#28a745'; }
-      const files = [mitra.file_mou?'MoU':'', mitra.file_moa?'MoA':'', mitra.file_ia?'IA':'', mitra.file_pks?'PKS':''].filter(Boolean);
-      html += `<tr class="${isInRange?'match':'nomatch'}"><td><code>${mitra.id?.slice(0,8)}...</code></td><td>${mitra.kode_mitra||'-'}</td><td><strong>${mitra.nama_instansi}</strong></td><td><a href="mailto:${mitra.email_fakultas}">${mitra.email_fakultas}</a></td><td><code>${mitra.tanggal_berakhir}</code><br><small>Type: ${typeof mitra.tanggal_berakhir}</small></td><td style="font-weight:bold;color:${color}">${diffDays} hari</td><td><span style="background:${color};color:white;padding:3px 8px;border-radius:10px;font-size:11px">${status}</span>${isExact?'<br>✅ Threshold!':''}</td><td>${files.join(', ')||'-'}</td></tr>`;
+      html += `<tr class="match"><td><code>${mitra.kode_mitra||'-'}</code></td><td><strong>${mitra.nama_instansi}</strong></td><td><a href="mailto:${mitra.email_fakultas}">${mitra.email_fakultas}</a></td><td><code>${mitra.tanggal_berakhir}</code></td><td style="font-weight:bold">${diffDays} hari</td><td><form method="POST" action="/test-alert/send" style="display:inline"><input type="hidden" name="mitra_id" value="${mitra.id}"><button type="submit" class="btn">📧 Test Kirim</button></form></td></tr>`;
     });
     
-    html += `</tbody></table>`;
-    if (inRange.length > 0) {
-      const testMitra = inRange[0];
-      const sisa = Math.ceil((new Date(testMitra.tanggal_berakhir) - today) / (1000*60*60*24));
-      html += `<div style="margin-top:30px;padding:20px;background:#d4edda;border-radius:8px;border-left:4px solid #28a745"><h3>🎯 Test Kirim Email</h3><p><strong>Mitra:</strong> ${testMitra.nama_instansi}<br><strong>Email:</strong> ${testMitra.email_fakultas}<br><strong>Sisa:</strong> ${sisa} hari</p><form method="POST" action="/test-alert/send"><input type="hidden" name="mitra_id" value="${testMitra.id}"><button type="submit" class="btn">📧 Kirim Email Test</button></form></div>`;
-    }
-    html += `<p style="margin-top:30px"><a href="/mitra" class="btn">← Dashboard</a></p></body></html>`;
+    html += `</tbody></table><p style="margin-top:30px"><a href="/mitra" class="btn">← Kembali ke Dashboard</a></p></body></html>`;
     res.send(html);
   } catch (err) {
-    console.error('💥 Super Debug Error:', err);
-    res.status(500).send(`<pre>💥 Error: ${err.message}\n\n${err.stack}</pre>`);
+    console.error('💥 Test Alert Error:', err);
+    res.status(500).send('❌ Test alert gagal. Silakan coba lagi.');
   }
 });
 
 // 🔹 POST: Kirim Email Test
-app.post('/test-alert/send', async (req, res) => {
+app.post('/test-alert/send', requireAuth('humas'), async (req, res) => {
   try {
     const { mitra_id } = req.body;
     const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', mitra_id).single();
@@ -326,10 +481,10 @@ app.post('/test-alert/send', async (req, res) => {
     const today = new Date();
     const endDate = new Date(mitra.tanggal_berakhir);
     const sisa_hari = Math.ceil((endDate - today) / (1000*60*60*24));
-    const subject = `🧪 [TEST] Alert: "${mitra.nama_instansi}" Berakhir dalam ${sisa_hari} Hari`;
+    const subject = `🧪 [TEST MANUAL] Alert: "${mitra.nama_instansi}" Berakhir dalam ${sisa_hari} Hari`;
     const sent = await sendAlertEmail({ to: mitra.email_fakultas, subject, mitra: { ...mitra, sisa_hari } });
-    res.send(sent ? `✅ Email terkirim ke ${mitra.email_fakultas}<br><a href="/test-alert">← Kembali</a>` : `❌ Gagal kirim. Cek terminal.`);
-  } catch (err) { res.status(500).send(`Error: ${err.message}`); }
+    res.send(sent ? `✅ Email test terkirim ke ${mitra.email_fakultas}<br><a href="/test-alert">← Kembali</a>` : `❌ Gagal kirim. Cek terminal.`);
+  } catch (err) { res.status(500).send('❌ Gagal kirim email test.'); }
 });
 
 const PORT = process.env.PORT || 3000;

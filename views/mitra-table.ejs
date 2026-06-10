@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Mitra - SI Mitra DUDIKA UNIBA</title>
+  <style>
+    :root {
+      --uniba-blue: #003366;
+      --uniba-gold: #FFD700;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --expired: #6c757d;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --border: #dee2e6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+    
+    /* Header */
+    header {
+      background: linear-gradient(135deg, var(--uniba-blue), #0055a4);
+      color: white;
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    header h1 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+    header .subtitle { font-size: 0.9rem; opacity: 0.9; }
+    
+    /* Toolbar */
+    .toolbar {
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-box {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      max-width: 400px;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--uniba-blue);
+      box-shadow: 0 0 0 3px rgba(0,51,102,0.1);
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      background: var(--uniba-blue);
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+    .btn:hover { background: #002244; transform: translateY(-1px); }
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: #218838; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--uniba-blue);
+      color: var(--uniba-blue);
+    }
+    .btn-outline:hover { background: var(--uniba-blue); color: white; }
+    
+    /* Table Container */
+    .table-wrapper {
+      padding: 0 30px 30px;
+      overflow-x: auto;
+    }
+    .table-container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 1000px;
+    }
+    thead {
+      background: var(--uniba-blue);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { background: #004488; }
+    th.sort-asc::after { content: " ▲"; font-size: 10px; }
+    th.sort-desc::after { content: " ▼"; font-size: 10px; }
+    
+    tbody tr:hover { background: #f8f9fa; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    
+    /* Status Badges */
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      text-align: center;
+      min-width: 110px;
+    }
+    .status-active { background: var(--success); }
+    .status-warning { background: var(--warning); color: #333; }
+    .status-danger { background: var(--danger); }
+    .status-expired { background: var(--expired); }
+    
+    /* Kode & Actions */
+    .kode-mitra {
+      font-family: monospace;
+      background: #e9ecef;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: block;
+      margin-bottom: 6px;
+      color: var(--uniba-blue);
+      font-weight: 600;
+    }
+    .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .action-btn {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .action-btn.detail { background: var(--uniba-blue); color: white; }
+    .action-btn.edit { background: var(--warning); color: #333; }
+    .action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    /* Contact & Email */
+    .contact-cell { font-size: 13px; }
+    .contact-cell small { color: #666; display: block; margin-top: 2px; }
+    .email-link { color: var(--uniba-blue); text-decoration: none; font-weight: 500; }
+    .email-link:hover { text-decoration: underline; }
+    
+    /* Document Status Badges */
+    .doc-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: default;
+    }
+    .doc-uploaded { background: #d4edda; color: #155724; }
+    .doc-missing { background: #f8d7da; color: #721c24; }
+    
+    /* Empty State */
+    .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+    .empty-state h3 { margin: 10px 0; color: var(--dark); }
+    
+    /* Footer Stats */
+    .table-footer {
+      padding: 15px 30px;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      header, .toolbar { flex-direction: column; align-items: stretch; text-align: center; }
+      .search-box { max-width: 100%; }
+      .table-wrapper { padding: 0 15px 15px; }
+      table { font-size: 12px; }
+      th, td { padding: 10px 8px; }
+      .status-badge { min-width: auto; padding: 4px 10px; }
+      .action-btns { flex-direction: column; }
+      .doc-status { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div>
+      <h1>📋 Daftar Mitra Kerja Sama</h1>
+      <div class="subtitle">SI Mitra DUDIKA — UNIBA Surakarta</div>
+      <!-- ✅ BADGE ROLE: Muncul di header biar tau akun siapa yang login -->
+      <% if (user) { %>
+        <div style="font-size: 0.85rem; margin-top: 5px; opacity: 0.9;">
+          👤 <strong><%= user.role.toUpperCase() %></strong>
+          <% if (user.fakultas_id) { %> | 🎓 <%= user.fakultas_id.toUpperCase() %> <% } %>
+          <a href="/logout" style="color: #FFD700; text-decoration: none; margin-left: 10px; font-weight: 600;">(Logout)</a>
+        </div>
+      <% } %>
+    </div>
+    <a href="/dashboard" class="btn btn-outline">📊 Ke Dashboard Stats</a>
+  </header>
+  
+  <!-- Toolbar: Search + Actions -->
+  <div class="toolbar">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔍 Cari instansi, kontak, atau email...">
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <!-- ✅ TOMBOL TAMBAH: Hanya untuk Humas -->
+      <% if (user && user.role === 'humas') { %>
+        <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
+      <% } %>
+      <button class="btn" onclick="exportTable()">📥 Export CSV</button>
+    </div>
+  </div>
+  
+  <!-- Table -->
+  <div class="table-wrapper">
+    <div class="table-container">
+      <table id="mitraTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">Kode</th>
+            <th onclick="sortTable(1)">Instansi</th>
+            <th onclick="sortTable(2)">Kontak</th>
+            <th onclick="sortTable(3)">Email Fakultas</th>
+            <th onclick="sortTable(4)">Berakhir</th>
+            <th onclick="sortTable(5)">Sisa Hari</th>
+            <th onclick="sortTable(6)">Status</th>
+            <th>Dokumen</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (mitra && mitra.length > 0) { %>
+            <% mitra.forEach(m => { %>
+              <tr>
+                <td><span class="kode-mitra"><%= m.kode_mitra %></span></td>
+                <td><strong><%= m.nama_instansi %></strong></td>
+                <td class="contact-cell">
+                  <%= m.nama_kontak || '-' %>
+                  <% if (m.no_hp_kontak) { %>
+                    <small>📞 <a href="tel:<%= m.no_hp_kontak %>" style="color:var(--uniba-blue);text-decoration:none"><%= m.no_hp_kontak %></a></small>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (m.email_fakultas) { %>
+                    <a href="mailto:<%= m.email_fakultas %>" class="email-link"><%= m.email_fakultas %></a>
+                  <% } else { %>
+                    <span style="color:#999">-</span>
+                  <% } %>
+                </td>
+                <td><%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %></td>
+                <td style="font-weight:600;color:<%= m.color %>"><%= m.sisa_hari %></td>
+                <td>
+                  <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
+                </td>
+                
+                <td>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span class="doc-status <%= m.file_mou ? 'doc-uploaded' : 'doc-missing' %>" title="MoU">
+                      <%= m.file_mou ? '✅ MoU' : '❌ MoU' %>
+                    </span>
+                    <span class="doc-status <%= m.file_moa ? 'doc-uploaded' : 'doc-missing' %>" title="MoA">
+                      <%= m.file_moa ? '✅ MoA' : '❌ MoA' %>
+                    </span>
+                    <span class="doc-status <%= m.file_ia ? 'doc-uploaded' : 'doc-missing' %>" title="IA">
+                      <%= m.file_ia ? '✅ IA' : '❌ IA' %>
+                    </span>
+                    <span class="doc-status <%= m.file_pks ? 'doc-uploaded' : 'doc-missing' %>" title="PKS">
+                      <%= m.file_pks ? '✅ PKS' : '❌ PKS' %>
+                    </span>
+                  </div>
+                </td>
+                
+                <td>
+                  <div class="action-btns">
+                    <a href="/mitra/<%= m.id %>" class="action-btn detail">🔍</a>
+                    <!-- ✅ TOMBOL EDIT: Hanya untuk Humas -->
+                    <% if (user && user.role === 'humas') { %>
+                      <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️</a>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="9">
+                <div class="empty-state">
+                  <h3>📭 Belum Ada Data Mitra</h3>
+                  <p style="margin:10px 0 20px">Mulai kelola kerja sama DUDIKA dengan menambahkan mitra pertama.</p>
+                  <!-- ✅ TOMBOL TAMBAH DI EMPTY STATE: Hanya untuk Humas -->
+                  <% if (user && user.role === 'humas') { %>
+                    <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Pertama</a>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <div class="table-footer">
+    <span id="resultCount"><%= mitra?.length || 0 %> mitra ditemukan</span>
+    <span>💡 Klik header kolom untuk sort • Search untuk filter • Arahkan mouse ke dokumen untuk tooltip</span>
+  </div>
+  
+  <!-- Scripts -->
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const table = document.getElementById('mitraTable');
+    const rows = table.querySelectorAll('tbody tr');
+    const resultCount = document.getElementById('resultCount');
+    
+    searchInput.addEventListener('input', function() {
+      const term = this.value.toLowerCase();
+      let visible = 0;
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(term)) { row.style.display = ''; visible++; }
+        else { row.style.display = 'none'; }
+      });
+      resultCount.textContent = `${visible} mitra ditemukan`;
+    });
+    
+    let sortDir = {};
+    function sortTable(colIndex) {
+      const headers = table.querySelectorAll('thead th');
+      const tbody = table.querySelector('tbody');
+      const rowsArray = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('td'));
+      
+      sortDir[colIndex] = sortDir[colIndex] === 'asc' ? 'desc' : 'asc';
+      headers.forEach((th, i) => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (i === colIndex) th.classList.add(`sort-${sortDir[colIndex]}`);
+      });
+      
+      rowsArray.sort((a, b) => {
+        const aText = a.querySelectorAll('td')[colIndex].textContent.trim();
+        const bText = b.querySelectorAll('td')[colIndex].textContent.trim();
+        
+        if (colIndex === 5) {
+          const aNum = parseInt(aText) || 0;
+          const bNum = parseInt(bText) || 0;
+          return sortDir[colIndex] === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        if (colIndex === 4) {
+          const aDate = new Date(aText);
+          const bDate = new Date(bText);
+          return sortDir[colIndex] === 'asc' ? aDate - bDate : bDate - aDate;
+        }
+        return sortDir[colIndex] === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+      });
+      rowsArray.forEach(row => tbody.appendChild(row));
+    }
+    
+    function exportTable() {
+      let csv = 'Kode,Instansi,Kontak,No HP,Email,Berakhir,Sisa Hari,Status,MoU,MoA,IA,PKS\n';
+      rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 7) return;
+        
+        const getVal = (sel) => cells[sel]?.textContent.trim() || '-';
+        const getFileStatus = (colIdx, type) => cells[colIdx]?.querySelector(`[title="${type}"]`)?.textContent.includes('✅') ? 'Sudah' : 'Belum';
+        
+        csv += [
+          cells[0].querySelector('.kode-mitra')?.textContent || '',
+          cells[1].textContent.trim(),
+          cells[2].querySelector('small')?.previousSibling?.textContent?.trim() || '-',
+          cells[2].querySelector('a')?.textContent || '-',
+          cells[3].textContent.trim(),
+          cells[4].textContent.trim(),
+          cells[5].textContent.trim(),
+          cells[6].querySelector('.status-badge')?.textContent || '',
+          getFileStatus(7, 'MoU'),
+          getFileStatus(7, 'MoA'),
+          getFileStatus(7, 'IA'),
+          getFileStatus(7, 'PKS')
+        ].map(v => `"${v}"`).join(',') + '\n';
+      });
+      
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `mitra-dudika-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+    
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>

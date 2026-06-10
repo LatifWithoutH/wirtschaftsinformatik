@@ -1,0 +1,31 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">🎓</div>
+    <h2>UNIBA Surakarta</h2>
+    <p>SI Mitra DUDIKA</p>
+  </div>
+  
+  <ul class="nav-menu">
+    <!-- Perhatikan: activePage dikirim dari server -->
+    <li>
+      <a href="/dashboard" class="<%= activePage === 'dashboard' ? 'active' : '' %>">
+        📊 Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="/mitra" class="<%= activePage === 'mitra' ? 'active' : '' %>">
+        📋 Daftar Mitra
+      </a>
+    </li>
+    <li>
+      <a href="/mitra/tambah" onclick="openAddModal(); return false;" class="<%= activePage === 'tambah' ? 'active' : '' %>">
+        ➕ Tambah Mitra
+      </a>
+    </li>
+    <li>
+      <a href="/test-alert" class="<%= activePage === 'alert' ? 'active' : '' %>">
+        🧪 Test Alert
+      </a>
+    </li>
+  </ul>
+</aside>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - SI Mitra DUDIKA UNIBA</title>
+  <style>
+    :root { --uniba-blue: #003366; --uniba-gold: #FFD700; --light: #f8f9fa; --border: #dee2e6; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      display: flex; justify-content: center; align-items: center; height: 100vh;
+    }
+    .login-box {
+      background: white; padding: 40px; border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12); width: 100%; max-width: 420px; text-align: center;
+    }
+    .login-box h2 { color: var(--uniba-blue); margin-bottom: 8px; }
+    .login-box p { color: #666; margin-bottom: 25px; font-size: 0.9rem; }
+    .form-group { margin-bottom: 18px; text-align: left; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #333; }
+    .form-group input {
+      width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 14px; transition: border 0.3s, box-shadow 0.3s;
+    }
+    .form-group input:focus { outline: none; border-color: var(--uniba-blue); box-shadow: 0 0 0 3px rgba(0,51,102,0.1); }
+    button {
+      width: 100%; padding: 12px; background: var(--uniba-blue); color: white; border: none;
+      border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.3s;
+    }
+    button:hover { background: #002244; }
+    .error {
+      color: #721c24; background: #f8d7da; padding: 10px; border-radius: 6px;
+      margin-bottom: 20px; font-size: 0.85rem; display: <%= error ? 'block' : 'none' %>;
+    }
+    .footer { margin-top: 25px; font-size: 0.75rem; color: #888; border-top: 1px solid #eee; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>🎓 SI Mitra DUDIKA</h2>
+    <p>UNIBA Surakarta - Sistem Informasi Mitra DUDIKA</p>
+    
+    <div class="error" id="errorMsg">❌ <%= error || '' %></div>
+    
+    <form action="/login" method="POST">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="humas@uniba.ac.id">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Masukkan password">
+      </div>
+      <button type="submit">🔐 Masuk</button>
+    </form>
+    
+    <div class="footer">© 2026 Humas UNIBA Surakarta | Sistem Internal</div>
+  </div>
+  <script>
+    const err = document.getElementById('errorMsg');
+    if (err.textContent.trim().length > 2) setTimeout(() => err.style.display = 'none', 4000);
+  </script>
+</body>
+</html>

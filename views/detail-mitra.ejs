@@ -1,129 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <!-- Tambah di bagian atas, sebelum judul -->
-  <p style="color: #666; font-size: 14px;">
-    <strong>Kode Mitra:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;"><%= mitra.kode_mitra %></code>
-  </p>
-  <h1>📋 <%= mitra.nama_instansi %></h1>
-  <title>Detail: <%= mitra.nama_instansi %></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Mitra: <%= mitra.nama_instansi %> - SI Mitra DUDIKA</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #fff; }
-    .card h3 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-    
-    .info-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px 15px; }
-    .info-grid strong { color: #555; }
-    
-    .status-badge { 
-      display: inline-block; 
-      padding: 4px 12px; 
-      border-radius: 20px; 
-      color: white; 
-      font-size: 12px; 
-      font-weight: bold;
-      margin-left: 10px;
+    :root {
+      --uniba-blue: #003366;
+      --uniba-gold: #FFD700;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --expired: #6c757d;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --border: #dee2e6;
     }
-    
-    .doc-item { 
-      margin: 15px 0; 
-      padding: 12px; 
-      background: #f9f9f9; 
-      border-radius: 6px; 
-      border-left: 4px solid #007bff;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      padding: 20px;
+      line-height: 1.6;
     }
-    .doc-item strong { display: block; margin-bottom: 8px; color: #333; }
-    
-    .btn { 
-      padding: 6px 12px; 
-      background: #007bff; 
-      color: white; 
-      text-decoration: none; 
-      border-radius: 4px; 
-      display: inline-block; 
-      margin-right: 5px; 
-      border: none; 
-      cursor: pointer; 
-      font-size: 13px;
+    .container { max-width: 800px; margin: auto; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+      margin-bottom: 20px; border-bottom: 2px solid var(--uniba-blue); padding-bottom: 15px;
     }
-    .btn:hover { background: #0056b3; }
-    .btn-success { background: #28a745; }
-    .btn-success:hover { background: #218838; }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-    
-    .upload-form { margin-top: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .upload-form input[type="file"] { flex: 1; min-width: 200px; }
-    
-    .back-link { color: #007bff; text-decoration: none; }
+    .header h1 { font-size: 1.6rem; color: var(--uniba-blue); }
+    .header .kode { background: #e9ecef; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
+    .back-link { color: var(--uniba-blue); text-decoration: none; font-weight: 500; }
     .back-link:hover { text-decoration: underline; }
+
+    .card {
+      background: white; border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card h3 {
+      margin-top: 0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--uniba-blue);
+      color: var(--uniba-blue); font-size: 1.2rem;
+    }
+    .info-grid { display: grid; grid-template-columns: 160px 1fr; gap: 10px 20px; }
+    .info-grid strong { color: #555; font-weight: 600; }
+    .status-badge {
+      display: inline-block; padding: 4px 12px; border-radius: 20px; color: white; font-size: 0.8rem; font-weight: 600;
+    }
+
+    .doc-item {
+      padding: 15px; background: var(--light); border-radius: 8px; border-left: 4px solid var(--uniba-blue); margin-bottom: 12px;
+      position: relative;
+    }
+    .doc-item:last-child { margin-bottom: 0; }
+    .doc-item.read-only { opacity: 0.85; }
+    .doc-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .doc-header strong { font-size: 1.1rem; color: var(--dark); }
+    .doc-status { font-size: 0.9rem; font-weight: 500; }
+    .doc-status.uploaded { color: var(--success); }
+    .doc-status.missing { color: #888; }
+
+    .doc-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn {
+      padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--uniba-blue); color: white; }
+    .btn-primary:hover { background: #002244; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #218838; }
+    .btn-outline { background: transparent; border: 1px solid var(--uniba-blue); color: var(--uniba-blue); }
+    .btn-outline:hover { background: var(--uniba-blue); color: white; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .upload-form { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; display: flex; gap: 10px; flex-wrap: wrap; }
+    .upload-form input[type="file"] { flex: 1; min-width: 200px; padding: 6px; }
+
+    .note { font-size: 0.85rem; color: #666; background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107; margin-top: 15px; }
+    .footer-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* Badge akses terbatas */
+    .access-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--warning);
+      color: #333;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 600px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; }
+    }
   </style>
 </head>
 <body>
-  <h1>📋 <%= mitra.nama_instansi %></h1>
-  <p><a href="/mitra" class="back-link">← Kembali ke Dashboard</a></p>
-  
-  <!-- 📇 Informasi Kontak -->
-  <div class="card">
-    <h3>📇 Informasi Kontak</h3>
-    <div class="info-grid">
-      <strong>Nama Kontak</strong><div><%= mitra.nama_kontak || '-' %></div>
-      <strong>Jabatan</strong><div><%= mitra.jabatan || '-' %></div>
-      <strong>Nomor HP</strong><div><%= mitra.no_hp_kontak || '-' %></div>
-      <strong>Email Fakultas</strong><div><%= mitra.email_fakultas || '-' %></div>
-      <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>📋 <%= mitra.nama_instansi %></h1>
+        <span class="kode">Kode: <%= mitra.kode_mitra %></span>
+      </div>
+      <a href="/mitra" class="back-link">← Kembali ke Daftar Mitra</a>
     </div>
-  </div>
-  
-  <!-- 📅 Masa Kerja Sama -->
-  <div class="card">
-    <h3>📅 Masa Kerja Sama</h3>
-    <div class="info-grid">
-      <strong>Tanggal Mulai</strong><div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID') %></div>
-      <strong>Tanggal Berakhir</strong><div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID') %></div>
-      <strong>Sisa Waktu</strong><div>
-        <%= mitra.sisa_hari %> hari 
-        <span class="status-badge" style="background:<%= mitra.color %>"><%= mitra.status %></span>
+
+    <!-- 📇 Informasi Kontak -->
+    <div class="card">
+      <h3>📇 Informasi Kontak</h3>
+      <div class="info-grid">
+        <strong>Nama Kontak</strong><div><%= mitra.nama_kontak || '-' %></div>
+        <strong>Jabatan</strong><div><%= mitra.jabatan || '-' %></div>
+        <strong>Nomor HP</strong><div><a href="tel:<%= mitra.no_hp_kontak %>" style="color:var(--uniba-blue);text-decoration:none"><%= mitra.no_hp_kontak || '-' %></a></div>
+        <strong>Email Fakultas</strong><div><a href="mailto:<%= mitra.email_fakultas %>" style="color:var(--uniba-blue);text-decoration:none"><%= mitra.email_fakultas || '-' %></a></div>
+        <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
       </div>
     </div>
-  </div>
-  
-  <!-- 📎 Dokumen Legalitas + Upload -->
-  <div class="card">
-    <h3>📎 Dokumen Legalitas</h3>
-    
-    <% ['mou', 'moa', 'ia', 'pks'].forEach(jenis => {
+
+    <!-- 📅 Masa Kerja Sama -->
+    <div class="card">
+      <h3>📅 Periode Kerja Sama</h3>
+      <div class="info-grid">
+        <strong>Tanggal Mulai</strong><div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+        <strong>Tanggal Berakhir</strong><div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+        <strong>Sisa Waktu</strong><div>
+          <span style="font-weight:600;color:<%= mitra.color %>"><%= mitra.sisa_hari %> hari</span>
+          <span class="status-badge" style="background:<%= mitra.color %>"><%= mitra.status %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📎 Dokumen Legalitas -->
+    <div class="card">
+      <h3>📎 Dokumen Legalitas</h3>
+      
+      <% 
+        // Cek apakah user bisa edit/upload dokumen ini
+        const canEdit = user?.role === 'humas' || 
+                       (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id));
+      %>
+      
+      <% ['mou', 'moa', 'ia', 'pks'].forEach(jenis => {
          const label = jenis.toUpperCase();
          const fieldName = 'file_' + jenis;
          const fileUrl = mitra[fieldName];
-    %>
-      <div class="doc-item">
-        <strong>📄 <%= label %></strong>
-        
-        <% if (fileUrl) { %>
-          <p style="margin: 8px 0; color: #28a745;">
-            ✅ Sudah diupload
-          </p>
-          <p>
-            <a href="<%= fileUrl %>" target="_blank" class="btn btn-sm">👁️ Preview PDF</a>
-            <a href="<%= fileUrl %>" download class="btn btn-sm btn-success">⬇️ Download</a>
-          </p>
-        <% } else { %>
-          <p style="margin: 8px 0; color: #999;">Belum diupload</p>
-        <% } %>
-        
-        <!-- Form Upload Terpisah (bukan nested) -->
-        <form method="POST" action="/mitra/<%= mitra.id %>/upload" enctype="multipart/form-data" class="upload-form">
-          <input type="hidden" name="jenis_file" value="<%= jenis %>">
-          <input type="file" name="file_pdf" accept=".pdf" required>
-          <button type="submit" class="btn btn-sm">Upload <%= label %></button>
-        </form>
-      </div>
-    <% }) %>
+         const isEditable = canEdit;
+      %>
+        <div class="doc-item <%= !isEditable ? 'read-only' : '' %>">
+          
+          <% if (!isEditable && user?.role === 'admin_fakultas') { %>
+            <span class="access-badge">🔒 Fakultas Lain</span>
+          <% } %>
+          
+          <div class="doc-header">
+            <strong>📄 <%= label %></strong>
+            <span class="doc-status <%= fileUrl ? 'uploaded' : 'missing' %>">
+              <%= fileUrl ? '✅ Sudah diupload' : '⏳ Belum diupload' %>
+            </span>
+          </div>
+
+          <!-- Preview & Download: Semua role bisa -->
+          <% if (fileUrl) { %>
+            <div class="doc-actions">
+              <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
+              <a href="<%= fileUrl %>" download class="btn btn-success">⬇️ Download</a>
+            </div>
+          <% } %>
+
+          <!-- Form Upload: Hanya humas & admin_fakultas (untuk fakultas sendiri) -->
+          <% if (isEditable) { %>
+            <form method="POST" action="/mitra/<%= mitra.id %>/upload" enctype="multipart/form-data" class="upload-form">
+              <input type="hidden" name="jenis_file" value="<%= jenis %>">
+              <input type="file" name="file_pdf" accept=".pdf" required>
+              <button type="submit" class="btn <%= fileUrl ? 'btn-outline' : 'btn-primary' %>">
+                <%= fileUrl ? '🔄 Ganti' : '⬆️ Upload' %> <%= label %>
+              </button>
+            </form>
+          <% } else if (user?.role === 'guest') { %>
+            <p style="font-size:0.8rem;color:#666;margin-top:8px">
+              👁️ Guest mode: Hanya dapat melihat dokumen. Hubungi Humas untuk upload.
+            </p>
+          <% } else if (user?.role === 'admin_fakultas') { %>
+            <p style="font-size:0.8rem;color:#666;margin-top:8px">
+              🔒 Dokumen ini milik fakultas lain. Hubungi Humas untuk perubahan.
+            </p>
+          <% } %>
+        </div>
+      <% }) %>
+      
+      <p class="note">
+        💡 <strong>Catatan:</strong> Dokumen dapat diupload kapan saja. Tanggal upload tidak mempengaruhi masa berlaku kerja sama yang tercantum di atas.
+      </p>
+    </div>
+
+    <!-- Tombol Aksi: Conditional per Role -->
+    <div class="footer-actions">
+      <% if (user?.role === 'humas' || (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id))) { %>
+        <a href="/mitra/<%= mitra.id %>/edit" class="btn btn-primary">✏️ Edit Data Mitra</a>
+      <% } else if (user?.role === 'guest') { %>
+        <span style="font-size:0.85rem;color:#666">👁️ Mode Baca Saja — Hubungi Humas untuk perubahan data</span>
+      <% } else if (user?.role === 'admin_fakultas') { %>
+        <span style="font-size:0.85rem;color:#666">🔒 Data milik fakultas lain — Hubungi Humas untuk edit</span>
+      <% } %>
+    </div>
   </div>
-  
-  <!-- Tombol Edit -->
-  <p>
-    <a href="/mitra/<%= mitra.id %>/edit" class="btn">✏️ Edit Data Mitra</a>
-  </p>
 </body>
 </html>

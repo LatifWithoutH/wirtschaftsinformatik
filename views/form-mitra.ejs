@@ -1,50 +1,134 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title><%= action === 'tambah' ? 'Tambah' : 'Edit' %> Mitra</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= action === 'tambah' ? 'Tambah' : 'Edit' %> Mitra - SI Mitra DUDIKA</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-    button { margin-top: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .required { color: red; }
+    :root {
+      --uniba-blue: #003366;
+      --success: #28a745;
+      --light: #f8f9fa;
+      --border: #dee2e6;
+      --dark: #343a40;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      padding: 20px;
+    }
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: var(--uniba-blue);
+      font-size: 1.5rem;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border 0.3s, box-shadow 0.3s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--uniba-blue);
+      box-shadow: 0 0 0 3px rgba(0,51,102,0.1);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    button[type="submit"] {
+      margin-top: 25px;
+      width: 100%;
+      padding: 12px;
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button[type="submit"]:hover { background: #218838; }
+    .required { color: #dc3545; }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: var(--uniba-blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .note {
+      margin-top: 25px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      background: #fff3cd;
+      padding: 10px;
+      border-radius: 6px;
+      border-left: 4px solid #ffc107;
+    }
   </style>
 </head>
 <body>
-  <h1><%= action === 'tambah' ? '➕ Tambah' : '✏️ Edit' %> Mitra</h1>
-  
-  <form method="POST" action="/mitra">
-    <label>Nama Instansi <span class="required">*</span></label>
-    <input type="text" name="nama_instansi" required value="<%= mitra?.nama_instansi || '' %>">
+  <div class="form-container">
+    <h1><%= action === 'tambah' ? '➕ Tambah' : '✏️ Edit' %> Mitra</h1>
+    
+    <!-- Action dinamis: Tambah → /mitra | Edit → /mitra/:id/update -->
+    <form method="POST" action="<%= action === 'tambah' ? '/mitra' : `/mitra/${mitra?.id}/update` %>">
+      
+      <label>Nama Instansi <span class="required">*</span></label>
+      <input type="text" name="nama_instansi" required value="<%= mitra?.nama_instansi || '' %>">
 
-    <label>Nama Kontak</label>
-    <input type="text" name="nama_kontak" value="<%= mitra?.nama_kontak || '' %>">
+      <label>Nama Kontak</label>
+      <input type="text" name="nama_kontak" value="<%= mitra?.nama_kontak || '' %>">
 
-    <label>Jabatan</label>
-    <input type="text" name="jabatan" value="<%= mitra?.jabatan || '' %>">
+      <label>Jabatan</label>
+      <input type="text" name="jabatan" value="<%= mitra?.jabatan || '' %>">
 
-    <label>Alamat</label>
-    <textarea name="alamat" rows="3"><%= mitra?.alamat || '' %></textarea>
+      <label>Alamat</label>
+      <textarea name="alamat" rows="3"><%= mitra?.alamat || '' %></textarea>
 
-    <label>Nomor HP Kontak <span class="required">*</span></label>
-    <input type="text" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxx">
+      <label>Nomor HP Kontak <span class="required">*</span></label>
+      <input type="text" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxx">
 
-    <label>Email Fakultas Bertanggung Jawab <span class="required">*</span></label>
-    <input type="email" name="email_fakultas" required value="<%= mitra?.email_fakultas || '' %>" placeholder="fti@uniba.ac.id">
+      <label>Email Fakultas Bertanggung Jawab <span class="required">*</span></label>
+      <input type="email" name="email_fakultas" required value="<%= mitra?.email_fakultas || '' %>" placeholder="fti@uniba.ac.id">
 
-    <label>Tanggal Mulai Kerja Sama <span class="required">*</span></label>
-    <input type="date" name="tanggal_mulai" required value="<%= mitra?.tanggal_mulai || '' %>">
+      <label>Tanggal Mulai Kerja Sama <span class="required">*</span></label>
+      <input type="date" name="tanggal_mulai" required value="<%= mitra?.tanggal_mulai || '' %>">
 
-    <label>Tanggal Berakhir Kerja Sama <span class="required">*</span></label>
-    <input type="date" name="tanggal_berakhir" required value="<%= mitra?.tanggal_berakhir || '' %>">
+      <label>Tanggal Berakhir Kerja Sama <span class="required">*</span></label>
+      <input type="date" name="tanggal_berakhir" required value="<%= mitra?.tanggal_berakhir || '' %>">
 
-    <button type="submit">💾 Simpan Data</button>
-  </form>
-  
-  <p style="margin-top: 20px;"><a href="/mitra">← Kembali ke Dashboard</a></p>
-  
-  <p style="font-size: 12px; color: #666; margin-top: 30px;">
-    💡 <strong>Catatan:</strong> Upload dokumen (MoU/MoA/IA/PKS) dilakukan setelah data mitra disimpan, di halaman Detail.
-  </p>
+      <button type="submit">💾 Simpan Data</button>
+    </form>
+    
+    <a href="/mitra" class="back-link">← Lihat Daftar</a>
+    
+    <p class="note">
+      💡 <strong>Catatan:</strong> Upload dokumen (MoU/MoA/IA/PKS) dilakukan setelah data mitra disimpan, di halaman Detail.
+    </p>
+  </div>
 </body>
 </html>
