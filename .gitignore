@@ -70,3 +70,9 @@ temp/
 
 # 🚫 Supabase CLI (kalau pakai)
 .supabase/
+
+# 🔒 Jangan upload file sensitif
+.env
+credentials/
+*.json
+!package.json
