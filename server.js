@@ -8,6 +8,7 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -20,10 +21,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production', 
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
@@ -106,52 +107,52 @@ async function sendAlertEmail({ to, subject, mitra }) {
   }
 }
 
-// 🔹 CRON JOB: Cek & Kirim Alert Setiap Hari Jam 08:00 WIB
-cron.schedule('0 8 * * *', async () => {
-  console.log('🔍 [Cron Job] Memulai pengecekan alert...');
+// // 🔹 CRON JOB: Cek & Kirim Alert Setiap Hari Jam 08:00 WIB
+// cron.schedule('0 8 * * *', async () => {
+  // console.log('🔍 [Cron Job] Memulai pengecekan alert...');
   
-  try {
-    const today = new Date();
-    const thresholds = [30, 14, 7];
+  // try {
+    // const today = new Date();
+    // const thresholds = [30, 14, 7];
     
-    for (const days of thresholds) {
-      const targetDate = new Date();
-      targetDate.setDate(today.getDate() + days);
-      const targetStr = targetDate.toISOString().split('T')[0];
+    // for (const days of thresholds) {
+      // const targetDate = new Date();
+      // targetDate.setDate(today.getDate() + days);
+      // const targetStr = targetDate.toISOString().split('T')[0];
       
-      const { data: mitraList, error } = await supabase
-        .from('mitra')
-        .select('*')
-        .eq('tanggal_berakhir', targetStr);
+      // const { data: mitraList, error } = await supabase
+        // .from('mitra')
+        // .select('*')
+        // .eq('tanggal_berakhir', targetStr);
       
-      if (error) { console.error('❌ Error query alert:', error); continue; }
-      if (!mitraList || mitraList.length === 0) {
-        console.log(`ℹ️ Tidak ada mitra yang berakhir dalam ${days} hari`);
-        continue;
-      }
+      // if (error) { console.error('❌ Error query alert:', error); continue; }
+      // if (!mitraList || mitraList.length === 0) {
+        // console.log(`ℹ️ Tidak ada mitra yang berakhir dalam ${days} hari`);
+        // continue;
+      // }
       
-      console.log(`📧 Ditemukan ${mitraList.length} mitra untuk alert ${days} hari`);
+      // console.log(`📧 Ditemukan ${mitraList.length} mitra untuk alert ${days} hari`);
       
-      for (const mitra of mitraList) {
-        const endDate = new Date(mitra.tanggal_berakhir);
-        const sisa_hari = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-        const subject = `⚠️ Alert: Kerja Sama "${mitra.nama_instansi}" Berakhir dalam ${days} Hari`;
+      // for (const mitra of mitraList) {
+        // const endDate = new Date(mitra.tanggal_berakhir);
+        // const sisa_hari = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+        // const subject = `⚠️ Alert: Kerja Sama "${mitra.nama_instansi}" Berakhir dalam ${days} Hari`;
         
-        const recipients = [mitra.email_fakultas];
-        if (process.env.EMAIL_HUMAS) recipients.push(process.env.EMAIL_HUMAS);
+        // const recipients = [mitra.email_fakultas];
+        // if (process.env.EMAIL_HUMAS) recipients.push(process.env.EMAIL_HUMAS);
         
-        await sendAlertEmail({
-          to: recipients,
-          subject: subject,
-          mitra: { ...mitra, sisa_hari }
-        });
-      }
-    }
-    console.log('✅ [Cron Job] Pengecekan alert selesai');
-  } catch (err) {
-    console.error('💥 [Cron Job] Error:', err.message);
-  }
-}, { scheduled: true, timezone: "Asia/Jakarta" });
+        // await sendAlertEmail({
+          // to: recipients,
+          // subject: subject,
+          // mitra: { ...mitra, sisa_hari }
+        // });
+      // }
+    // }
+    // console.log('✅ [Cron Job] Pengecekan alert selesai');
+  // } catch (err) {
+    // console.error('💥 [Cron Job] Error:', err.message);
+  // }
+// }, { scheduled: true, timezone: "Asia/Jakarta" });
 
 // 🔹 HOME → Redirect ke Dashboard
 app.get('/', (req, res) => res.redirect('/dashboard'));
