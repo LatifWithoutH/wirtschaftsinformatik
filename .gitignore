@@ -2,25 +2,31 @@
 .env
 .env.local
 .env.*.local
-*.env
+# CATATAN: Jangan ignore .env.example agar developer lain tahu variabel apa saja yang dibutuhkan
 
 # 📦 Node.js & NPM
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+pnpm-debug.log*
 *.tgz
+.pnp.*
+.pnp.js
+# HAPUS package-lock.json dari sini! File ini HARUS di-commit.
 
-# 🗄️ Database Lokal (kalau pakai SQLite nanti)
+# 🗄️ Database Lokal
 *.sqlite
 *.sqlite3
 *.db
 database.sqlite
+*.sql          # Tambahan: jika ada file dump database lokal
+dump.sql
 
-# 📁 Uploads & User Files (jangan commit file user!)
-public/uploads/
+# 📁 Uploads & User Files (Multer / User Uploads)
+public/uploads/*
 !public/uploads/.gitkeep
+uploads/        # Tambahan: jaga-jaga jika folder upload ada di root, bukan di public
 
 # 🖥️ OS & System Files
 .DS_Store
@@ -28,8 +34,10 @@ Thumbs.db
 desktop.ini
 *.log
 *.tmp
+*.temp
 *.swp
 *.swo
+*~
 
 # 💻 IDE & Editor
 .vscode/
@@ -37,26 +45,37 @@ desktop.ini
 *.sublime-project
 *.sublime-workspace
 *.code-workspace
+.history/       # Tambahan: untuk ekstensi "Local History" di VS Code
 
 # 🧪 Testing & Coverage
 coverage/
 .nyc_output/
 *.lcov
+# 🧪 File Test, Log, dan Dump Lokal (JANGAN di-push ke GitHub)
+test-*.js
+test-*.txt
+create-*.js
+treemu.txt
+gabungan_kode_ejs.txt
 
-# 📦 Build Output (jika nanti ada build step)
+# 📦 Build Output
 dist/
 build/
 public/dist/
 
-# 🔐 Sensitive Files
+# 🔐 Sensitive Files & Credentials (Disesuaikan dengan tree Anda)
 *.pem
 *.key
 *.crt
 *.p12
 secrets.json
 config/secret.*
+credentials/          # Folder 'credentials' yang terdeteksi di tree Anda
+credentials/drive.json
+token.json            # Sering dibuat otomatis oleh googleapis / oauth2
+serviceAccount.json   # Nama umum file kunci akun layanan Google
 
-# 📚 Documentation (opsional: kalau mau private)
+# 📚 Documentation
 docs/private/
 *.pdf
 !Rancangan\ Proyek\ SI\ Mitra\ DUDIKA\ UNIBA\ Surakarta.pdf
@@ -67,12 +86,7 @@ temp/
 .cache/
 *.bak
 *.backup
+.eslintcache
 
-# 🚫 Supabase CLI (kalau pakai)
+# 🚫 Supabase CLI
 .supabase/
-
-# 🔒 Jangan upload file sensitif
-.env
-credentials/
-*.json
-!package.json
