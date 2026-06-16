@@ -1,31 +1,461 @@
-<aside class="sidebar">
+<style>
+  /* ========== CSS VARIABLES ========== */
+  :root {
+    --uniba-primary: #1a3a5c;
+    --uniba-secondary: #8b6f47;
+    --uniba-gold: #d4a017;
+    --uniba-blue-light: #2c5282;
+    --uniba-dark: #0f2439;
+    --sidebar-width: 280px;
+  }
+
+  /* ========== SIDEBAR ========== */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, var(--uniba-primary) 0%, var(--uniba-dark) 100%);
+    color: white;
+    padding: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(0);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar.hidden {
+    transform: translateX(-100%);
+  }
+
+  .sidebar::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 200px;
+    height: 200px;
+    background: var(--uniba-gold);
+    border-radius: 50%;
+    opacity: 0.08;
+    filter: blur(60px);
+  }
+
+  /* ========== SIDEBAR HEADER ========== */
+  .sidebar-header {
+    text-align: center;
+    padding: 30px 20px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header .logo-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 8px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(212, 160, 23, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header .logo-wrapper:hover {
+    transform: scale(1.05) rotate(3deg);
+  }
+
+  .sidebar-header .logo-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .sidebar-header h2 { 
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem; 
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-header p { 
+    font-size: 0.75rem; 
+    opacity: 0.7; 
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ========== USER PROFILE SECTION ========== */
+  .user-profile {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .user-profile .avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--uniba-dark);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
+  }
+
+  .user-profile .user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-profile .user-info strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-profile .user-info small {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-profile .role-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  /* ========== NAV MENU ========== */
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .nav-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.5;
+    margin: 20px 0 10px 16px;
+    font-weight: 600;
+  }
+
+  .nav-section-title:first-child {
+    margin-top: 0;
+  }
+
+  .nav-menu { list-style: none; }
+  .nav-menu li { margin-bottom: 6px; }
+  
+  .nav-menu a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nav-menu a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--uniba-gold), transparent);
+    opacity: 0.15;
+    transition: width 0.3s ease;
+  }
+
+  .nav-menu a:hover::before { width: 100%; }
+
+  .nav-menu a:hover {
+    color: white;
+    transform: translateX(5px);
+  }
+
+  /* ========== BETTER ACTIVE STATE ========== */
+  .nav-menu a.active {
+    background: rgba(212, 160, 23, 0.15);
+    color: white;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .nav-menu a.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background: var(--uniba-gold);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
+  }
+
+  .nav-menu a .nav-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .nav-menu a .nav-text {
+    flex: 1;
+  }
+
+  /* ========== NOTIFICATION BADGE ========== */
+  .nav-menu a .badge {
+    background: var(--danger, #ef4444);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /* ========== SIDEBAR FOOTER ========== */
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar-footer .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .sidebar-footer .logout-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: white;
+    transform: translateX(5px);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+
+  .sidebar-footer .version {
+    text-align: center;
+    font-size: 0.7rem;
+    opacity: 0.4;
+    margin-top: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ========== TOGGLE BUTTON (CHEVRON) ========== */
+  .sidebar-toggle {
+    position: fixed;
+    left: var(--sidebar-width);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1001;
+    background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+    color: white;
+    border: none;
+    width: 32px;
+    height: 64px;
+    border-radius: 0 12px 12px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-toggle:hover {
+    background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+    color: var(--uniba-dark);
+    width: 36px;
+  }
+
+  .sidebar-toggle.shifted {
+    left: 0;
+  }
+
+  .sidebar-toggle .chevron {
+    transition: transform 0.4s ease;
+    display: inline-block;
+  }
+
+  .sidebar-toggle.shifted .chevron {
+    transform: rotate(180deg);
+  }
+
+  /* ========== MOBILE ========== */
+  @media (max-width: 768px) {
+    .sidebar { 
+      transform: translateX(-100%);
+      width: 260px;
+    }
+    .sidebar.active { 
+      transform: translateX(0);
+    }
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+    .sidebar-toggle {
+      left: 0;
+      top: 20px;
+      transform: none;
+      border-radius: 0 12px 12px 0;
+      width: 40px;
+      height: 40px;
+    }
+    .sidebar-toggle.shifted {
+      left: 260px;
+    }
+  }
+
+  /* Scrollbar */
+  .sidebar::-webkit-scrollbar { width: 8px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { 
+    background: rgba(255, 255, 255, 0.2); 
+    border-radius: 4px;
+  }
+  .sidebar::-webkit-scrollbar-thumb:hover { 
+    background: rgba(255, 255, 255, 0.3); 
+  }
+</style>
+
+<!-- Tombol Toggle Sidebar -->
+<button class="sidebar-toggle" id="sidebarToggle" title="Buka/Tutup Menu">
+  <span class="chevron">‹</span>
+</button>
+
+<aside class="sidebar" id="sidebar">
+  <!-- Header dengan Logo -->
   <div class="sidebar-header">
-    <div class="logo">🎓</div>
-    <h2>UNIBA Surakarta</h2>
+    <div class="logo-wrapper">
+      <img src="/images/logo-uniba.png" alt="Logo UNIBA">
+    </div>
+    <h2>Universitas Islam Batik</h2>
     <p>SI Mitra DUDIKA</p>
   </div>
   
-  <ul class="nav-menu">
-    <!-- Perhatikan: activePage dikirim dari server -->
-    <li>
-      <a href="/dashboard" class="<%= activePage === 'dashboard' ? 'active' : '' %>">
-        📊 Dashboard
-      </a>
-    </li>
-    <li>
-      <a href="/mitra" class="<%= activePage === 'mitra' ? 'active' : '' %>">
-        📋 Daftar Mitra
-      </a>
-    </li>
-    <li>
-      <a href="/mitra/tambah" onclick="openAddModal(); return false;" class="<%= activePage === 'tambah' ? 'active' : '' %>">
-        ➕ Tambah Mitra
-      </a>
-    </li>
-    <li>
-      <a href="/test-alert" class="<%= activePage === 'alert' ? 'active' : '' %>">
-        🧪 Test Alert
-      </a>
-    </li>
-  </ul>
+  <!-- User Profile Section -->
+  <% if (typeof user !== 'undefined' && user) { %>
+    <div class="user-profile">
+      <div class="avatar">
+        <%= user.role === 'humas' ? 'HU' : 'US' %>
+      </div>
+      <div class="user-info">
+        <strong><%= user.name || 'User' %></strong>
+        <small><%= user.email || 'user@uniba.ac.id' %></small>
+        <span class="role-badge"><%= user.role %></span>
+      </div>
+    </div>
+  <% } %>
+  
+  <!-- Navigation Menu -->
+  <div class="sidebar-content">
+    <div class="nav-section-title">Menu Utama</div>
+    <ul class="nav-menu">
+      <li>
+        <a href="/dashboard" class="<%= (typeof activePage !== 'undefined' && activePage === 'dashboard') ? 'active' : '' %>">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="/mitra" class="<%= (typeof activePage !== 'undefined' && activePage === 'mitra') ? 'active' : '' %>">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Daftar Mitra</span>
+          <% if (typeof alertCount !== 'undefined' && alertCount > 0) { %>
+            <span class="badge"><%= alertCount %></span>
+          <% } %>
+        </a>
+      </li>
+    </ul>
+    
+    <!-- Menu Khusus Humas -->
+    <% if (typeof user !== 'undefined' && user && user.role === 'humas') { %>
+      <div class="nav-section-title">Kelola Data</div>
+      <ul class="nav-menu">
+        <li>
+          <a href="/mitra/tambah" class="<%= (typeof activePage !== 'undefined' && activePage === 'tambah') ? 'active' : '' %>">
+            <span class="nav-icon">➕</span>
+            <span class="nav-text">Tambah Mitra</span>
+          </a>
+        </li>
+        <li>
+          <a href="/test-alert" class="<%= (typeof activePage !== 'undefined' && activePage === 'alert') ? 'active' : '' %>">
+            <span class="nav-icon">🧪</span>
+            <span class="nav-text">Test Alert</span>
+          </a>
+        </li>
+      </ul>
+    <% } %>
+  </div>
+  
+  <!-- Footer dengan Logout -->
+  <div class="sidebar-footer">
+    <a href="/logout" class="logout-btn">
+      <span>🚪</span>
+      <span>Logout</span>
+    </a>
+    <div class="version">v1.0.0 • © 2026 UNIBA</div>
+  </div>
 </aside>

@@ -4,119 +4,584 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Detail Mitra: <%= mitra.nama_instansi %> - SI Mitra DUDIKA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --uniba-blue: #003366;
-      --uniba-gold: #FFD700;
-      --success: #28a745;
-      --warning: #ffc107;
-      --danger: #dc3545;
-      --expired: #6c757d;
-      --light: #f8f9fa;
-      --dark: #343a40;
-      --border: #dee2e6;
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      
+      --border: #e2e8f0;
     }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--light);
-      color: var(--dark);
-      padding: 20px;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
       line-height: 1.6;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      padding: 30px 20px;
     }
-    .container { max-width: 800px; margin: auto; }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ========== HEADER ========== */
     .header {
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
-      margin-bottom: 20px; border-bottom: 2px solid var(--uniba-blue); padding-bottom: 15px;
-    }
-    .header h1 { font-size: 1.6rem; color: var(--uniba-blue); }
-    .header .kode { background: #e9ecef; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
-    .back-link { color: var(--uniba-blue); text-decoration: none; font-weight: 500; }
-    .back-link:hover { text-decoration: underline; }
-
-    .card {
-      background: white; border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .card h3 {
-      margin-top: 0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--uniba-blue);
-      color: var(--uniba-blue); font-size: 1.2rem;
-    }
-    .info-grid { display: grid; grid-template-columns: 160px 1fr; gap: 10px 20px; }
-    .info-grid strong { color: #555; font-weight: 600; }
-    .status-badge {
-      display: inline-block; padding: 4px 12px; border-radius: 20px; color: white; font-size: 0.8rem; font-weight: 600;
-    }
-
-    .doc-item {
-      padding: 15px; background: var(--light); border-radius: 8px; border-left: 4px solid var(--uniba-blue); margin-bottom: 12px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
       position: relative;
+      overflow: hidden;
     }
-    .doc-item:last-child { margin-bottom: 0; }
-    .doc-item.read-only { opacity: 0.85; }
-    .doc-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .doc-header strong { font-size: 1.1rem; color: var(--dark); }
-    .doc-status { font-size: 0.9rem; font-weight: 500; }
-    .doc-status.uploaded { color: var(--success); }
-    .doc-status.missing { color: #888; }
-
-    .doc-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--uniba-gold), var(--uniba-primary), var(--uniba-gold));
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .header-info h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--uniba-primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .header-info .kode {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08));
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: inline-block;
+      color: var(--uniba-primary);
+      font-weight: 700;
+      border: 1px solid rgba(26, 58, 92, 0.15);
+      letter-spacing: 0.5px;
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: white;
+      color: var(--uniba-primary);
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 2px solid var(--border);
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    
+    .back-link:hover {
+      border-color: var(--uniba-primary);
+      background: #f8fafc;
+      transform: translateX(-5px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* ========== CARDS ========== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+    }
+    
+    .card h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--uniba-primary);
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* ========== INFO GRID ========== */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 15px 25px;
+      align-items: center;
+    }
+    
+    .info-grid strong {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .info-grid div {
+      color: var(--text-dark);
+      font-size: 15px;
+    }
+    
+    .info-grid a {
+      color: var(--uniba-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .info-grid a:hover {
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
+    
+    /* ========== STATUS BADGE ========== */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      letter-spacing: 0.3px;
+      margin-left: 10px;
+    }
+    
+    /* ========== DOCUMENT ITEMS ========== */
+    .doc-item {
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.9));
+      border-radius: 12px;
+      border-left: 4px solid var(--uniba-primary);
+      margin-bottom: 15px;
+      position: relative;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+    }
+    
+    .doc-item:hover {
+      transform: translateX(5px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .doc-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .doc-item.read-only {
+      opacity: 0.85;
+      border-left-color: var(--expired);
+    }
+    
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .doc-header strong {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--uniba-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .doc-status {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .doc-status.uploaded {
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .doc-status.missing {
+      color: var(--text-muted);
+      background: rgba(100, 116, 139, 0.1);
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+    
+    /* ========== BUTTONS ========== */
+    .doc-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
     .btn {
-      padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500;
-      text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    .btn-primary { background: var(--uniba-blue); color: white; }
-    .btn-primary:hover { background: #002244; }
-    .btn-success { background: var(--success); color: white; }
-    .btn-success:hover { background: #218838; }
-    .btn-outline { background: transparent; border: 1px solid var(--uniba-blue); color: var(--uniba-blue); }
-    .btn-outline:hover { background: var(--uniba-blue); color: white; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .upload-form { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; display: flex; gap: 10px; flex-wrap: wrap; }
-    .upload-form input[type="file"] { flex: 1; min-width: 200px; padding: 6px; }
-
-    .note { font-size: 0.85rem; color: #666; background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107; margin-top: 15px; }
-    .footer-actions { display: flex; gap: 10px; margin-top: 20px; }
-
-    /* Badge akses terbatas */
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.3);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #34d399);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-outline {
+      background: white;
+      border: 2px solid var(--uniba-primary);
+      color: var(--uniba-primary);
+      box-shadow: none;
+    }
+    
+    .btn-outline:hover {
+      background: var(--uniba-primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    /* ========== UPLOAD FORM ========== */
+    .upload-form {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px dashed var(--border);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .upload-form input[type="file"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      transition: all 0.3s;
+    }
+    
+    .upload-form input[type="file"]:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+    
+    /* ========== NOTE ========== */
+    .note {
+      font-size: 14px;
+      color: #92400e;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+      padding: 16px 20px;
+      border-radius: 12px;
+      border-left: 4px solid var(--warning);
+      margin-top: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .note strong {
+      color: #78350f;
+    }
+    
+    /* ========== FOOTER ACTIONS ========== */
+    .footer-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .footer-actions .btn {
+      padding: 14px 28px;
+      font-size: 15px;
+    }
+    
+    /* ========== ACCESS BADGE ========== */
     .access-badge {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: var(--warning);
-      color: #333;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: #78350f;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
-
-    @media (max-width: 600px) {
-      .info-grid { grid-template-columns: 1fr; }
-      .header { flex-direction: column; align-items: flex-start; }
+    
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 15px;
+      }
+      
+      .container {
+        max-width: 100%;
+      }
+      
+      .header {
+        padding: 20px;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .header-info h1 {
+        font-size: 1.4rem;
+      }
+      
+      .back-link {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .card h3 {
+        font-size: 1.1rem;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      
+      .info-grid strong {
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      
+      .info-grid strong:first-child {
+        margin-top: 0;
+      }
+      
+      .doc-item {
+        padding: 15px;
+      }
+      
+      .doc-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .doc-actions {
+        width: 100%;
+      }
+      
+      .doc-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+      
+      .upload-form {
+        flex-direction: column;
+      }
+      
+      .upload-form input[type="file"] {
+        width: 100%;
+      }
+      
+      .upload-form .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .footer-actions {
+        flex-direction: column;
+      }
+      
+      .footer-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--uniba-dark);
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Header -->
     <div class="header">
-      <div>
-        <h1>📋 <%= mitra.nama_instansi %></h1>
-        <span class="kode">Kode: <%= mitra.kode_mitra %></span>
+      <div class="header-content">
+        <div class="header-info">
+          <h1>📋 <%= mitra.nama_instansi %></h1>
+          <span class="kode">Kode: <%= mitra.kode_mitra %></span>
+        </div>
+        <a href="/mitra" class="back-link">← Kembali ke Daftar Mitra</a>
       </div>
-      <a href="/mitra" class="back-link">← Kembali ke Daftar Mitra</a>
     </div>
 
     <!-- 📇 Informasi Kontak -->
     <div class="card">
       <h3>📇 Informasi Kontak</h3>
       <div class="info-grid">
-        <strong>Nama Kontak</strong><div><%= mitra.nama_kontak || '-' %></div>
-        <strong>Jabatan</strong><div><%= mitra.jabatan || '-' %></div>
-        <strong>Nomor HP</strong><div><a href="tel:<%= mitra.no_hp_kontak %>" style="color:var(--uniba-blue);text-decoration:none"><%= mitra.no_hp_kontak || '-' %></a></div>
-        <strong>Email Fakultas</strong><div><a href="mailto:<%= mitra.email_fakultas %>" style="color:var(--uniba-blue);text-decoration:none"><%= mitra.email_fakultas || '-' %></a></div>
-        <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
+        <strong>Nama Kontak</strong>
+        <div><%= mitra.nama_kontak || '-' %></div>
+        
+        <strong>Jabatan</strong>
+        <div><%= mitra.jabatan || '-' %></div>
+        
+        <strong>Nomor HP</strong>
+        <div>
+          <% if (mitra.no_hp_kontak) { %>
+            <a href="tel:<%= mitra.no_hp_kontak %>"><%= mitra.no_hp_kontak %></a>
+          <% } else { %>
+            -
+          <% } %>
+        </div>
+        
+        <strong>Email Fakultas</strong>
+        <div>
+          <% if (mitra.email_fakultas) { %>
+            <a href="mailto:<%= mitra.email_fakultas %>"><%= mitra.email_fakultas %></a>
+          <% } else { %>
+            -
+          <% } %>
+        </div>
+        
+        <strong>Alamat</strong>
+        <div><%= mitra.alamat || '-' %></div>
       </div>
     </div>
 
@@ -124,10 +589,15 @@
     <div class="card">
       <h3>📅 Periode Kerja Sama</h3>
       <div class="info-grid">
-        <strong>Tanggal Mulai</strong><div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
-        <strong>Tanggal Berakhir</strong><div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
-        <strong>Sisa Waktu</strong><div>
-          <span style="font-weight:600;color:<%= mitra.color %>"><%= mitra.sisa_hari %> hari</span>
+        <strong>Tanggal Mulai</strong>
+        <div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+        
+        <strong>Tanggal Berakhir</strong>
+        <div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+        
+        <strong>Sisa Waktu</strong>
+        <div>
+          <span style="font-weight:700;color:<%= mitra.color %>;font-size:16px"><%= mitra.sisa_hari %> hari</span>
           <span class="status-badge" style="background:<%= mitra.color %>"><%= mitra.status %></span>
         </div>
       </div>
@@ -138,7 +608,6 @@
       <h3>📎 Dokumen Legalitas</h3>
       
       <% 
-        // Cek apakah user bisa edit/upload dokumen ini
         const canEdit = user?.role === 'humas' || 
                        (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id));
       %>
@@ -162,7 +631,6 @@
             </span>
           </div>
 
-          <!-- Preview & Download: Semua role bisa -->
           <% if (fileUrl) { %>
             <div class="doc-actions">
               <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
@@ -170,7 +638,6 @@
             </div>
           <% } %>
 
-          <!-- Form Upload: Hanya humas & admin_fakultas (untuk fakultas sendiri) -->
           <% if (isEditable) { %>
             <form method="POST" action="/mitra/<%= mitra.id %>/upload" enctype="multipart/form-data" class="upload-form">
               <input type="hidden" name="jenis_file" value="<%= jenis %>">
@@ -180,30 +647,33 @@
               </button>
             </form>
           <% } else if (user?.role === 'guest') { %>
-            <p style="font-size:0.8rem;color:#666;margin-top:8px">
+            <p style="font-size:13px;color:var(--text-muted);margin-top:10px">
               👁️ Guest mode: Hanya dapat melihat dokumen. Hubungi Humas untuk upload.
             </p>
           <% } else if (user?.role === 'admin_fakultas') { %>
-            <p style="font-size:0.8rem;color:#666;margin-top:8px">
+            <p style="font-size:13px;color:var(--text-muted);margin-top:10px">
               🔒 Dokumen ini milik fakultas lain. Hubungi Humas untuk perubahan.
             </p>
           <% } %>
         </div>
       <% }) %>
       
-      <p class="note">
-        💡 <strong>Catatan:</strong> Dokumen dapat diupload kapan saja. Tanggal upload tidak mempengaruhi masa berlaku kerja sama yang tercantum di atas.
-      </p>
+      <div class="note">
+        <span style="font-size:1.2rem">💡</span>
+        <div>
+          <strong>Catatan:</strong> Dokumen dapat diupload kapan saja. Tanggal upload tidak mempengaruhi masa berlaku kerja sama yang tercantum di atas.
+        </div>
+      </div>
     </div>
 
-    <!-- Tombol Aksi: Conditional per Role -->
+    <!-- Footer Actions -->
     <div class="footer-actions">
       <% if (user?.role === 'humas' || (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id))) { %>
         <a href="/mitra/<%= mitra.id %>/edit" class="btn btn-primary">✏️ Edit Data Mitra</a>
       <% } else if (user?.role === 'guest') { %>
-        <span style="font-size:0.85rem;color:#666">👁️ Mode Baca Saja — Hubungi Humas untuk perubahan data</span>
+        <span style="font-size:14px;color:var(--text-muted)">👁️ Mode Baca Saja — Hubungi Humas untuk perubahan data</span>
       <% } else if (user?.role === 'admin_fakultas') { %>
-        <span style="font-size:0.85rem;color:#666">🔒 Data milik fakultas lain — Hubungi Humas untuk edit</span>
+        <span style="font-size:14px;color:var(--text-muted)">🔒 Data milik fakultas lain — Hubungi Humas untuk edit</span>
       <% } %>
     </div>
   </div>

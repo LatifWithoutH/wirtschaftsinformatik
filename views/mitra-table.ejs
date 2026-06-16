@@ -3,361 +3,975 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daftar Mitra - SI Mitra DUDIKA UNIBA</title>
+  <title>Daftar Mitra - SI Mitra DUDIKA | Universitas Islam Batik</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --uniba-blue: #003366;
-      --uniba-gold: #FFD700;
-      --success: #28a745;
-      --warning: #ffc107;
-      --danger: #dc3545;
-      --expired: #6c757d;
-      --light: #f8f9fa;
-      --dark: #343a40;
-      --border: #dee2e6;
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      
+      --border: #e2e8f0;
     }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--light);
-      color: var(--dark);
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
       line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
     
-    /* Header */
-    header {
-      background: linear-gradient(135deg, var(--uniba-blue), #0055a4);
-      color: white;
-      padding: 20px 30px;
+    /* ========== MAIN WRAPPER ========== */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+    }
+    
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+    
+    /* ========== PAGE HEADER ========== */
+    .page-header {
+      padding: 30px 40px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 15px;
+      gap: 20px;
     }
-    header h1 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
-    header .subtitle { font-size: 0.9rem; opacity: 0.9; }
     
-    /* Toolbar */
+    .page-header h1 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      position: relative;
+      padding-left: 18px;
+    }
+    
+    .page-header h1::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 5px;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+      border-radius: 3px;
+    }
+    
+    /* ========== STATS BAR ========== */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px 40px 25px;
+    }
+    
+    .stat-item {
+      background: var(--bg-card);
+      padding: 18px 22px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s;
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .stat-icon.total { background: rgba(26, 58, 92, 0.1); }
+    .stat-icon.active { background: rgba(16, 185, 129, 0.1); }
+    .stat-icon.warning { background: rgba(245, 158, 11, 0.1); }
+    .stat-icon.expired { background: rgba(100, 116, 139, 0.1); }
+    
+    .stat-info h3 {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .stat-info p {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1;
+    }
+    
+    /* ========== TOOLBAR ========== */
     .toolbar {
-      padding: 20px 30px;
+      padding: 0 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 15px;
-      background: white;
-      border-bottom: 1px solid var(--border);
+      gap: 20px;
     }
+    
     .search-box {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       flex: 1;
-      max-width: 400px;
-    }
-    .search-box input {
-      flex: 1;
-      padding: 10px 15px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--uniba-blue);
-      box-shadow: 0 0 0 3px rgba(0,51,102,0.1);
+      max-width: 500px;
+      position: relative;
     }
     
-    /* Buttons */
+    .search-box input {
+      flex: 1;
+      padding: 12px 18px 12px 45px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s;
+      background: white;
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+    
+    .search-box::before {
+      content: '';
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      opacity: 0.5;
+      z-index: 1;
+    }
+    
+    .toolbar-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    /* ========== BUTTONS ========== */
     .btn {
-      padding: 10px 20px;
-      background: var(--uniba-blue);
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       color: white;
       text-decoration: none;
-      border-radius: 6px;
-      font-weight: 500;
+      border-radius: 10px;
+      font-weight: 600;
       border: none;
       cursor: pointer;
       transition: all 0.3s;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
     }
-    .btn:hover { background: #002244; transform: translateY(-1px); }
-    .btn-success { background: var(--success); }
-    .btn-success:hover { background: #218838; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--uniba-blue);
-      color: var(--uniba-blue);
-    }
-    .btn-outline:hover { background: var(--uniba-blue); color: white; }
     
-    /* Table Container */
-    .table-wrapper {
-      padding: 0 30px 30px;
-      overflow-x: auto;
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
     }
-    .table-container {
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-success { 
+      background: linear-gradient(135deg, var(--success), #34d399);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+    .btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+    
+    .btn-outline {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
-      overflow: hidden;
+      border: 2px solid var(--border);
+      color: var(--uniba-primary);
     }
+    .btn-outline:hover { 
+      border-color: var(--uniba-primary);
+      background: #f8fafc;
+    }
+    
+    /* ========== TABLE SECTION ========== */
+    .table-section {
+      padding: 25px 40px 40px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .table-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    
+    /* ========== TABLE DESKTOP DEFAULT ========== */
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
-      min-width: 1000px;
+      min-width: 1100px;
+      display: table !important;
     }
+    
     thead {
-      background: var(--uniba-blue);
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       color: white;
       position: sticky;
       top: 0;
       z-index: 10;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: table-header-group !important;
     }
+    
+    tbody {
+      display: table-row-group !important;
+    }
+    
+    tr {
+      display: table-row !important;
+      transition: all 0.2s;
+    }
+    
     th, td {
-      padding: 14px 16px;
+      display: table-cell !important;
+      padding: 16px 18px;
       text-align: left;
       border-bottom: 1px solid var(--border);
     }
+    
     th {
+      font-family: 'Poppins', sans-serif;
       font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
+      transition: all 0.3s;
+      position: relative;
     }
-    th:hover { background: #004488; }
-    th.sort-asc::after { content: " ▲"; font-size: 10px; }
-    th.sort-desc::after { content: " ▼"; font-size: 10px; }
     
-    tbody tr:hover { background: #f8f9fa; }
-    tbody tr:nth-child(even) { background: #fafafa; }
+    th:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
     
-    /* Status Badges */
+    th.sort-asc::after { 
+      content: " ▲"; 
+      font-size: 10px;
+      color: var(--uniba-gold);
+    }
+    th.sort-desc::after { 
+      content: " ▼"; 
+      font-size: 10px;
+      color: var(--uniba-gold);
+    }
+    
+    tbody tr:hover {
+      background: rgba(26, 58, 92, 0.03);
+      transform: scale(1.001);
+    }
+    
+    tbody tr:nth-child(even) {
+      background: rgba(248, 250, 252, 0.5);
+    }
+    
+    tbody tr:nth-child(even):hover {
+      background: rgba(26, 58, 92, 0.05);
+    }
+    
+    /* Hide data-label di desktop */
+    td::before {
+      display: none !important;
+    }
+    
+    /* ========== STATUS BADGES ========== */
     .status-badge {
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
       color: white;
       font-size: 12px;
       font-weight: 600;
       display: inline-block;
       text-align: center;
-      min-width: 110px;
+      min-width: 120px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      letter-spacing: 0.3px;
     }
-    .status-active { background: var(--success); }
-    .status-warning { background: var(--warning); color: #333; }
-    .status-danger { background: var(--danger); }
-    .status-expired { background: var(--expired); }
     
-    /* Kode & Actions */
-    .kode-mitra {
-      font-family: monospace;
-      background: #e9ecef;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 13px;
-      display: block;
-      margin-bottom: 6px;
-      color: var(--uniba-blue);
-      font-weight: 600;
+    .status-active { 
+      background: linear-gradient(135deg, var(--success), #34d399);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
-    .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .status-warning { 
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    .status-danger { 
+      background: linear-gradient(135deg, var(--danger), #f87171);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .status-expired { 
+      background: linear-gradient(135deg, var(--expired), #94a3b8);
+      box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
+    }
+    
+    /* ========== KODE MITRA ========== */
+    .kode-mitra {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08));
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: inline-block;
+      color: var(--uniba-primary);
+      font-weight: 700;
+      border: 1px solid rgba(26, 58, 92, 0.15);
+      letter-spacing: 0.5px;
+    }
+    
+    /* ========== ACTION BUTTONS ========== */
+    .action-btns { 
+      display: flex; 
+      gap: 8px; 
+      flex-wrap: wrap;
+    }
+    
     .action-btn {
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      transition: all 0.3s;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-btn.detail { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+    }
+    
+    .action-btn.edit { 
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* ========== CONTACT & EMAIL ========== */
+    .contact-cell { 
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .contact-cell strong {
+      color: var(--text-dark);
+      font-weight: 600;
+    }
+    
+    .contact-cell small { 
+      color: var(--text-muted);
+      display: block; 
+      margin-top: 4px;
+      font-size: 12px;
+    }
+    
+    .contact-cell a {
+      color: var(--uniba-primary);
+      text-decoration: none;
+      font-weight: 500;
       transition: all 0.2s;
     }
-    .action-btn.detail { background: var(--uniba-blue); color: white; }
-    .action-btn.edit { background: var(--warning); color: #333; }
-    .action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
     
-    /* Contact & Email */
-    .contact-cell { font-size: 13px; }
-    .contact-cell small { color: #666; display: block; margin-top: 2px; }
-    .email-link { color: var(--uniba-blue); text-decoration: none; font-weight: 500; }
-    .email-link:hover { text-decoration: underline; }
+    .contact-cell a:hover {
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
     
-    /* Document Status Badges */
+    .email-link { 
+      color: var(--uniba-primary); 
+      text-decoration: none; 
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .email-link:hover { 
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
+    
+    /* ========== DOCUMENT STATUS ========== */
     .doc-status {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 4px 8px;
-      border-radius: 12px;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 10px;
       font-size: 11px;
       font-weight: 600;
       cursor: default;
+      transition: all 0.2s;
+      border: 1px solid;
     }
-    .doc-uploaded { background: #d4edda; color: #155724; }
-    .doc-missing { background: #f8d7da; color: #721c24; }
     
-    /* Empty State */
-    .empty-state { text-align: center; padding: 60px 20px; color: #666; }
-    .empty-state h3 { margin: 10px 0; color: var(--dark); }
+    .doc-status:hover {
+      transform: scale(1.05);
+    }
     
-    /* Footer Stats */
+    .doc-uploaded { 
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+      color: #065f46;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .doc-missing { 
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.1));
+      color: #991b1b;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    /* ========== EMPTY STATE ========== */
+    .empty-state { 
+      text-align: center; 
+      padding: 80px 20px; 
+      color: var(--text-muted);
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+    
+    .empty-state h3 { 
+      margin: 10px 0; 
+      color: var(--text-dark);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.3rem;
+    }
+    
+    .empty-state p {
+      margin: 10px 0 25px;
+      font-size: 0.95rem;
+    }
+    
+    /* ========== TABLE FOOTER ========== */
     .table-footer {
-      padding: 15px 30px;
-      background: white;
+      padding: 18px 24px;
+      background: rgba(248, 250, 252, 0.8);
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 13px;
-      color: #666;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 15px;
     }
     
-    /* Responsive */
+    .table-footer span:first-child {
+      font-weight: 600;
+      color: var(--uniba-primary);
+    }
+    
+    /* ========== MOBILE RESPONSIVE - CARD LAYOUT ========== */
     @media (max-width: 768px) {
-      header, .toolbar { flex-direction: column; align-items: stretch; text-align: center; }
-      .search-box { max-width: 100%; }
-      .table-wrapper { padding: 0 15px 15px; }
-      table { font-size: 12px; }
-      th, td { padding: 10px 8px; }
-      .status-badge { min-width: auto; padding: 4px 10px; }
-      .action-btns { flex-direction: column; }
-      .doc-status { flex-wrap: wrap; }
+      .main-wrapper { 
+        margin-left: 0;
+      }
+      .main-wrapper.expanded { 
+        margin-left: 0;
+      }
+      
+      .page-header { 
+        padding: 20px 20px 10px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .stats-bar {
+        padding: 15px 20px 20px;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .toolbar { 
+        padding: 0 20px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .search-box { 
+        max-width: 100%;
+        width: 100%;
+      }
+      
+      .toolbar-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+      
+      .toolbar-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+      
+      .table-section { 
+        padding: 20px 15px 20px;
+      }
+      
+      /* Card Layout untuk Mobile */
+      .table-container {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        overflow: visible;
+      }
+      
+      table {
+        display: block !important;
+        min-width: 0;
+      }
+      
+      thead {
+        display: none !important;
+      }
+      
+      tbody {
+        display: flex !important;
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      tbody tr {
+        display: block !important;
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border);
+        position: relative;
+        transition: all 0.3s;
+      }
+      
+      tbody tr:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+      }
+      
+      tbody tr td {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border: none;
+        border-bottom: 1px dashed rgba(226, 232, 240, 0.6);
+        font-size: 14px;
+        text-align: left;
+      }
+      
+      tbody tr td:last-child {
+        border-bottom: none;
+      }
+      
+      tbody tr td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        margin-right: 15px;
+        min-width: 100px;
+      }
+      
+      /* Header Card (Kode + Instansi) */
+      tbody tr td:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 5px;
+      }
+      
+      tbody tr td:first-child::before {
+        display: none;
+      }
+      
+      tbody tr td:first-child .kode-mitra {
+        margin-bottom: 8px;
+        font-size: 12px;
+      }
+      
+      tbody tr td:first-child strong {
+        font-size: 16px;
+        color: var(--uniba-primary);
+        line-height: 1.3;
+      }
+      
+      /* Kontak Cell */
+      tbody tr td .contact-cell {
+        text-align: right;
+        flex: 1;
+      }
+      
+      /* Status Badge */
+      tbody tr td .status-badge {
+        min-width: auto;
+        padding: 6px 14px;
+        font-size: 12px;
+      }
+      
+      /* Dokumen Status */
+      tbody tr td:nth-child(8) {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      
+      tbody tr td:nth-child(8) .doc-status {
+        font-size: 10px;
+        padding: 4px 8px;
+      }
+      
+      /* Action Buttons */
+      tbody tr td:last-child {
+        flex-direction: row;
+        align-items: stretch;
+        padding-top: 15px;
+        border-top: 2px solid var(--border);
+        border-bottom: none;
+        margin-top: 5px;
+      }
+      
+      tbody tr td:last-child::before {
+        display: none;
+      }
+      
+      tbody tr td:last-child .action-btns {
+        flex-direction: row;
+        width: 100%;
+        gap: 10px;
+      }
+      
+      tbody tr td:last-child .action-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+      }
+      
+      /* Sisa Hari - Highlight */
+      tbody tr td:nth-child(6) {
+        font-weight: 700;
+      }
+      
+      .table-footer {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px 20px;
+        background: white;
+        border-radius: 12px;
+        margin-top: 10px;
+      }
+      
+      /* Empty State di Mobile */
+      .empty-state {
+        padding: 40px 20px;
+      }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar { 
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track { 
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover { 
+      background: var(--uniba-dark);
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <div>
+  <!-- Include Sidebar dari partials -->
+  <%- include('partials/_sidebar') %>
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Page Header (Minimal) -->
+    <div class="page-header">
       <h1>📋 Daftar Mitra Kerja Sama</h1>
-      <div class="subtitle">SI Mitra DUDIKA — UNIBA Surakarta</div>
-      <!-- ✅ BADGE ROLE: Muncul di header biar tau akun siapa yang login -->
-      <% if (user) { %>
-        <div style="font-size: 0.85rem; margin-top: 5px; opacity: 0.9;">
-          👤 <strong><%= user.role.toUpperCase() %></strong>
-          <% if (user.fakultas_id) { %> | 🎓 <%= user.fakultas_id.toUpperCase() %> <% } %>
-          <a href="/logout" style="color: #FFD700; text-decoration: none; margin-left: 10px; font-weight: 600;">(Logout)</a>
+    </div>
+    
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-icon total">🏢</div>
+        <div class="stat-info">
+          <h3>Total Mitra</h3>
+          <p id="statTotal"><%= mitra?.length || 0 %></p>
         </div>
-      <% } %>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon active">✅</div>
+        <div class="stat-info">
+          <h3>Aktif</h3>
+          <p id="statActive">0</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon warning">⚠️</div>
+        <div class="stat-info">
+          <h3>Segera Berakhir</h3>
+          <p id="statWarning">0</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon expired">⏰</div>
+        <div class="stat-info">
+          <h3>Expired</h3>
+          <p id="statExpired">0</p>
+        </div>
+      </div>
     </div>
-    <a href="/dashboard" class="btn btn-outline">📊 Ke Dashboard Stats</a>
-  </header>
-  
-  <!-- Toolbar: Search + Actions -->
-  <div class="toolbar">
-    <div class="search-box">
-      <input type="text" id="searchInput" placeholder="🔍 Cari instansi, kontak, atau email...">
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Cari instansi, kontak, atau email...">
+      </div>
+      <div class="toolbar-actions">
+        <% if (user && user.role === 'humas') { %>
+          <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
+        <% } %>
+        <button class="btn" onclick="exportTable()">📥 Export CSV</button>
+      </div>
     </div>
-    <div style="display: flex; gap: 10px;">
-      <!-- ✅ TOMBOL TAMBAH: Hanya untuk Humas -->
-      <% if (user && user.role === 'humas') { %>
-        <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
-      <% } %>
-      <button class="btn" onclick="exportTable()">📥 Export CSV</button>
-    </div>
-  </div>
-  
-  <!-- Table -->
-  <div class="table-wrapper">
-    <div class="table-container">
-      <table id="mitraTable">
-        <thead>
-          <tr>
-            <th onclick="sortTable(0)">Kode</th>
-            <th onclick="sortTable(1)">Instansi</th>
-            <th onclick="sortTable(2)">Kontak</th>
-            <th onclick="sortTable(3)">Email Fakultas</th>
-            <th onclick="sortTable(4)">Berakhir</th>
-            <th onclick="sortTable(5)">Sisa Hari</th>
-            <th onclick="sortTable(6)">Status</th>
-            <th>Dokumen</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (mitra && mitra.length > 0) { %>
-            <% mitra.forEach(m => { %>
+    
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="table-container">
+        <table id="mitraTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Kode</th>
+              <th onclick="sortTable(1)">Instansi</th>
+              <th onclick="sortTable(2)">Kontak</th>
+              <th onclick="sortTable(3)">Email Fakultas</th>
+              <th onclick="sortTable(4)">Berakhir</th>
+              <th onclick="sortTable(5)">Sisa Hari</th>
+              <th onclick="sortTable(6)">Status</th>
+              <th>Dokumen</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (mitra && mitra.length > 0) { %>
+              <% mitra.forEach(m => { %>
+                <tr>
+                  <td data-label="Kode">
+                    <span class="kode-mitra"><%= m.kode_mitra %></span>
+                    <br><strong style="display:none" class="mobile-instansi"><%= m.nama_instansi %></strong>
+                  </td>
+                  <td data-label="Instansi"><strong><%= m.nama_instansi %></strong></td>
+                  <td data-label="Kontak" class="contact-cell">
+                    <strong><%= m.nama_kontak || '-' %></strong>
+                    <% if (m.no_hp_kontak) { %>
+                      <small>📞 <a href="tel:<%= m.no_hp_kontak %>"><%= m.no_hp_kontak %></a></small>
+                    <% } %>
+                  </td>
+                  <td data-label="Email">
+                    <% if (m.email_fakultas) { %>
+                      <a href="mailto:<%= m.email_fakultas %>" class="email-link"><%= m.email_fakultas %></a>
+                    <% } else { %>
+                      <span style="color: var(--text-muted)">-</span>
+                    <% } %>
+                  </td>
+                  <td data-label="Berakhir">
+                    <%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %>
+                  </td>
+                  <td data-label="Sisa Hari" style="font-weight:700;color:<%= m.color %>;font-size:15px">
+                    <%= m.sisa_hari %>
+                  </td>
+                  <td data-label="Status">
+                    <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
+                  </td>
+                  <td data-label="Dokumen">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      <span class="doc-status <%= m.file_mou ? 'doc-uploaded' : 'doc-missing' %>" title="MoU">
+                        <%= m.file_mou ? '✅ MoU' : '❌ MoU' %>
+                      </span>
+                      <span class="doc-status <%= m.file_moa ? 'doc-uploaded' : 'doc-missing' %>" title="MoA">
+                        <%= m.file_moa ? '✅ MoA' : '❌ MoA' %>
+                      </span>
+                      <span class="doc-status <%= m.file_ia ? 'doc-uploaded' : 'doc-missing' %>" title="IA">
+                        <%= m.file_ia ? '✅ IA' : '❌ IA' %>
+                      </span>
+                      <span class="doc-status <%= m.file_pks ? 'doc-uploaded' : 'doc-missing' %>" title="PKS">
+                        <%= m.file_pks ? '✅ PKS' : '❌ PKS' %>
+                      </span>
+                    </div>
+                  </td>
+                  <td data-label="Aksi">
+                    <div class="action-btns">
+                      <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
+                      <% if (user && user.role === 'humas') { %>
+                        <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️ Edit</a>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
               <tr>
-                <td><span class="kode-mitra"><%= m.kode_mitra %></span></td>
-                <td><strong><%= m.nama_instansi %></strong></td>
-                <td class="contact-cell">
-                  <%= m.nama_kontak || '-' %>
-                  <% if (m.no_hp_kontak) { %>
-                    <small>📞 <a href="tel:<%= m.no_hp_kontak %>" style="color:var(--uniba-blue);text-decoration:none"><%= m.no_hp_kontak %></a></small>
-                  <% } %>
-                </td>
-                <td>
-                  <% if (m.email_fakultas) { %>
-                    <a href="mailto:<%= m.email_fakultas %>" class="email-link"><%= m.email_fakultas %></a>
-                  <% } else { %>
-                    <span style="color:#999">-</span>
-                  <% } %>
-                </td>
-                <td><%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %></td>
-                <td style="font-weight:600;color:<%= m.color %>"><%= m.sisa_hari %></td>
-                <td>
-                  <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
-                </td>
-                
-                <td>
-                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <span class="doc-status <%= m.file_mou ? 'doc-uploaded' : 'doc-missing' %>" title="MoU">
-                      <%= m.file_mou ? '✅ MoU' : '❌ MoU' %>
-                    </span>
-                    <span class="doc-status <%= m.file_moa ? 'doc-uploaded' : 'doc-missing' %>" title="MoA">
-                      <%= m.file_moa ? '✅ MoA' : '❌ MoA' %>
-                    </span>
-                    <span class="doc-status <%= m.file_ia ? 'doc-uploaded' : 'doc-missing' %>" title="IA">
-                      <%= m.file_ia ? '✅ IA' : '❌ IA' %>
-                    </span>
-                    <span class="doc-status <%= m.file_pks ? 'doc-uploaded' : 'doc-missing' %>" title="PKS">
-                      <%= m.file_pks ? '✅ PKS' : '❌ PKS' %>
-                    </span>
-                  </div>
-                </td>
-                
-                <td>
-                  <div class="action-btns">
-                    <a href="/mitra/<%= m.id %>" class="action-btn detail">🔍</a>
-                    <!-- ✅ TOMBOL EDIT: Hanya untuk Humas -->
+                <td colspan="9">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>Belum Ada Data Mitra</h3>
+                    <p>Mulai kelola kerja sama DUDIKA dengan menambahkan mitra pertama.</p>
                     <% if (user && user.role === 'humas') { %>
-                      <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️</a>
+                      <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Pertama</a>
                     <% } %>
                   </div>
                 </td>
               </tr>
-            <% }) %>
-          <% } else { %>
-            <tr>
-              <td colspan="9">
-                <div class="empty-state">
-                  <h3>📭 Belum Ada Data Mitra</h3>
-                  <p style="margin:10px 0 20px">Mulai kelola kerja sama DUDIKA dengan menambahkan mitra pertama.</p>
-                  <!-- ✅ TOMBOL TAMBAH DI EMPTY STATE: Hanya untuk Humas -->
-                  <% if (user && user.role === 'humas') { %>
-                    <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Pertama</a>
-                  <% } %>
-                </div>
-              </td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
+            <% } %>
+          </tbody>
+        </table>
+	  </div>
+      
+      <!-- Table Footer -->
+      <div class="table-footer">
+        <span id="resultCount"><%= mitra?.length || 0 %> mitra ditemukan</span>
+        <span>💡 Klik header untuk sort • Ctrl+K untuk search</span>
+      </div>
     </div>
-  </div>
-  
-  <!-- Footer -->
-  <div class="table-footer">
-    <span id="resultCount"><%= mitra?.length || 0 %> mitra ditemukan</span>
-    <span>💡 Klik header kolom untuk sort • Search untuk filter • Arahkan mouse ke dokumen untuk tooltip</span>
   </div>
   
   <!-- Scripts -->
   <script>
+    // Logic untuk Toggle Sidebar dengan Chevron
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          mainWrapper.classList.remove('expanded');
+          sidebarToggle.classList.remove('shifted');
+        }
+      });
+    }
+    
+    // Update Stats
+    function updateStats() {
+      const rows = document.querySelectorAll('#mitraTable tbody tr');
+      let active = 0, warning = 0, expired = 0;
+      
+      rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        const badge = row.querySelector('.status-badge');
+        if (!badge) return;
+        
+        if (badge.classList.contains('status-active')) active++;
+        else if (badge.classList.contains('status-warning')) warning++;
+        else if (badge.classList.contains('status-expired')) expired++;
+      });
+      
+      document.getElementById('statActive').textContent = active;
+      document.getElementById('statWarning').textContent = warning;
+      document.getElementById('statExpired').textContent = expired;
+    }
+    
+    // Search & Sort Logic
     const searchInput = document.getElementById('searchInput');
     const table = document.getElementById('mitraTable');
     const rows = table.querySelectorAll('tbody tr');
@@ -368,10 +982,16 @@
       let visible = 0;
       rows.forEach(row => {
         const text = row.textContent.toLowerCase();
-        if (text.includes(term)) { row.style.display = ''; visible++; }
-        else { row.style.display = 'none'; }
+        if (text.includes(term)) { 
+          row.style.display = ''; 
+          visible++;
+          row.style.animation = 'fadeIn 0.3s ease';
+        } else { 
+          row.style.display = 'none'; 
+        }
       });
       resultCount.textContent = `${visible} mitra ditemukan`;
+      updateStats();
     });
     
     let sortDir = {};
@@ -417,17 +1037,17 @@
         
         csv += [
           cells[0].querySelector('.kode-mitra')?.textContent || '',
-          cells[1].textContent.trim(),
-          cells[2].querySelector('small')?.previousSibling?.textContent?.trim() || '-',
-          cells[2].querySelector('a')?.textContent || '-',
+          cells[0].querySelector('strong')?.textContent || '',
+          cells[1].querySelector('strong')?.textContent || '-',
+          cells[1].querySelector('a')?.textContent || '-',
+          cells[2].textContent.trim(),
           cells[3].textContent.trim(),
           cells[4].textContent.trim(),
-          cells[5].textContent.trim(),
-          cells[6].querySelector('.status-badge')?.textContent || '',
-          getFileStatus(7, 'MoU'),
-          getFileStatus(7, 'MoA'),
-          getFileStatus(7, 'IA'),
-          getFileStatus(7, 'PKS')
+          cells[5].querySelector('.status-badge')?.textContent || '',
+          getFileStatus(6, 'MoU'),
+          getFileStatus(6, 'MoA'),
+          getFileStatus(6, 'IA'),
+          getFileStatus(6, 'PKS')
         ].map(v => `"${v}"`).join(',') + '\n';
       });
       
@@ -442,8 +1062,12 @@
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         searchInput.focus();
+        searchInput.select();
       }
     });
+    
+    // Init stats on load
+    updateStats();
   </script>
 </body>
 </html>
