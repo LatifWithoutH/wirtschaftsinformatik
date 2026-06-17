@@ -1,0 +1,4729 @@
+
+
+====================
+FILE: server.js
+====================
+
+require('dotenv').config();
+const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
+const multer = require('multer');
+const nodemailer = require('nodemailer');
+const cron = require('node-cron');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
+
+// 🔹 IMPORT GAS UPLOADER (Jembatan ke Google Drive)
+const { uploadFileToDrive } = require('./utils/gasUploader');
+
+const app = express();
+app.set('trust proxy', 1);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.set('view engine', 'ejs');
+app.set('views', './views');
+
+// 🔹 Session Config
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'uniba-dudika-secret-2026',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', 
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}));
+
+// 🔹 Middleware: Proteksi Route berdasarkan Role
+function requireAuth(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.session.user) return res.redirect('/login');
+    if (allowedRoles.length && !allowedRoles.includes(req.session.user.role)) {
+      return res.status(403).send('❌ Akses ditolak: Role tidak memiliki izin');
+    }
+    next();
+  };
+}
+
+// ✅ Inisialisasi Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
+// 🔹 SETUP MULTER (Upload Handler - Simpan di Memory)
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Hanya file PDF yang diperbolehkan!'), false);
+  }
+});
+
+// 🔹 SETUP NODemailer (Email Transporter)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// 🔹 FUNGSI: Kirim Email Alert
+async function sendAlertEmail({ to, subject, mitra }) {
+  const htmlContent = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+      <h2 style="color: #d32f2f;">⚠️ Peringatan: Masa Kerja Sama Hampir Berakhir</h2>
+      <p><strong>Instansi:</strong> ${mitra.nama_instansi}</p>
+      <p><strong>Kontak:</strong> ${mitra.nama_kontak || '-'} (${mitra.no_hp_kontak || '-'})</p>
+      <p><strong>Email Fakultas:</strong> ${mitra.email_fakultas}</p>
+      <p><strong>Tanggal Mulai:</strong> ${new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID')}</p>
+      <p><strong>Tanggal Berakhir:</strong> ${new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID')}</p>
+      <p style="background: #fff3cd; padding: 10px; border-radius: 4px; border-left: 4px solid #ffc107;">
+        <strong>📅 Sisa Waktu:</strong> ${mitra.sisa_hari} hari lagi
+      </p>
+      <h3>📎 Dokumen Legalitas:</h3>
+      <ul>
+        ${mitra.file_mou ? `<li><a href="${mitra.file_mou}" target="_blank">MoU</a></li>` : '<li>MoU: Belum diupload</li>'}
+        ${mitra.file_moa ? `<li><a href="${mitra.file_moa}" target="_blank">MoA</a></li>` : '<li>MoA: Belum diupload</li>'}
+        ${mitra.file_ia ? `<li><a href="${mitra.file_ia}" target="_blank">IA</a></li>` : '<li>IA: Belum diupload</li>'}
+        ${mitra.file_pks ? `<li><a href="${mitra.file_pks}" target="_blank">PKS</a></li>` : '<li>PKS: Belum diupload</li>'}
+      </ul>
+      <p style="margin-top: 20px; font-size: 13px; color: #666;">
+        💡 Silakan segera koordinasi dengan pihak mitra untuk perpanjangan kerja sama.<br>
+        Email ini dikirim otomatis oleh <strong>SI Mitra DUDIKA UNIBA Surakarta</strong>.
+      </p>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"SI Mitra DUDIKA" <${process.env.EMAIL_USER}>`,
+      to: Array.isArray(to) ? to.join(',') : to,
+      subject: subject,
+      html: htmlContent
+    });
+    console.log(`✅ Email alert terkirim ke: ${to}`);
+    return true;
+  } catch (err) {
+    console.error('❌ Gagal kirim email:', err.message);
+    return false;
+  }
+}
+
+// 🔹 HOME → Redirect ke Dashboard
+app.get('/', (req, res) => res.redirect('/dashboard'));
+
+// 🔹 LOGIN ROUTES
+app.get('/login', (req, res) => {
+  if (req.session.user) return res.redirect('/dashboard');
+  res.render('login', { error: null });
+});
+
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !user) return res.render('login', { error: '❌ Email tidak ditemukan' });
+
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.render('login', { error: '❌ Password salah' });
+
+    req.session.user = { id: user.id, email: user.email, role: user.role, fakultas_id: user.fakultas_id };
+    res.redirect('/dashboard');
+  } catch (err) {
+    console.error('Login error:', err);
+    res.render('login', { error: '❌ Terjadi kesalahan sistem' });
+  }
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/login'));
+});
+
+// 🔹 DASHBOARD MODERN (Stats + Charts)
+app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+  try {
+    const today = new Date();
+    
+    let query = supabase.from('mitra').select('*');
+    if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
+      query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
+    }
+    
+    const { data: allMitra, error } = await query;
+    if (error) throw error;
+    
+    const stats = { total: 0, aktif: 0, akan_berakhir: 0, segera_berakhir: 0, expired: 0 };
+    const segeraBerakhir = [];
+    
+    (allMitra || []).forEach(mitra => {
+      const endDate = new Date(mitra.tanggal_berakhir);
+      if (isNaN(endDate.getTime())) return;
+      
+      const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
+      if (diffDays < 0) stats.expired++;
+      else if (diffDays <= 7) { stats.segera_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays, color: '#dc3545' }); }
+      else if (diffDays <= 30) { stats.akan_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays, color: '#ffc107' }); }
+      else stats.aktif++;
+    });
+    stats.total = (allMitra || []).length;
+    segeraBerakhir.sort((a,b) => a.sisa_hari - b.sisa_hari);
+    
+    res.render('dashboard', { 
+      stats, 
+      segeraBerakhir, 
+      user: req.session.user,
+      activePage: 'dashboard',
+      alertCount: segeraBerakhir.length
+    });
+  } catch (err) {
+    console.error('❌ Error dashboard:', err.message);
+    res.status(500).send('Gagal memuat dashboard. Silakan coba lagi.');
+  }
+});
+
+// 🔹 DAFTAR MITRA (Tabel Improved)
+app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+  try {
+    const today = new Date();
+    
+    let query = supabase
+      .from('mitra')
+      .select('*')
+      .order('tanggal_berakhir', { ascending: true });
+    
+    if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
+      query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
+    }
+    
+    const { data: mitraList, error } = await query;
+    if (error) throw error;
+
+    const mitraDenganStatus = (mitraList || []).map(mitra => {
+      const endDate = new Date(mitra.tanggal_berakhir);
+      if (isNaN(endDate.getTime())) return { ...mitra, sisa_hari: 0, status: 'Invalid', color: '#999', badgeClass: 'expired' };
+      
+      const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
+      let status, color, badgeClass;
+      if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; badgeClass = 'expired'; }
+      else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; badgeClass = 'danger'; }
+      else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; badgeClass = 'warning'; }
+      else { status = 'Aktif'; color = '#28a745'; badgeClass = 'active'; }
+      return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
+    });
+
+    // Hitung alert count untuk sidebar
+    const alertCount = mitraDenganStatus.filter(m => m.sisa_hari > 0 && m.sisa_hari <= 30).length;
+
+    res.render('mitra-table', { 
+      mitra: mitraDenganStatus, 
+      user: req.session.user,
+      activePage: 'mitra',
+      alertCount: alertCount
+    });
+  } catch (err) {
+    console.error('❌ Error table view:', err.message);
+    res.status(500).send('Gagal memuat daftar mitra. Silakan coba lagi.');
+  }
+});
+
+// 🔹 FORM Tambah Mitra — HANYA HUMAS
+app.get('/mitra/tambah', requireAuth('humas'), (req, res) => 
+  res.render('form-mitra', { 
+    mitra: null, 
+    action: 'tambah', 
+    user: req.session.user,
+    activePage: 'tambah',
+    alertCount: 0
+  })
+);
+
+// 🔹 POST Simpan Data Mitra + Generate kode_mitra
+app.post('/mitra', requireAuth('humas'), async (req, res) => {
+  try {
+    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
+    const { count } = await supabase.from('mitra').select('*', { count: 'exact', head: true });
+    const kode_mitra = `MITRA-${String((count || 0) + 1).padStart(4, '0')}`;
+    const { error } = await supabase.from('mitra').insert({ kode_mitra, nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir });
+    if (error) throw error;
+    res.redirect('/mitra');
+  } catch (err) {
+    console.error('❌ Error insert mitra:', err.message);
+    res.status(500).send('Gagal menyimpan data. Silakan coba lagi.');
+  }
+});
+
+// 🔹 UPLOAD PDF — ✅ GANTI KE GOOGLE DRIVE VIA GAS BRIDGE
+app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.single('file_pdf'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { jenis_file } = req.body;
+    
+    // 🔹 Cek: admin_fakultas hanya bisa upload untuk mitra fakultas sendiri
+    if (req.session.user.role === 'admin_fakultas') {
+      const { data: mitra, error: checkError } = await supabase
+        .from('mitra')
+        .select('email_fakultas')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+        return res.status(403).send('❌ Anda hanya dapat mengupload dokumen untuk mitra fakultas Anda');
+      }
+    }
+    
+    if (!req.file) throw new Error('File tidak ditemukan');
+    if (!['mou', 'moa', 'ia', 'pks'].includes(jenis_file)) throw new Error('Jenis file tidak valid');
+    
+    console.log(`\n📤 [UPLOAD] Menerima file: ${req.file.originalname}`);
+    console.log(`   Jenis: ${jenis_file.toUpperCase()}`);
+    console.log(`   Ukuran: ${(req.file.size / 1024).toFixed(2)} KB`);
+    console.log(`   Mitra ID: ${id}`);
+    
+    // 🚀 UPLOAD KE GOOGLE DRIVE VIA GAS BRIDGE
+    console.log('🚀 Mengirim ke Google Drive via GAS...');
+    const driveLink = await uploadFileToDrive(req.file.buffer, req.file.originalname, req.file.mimetype);
+    
+    console.log(`✅ File berhasil masuk Drive!`);
+    console.log(`🔗 Link: ${driveLink}`);
+    
+    // 💾 SIMPAN LINK KE DATABASE SUPABASE
+    const fieldName = `file_${jenis_file}`;
+    const { error: dbError } = await supabase
+      .from('mitra')
+      .update({ [fieldName]: driveLink })
+      .eq('id', id);
+    
+    if (dbError) throw dbError;
+    
+    console.log(`💾 Link berhasil disimpan ke kolom ${fieldName} untuk Mitra ID ${id}`);
+    console.log('─'.repeat(50));
+    
+    res.redirect(`/mitra/${id}`);
+  } catch (err) {
+    console.error('❌ Error upload:', err.message);
+    res.status(500).send(`
+      <div style="font-family: sans-serif; padding: 40px; text-align: center;">
+        <h1 style="color: #dc3545;">❌ Upload Gagal</h1>
+        <p>${err.message}</p>
+        <a href="/mitra/${req.params.id}" style="color: #003366;">← Kembali ke Detail Mitra</a>
+      </div>
+    `);
+  }
+});
+
+// 🔹 DETAIL MITRA
+app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🔍 Mencari mitra dengan ID:', id);
+    
+    const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
+    if (error) { console.error('❌ Supabase Error:', error); return res.status(500).send('❌ Database Error. Silakan coba lagi.'); }
+    if (!mitra) { console.warn('⚠️ Mitra tidak ditemukan untuk ID:', id); return res.status(404).send('❌ Mitra tidak ditemukan'); }
+    
+    console.log('✅ Data mitra ditemukan:', mitra.nama_instansi);
+    const today = new Date();
+    const endDate = new Date(mitra.tanggal_berakhir);
+    if (isNaN(endDate.getTime())) { console.error('❌ Invalid date:', mitra.tanggal_berakhir); return res.status(500).send('❌ Format tanggal_berakhir tidak valid'); }
+    
+    const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+    let status, color;
+    if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; }
+    else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; }
+    else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; }
+    else { status = 'Aktif'; color = '#28a745'; }
+    
+    console.log(`📊 Status: ${status} (${diffDays} hari)`);
+    
+    res.render('detail-mitra', { 
+      mitra: { ...mitra, sisa_hari: diffDays, status, color }, 
+      user: req.session.user,
+      activePage: 'mitra',
+      alertCount: 0
+    });
+  } catch (err) {
+    console.error('💥 Unexpected Error:', err);
+    res.status(500).send('Gagal memuat detail mitra. Silakan coba lagi.');
+  }
+});
+
+// 🔹 Redirect by Kode Mitra
+app.get('/mitra/kode/:kode', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+  try {
+    const { kode } = req.params;
+    const { data: mitra, error } = await supabase.from('mitra').select('id').eq('kode_mitra', kode.toUpperCase()).single();
+    if (error || !mitra) throw new Error('Kode mitra tidak ditemukan');
+    res.redirect(`/mitra/${mitra.id}`);
+  } catch (err) { res.status(404).send('❌ Mitra dengan kode tersebut tidak ditemukan'); }
+});
+
+// 🔹 FORM Edit
+app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (req.session.user.role === 'admin_fakultas') {
+      const { data: mitra, error: checkError } = await supabase
+        .from('mitra')
+        .select('email_fakultas')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+        return res.status(403).send('❌ Anda hanya dapat mengedit mitra fakultas Anda');
+      }
+    }
+    
+    const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
+    if (error || !mitra) return res.status(404).send('Mitra tidak ditemukan');
+    
+    res.render('form-mitra', { 
+      mitra, 
+      action: 'edit', 
+      user: req.session.user,
+      activePage: 'tambah',
+      alertCount: 0
+    });
+  } catch (err) { res.status(500).send('Gagal memuat form edit. Silakan coba lagi.'); }
+});
+
+// 🔹 UPDATE Data Mitra
+app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (req.session.user.role === 'admin_fakultas') {
+      const { data: mitra, error: checkError } = await supabase
+        .from('mitra')
+        .select('email_fakultas')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+        return res.status(403).send('❌ Anda hanya dapat mengupdate mitra fakultas Anda');
+      }
+    }
+    
+    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
+    const { error } = await supabase.from('mitra').update({ nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir }).eq('id', id);
+    if (error) throw error;
+    res.redirect(`/mitra/${id}`);
+  } catch (err) { console.error('❌ Error update:', err.message); res.status(500).send('Gagal update data. Silakan coba lagi.'); }
+});
+
+// 🔹 ROUTE: /test-alert
+app.get('/test-alert', requireAuth('humas'), async (req, res) => {
+  try {
+    const today = new Date();
+    const formatDateLocal = (date) => date.toISOString().split('T')[0];
+    
+    const todayStr = formatDateLocal(today);
+    const maxDate = new Date(); 
+    maxDate.setDate(today.getDate() + 30);
+    const maxDateStr = formatDateLocal(maxDate);
+
+    const { data: allMitra, error } = await supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
+    if (error) throw error;
+
+    const mitraInRange = (allMitra || []).filter(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      const sisa = Math.ceil((endDate - today) / (1000*60*60*24));
+      return sisa >= 0 && sisa <= 30;
+    }).map(m => ({
+      ...m,
+      sisa_hari: Math.ceil((new Date(m.tanggal_berakhir) - today) / (1000*60*60*24))
+    }));
+
+    res.render('test-alert', {
+      serverTime: today.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'medium' }),
+      todayStr,
+      maxDateStr,
+      totalMitra: (allMitra || []).length,
+      inRangeCount: mitraInRange.length,
+      mitraList: mitraInRange,
+      user: req.session.user,
+      activePage: 'alert',
+      alertCount: mitraInRange.length
+    });
+
+  } catch (err) {
+    console.error('💥 Test Alert Error:', err);
+    res.status(500).send('❌ Gagal memuat halaman test alert.');
+  }
+});
+
+// 🔹 POST: Kirim Email Test
+app.post('/test-alert/send', requireAuth('humas'), async (req, res) => {
+  try {
+    const { mitra_id } = req.body;
+    const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', mitra_id).single();
+    if (error || !mitra) return res.status(404).send('Mitra tidak ditemukan');
+    const today = new Date();
+    const endDate = new Date(mitra.tanggal_berakhir);
+    const sisa_hari = Math.ceil((endDate - today) / (1000*60*60*24));
+    const subject = `🧪 [TEST MANUAL] Alert: "${mitra.nama_instansi}" Berakhir dalam ${sisa_hari} Hari`;
+    const sent = await sendAlertEmail({ to: mitra.email_fakultas, subject, mitra: { ...mitra, sisa_hari } });
+    res.send(sent ? `✅ Email test terkirim ke ${mitra.email_fakultas}<br><a href="/test-alert">← Kembali</a>` : `❌ Gagal kirim. Cek terminal.`);
+  } catch (err) { res.status(500).send('❌ Gagal kirim email test.'); }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server aktif di http://localhost:${PORT}`));
+
+
+====================
+FILE: .\utils\gasUploader.js
+====================
+
+// 📂 FILE: utils/gasUploader.js
+// Helper untuk lempar file ke Google Drive via GAS Web App
+
+async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
+    console.log(`🚀 [GAS Bridge] Mengirim ${fileName} ke Google Drive...`);
+
+    // 1. Ubah Buffer file jadi format Base64 (teks)
+    const base64File = fileBuffer.toString('base64');
+
+    // 2. Siapkan data yang mau dikirim ke GAS
+    const payload = {
+        fileName: fileName,
+        fileBase64: base64File,
+        mimeType: mimeType
+    };
+
+    try {
+        // 3. Kirim POST request ke URL GAS Web App
+        // (Node.js v22 udah support native fetch, jadi gak perlu install node-fetch)
+        const response = await fetch(process.env.GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' }, // Trik biar gak kena CORS
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        // 4. Cek balasan dari GAS
+        if (result.success) {
+            console.log(`✅ [GAS Bridge] Sukses! Link: ${result.previewLink}`);
+            return result.previewLink; // Kembalikan link Drive-nya
+        } else {
+            throw new Error(result.error || 'Gagal upload ke Drive');
+        }
+    } catch (error) {
+        console.error('❌ [GAS Bridge] Error:', error.message);
+        throw error;
+    }
+}
+
+// Biar bisa dipanggil dari file lain (test-tampilan.js)
+module.exports = { uploadFileToDrive };
+
+
+====================
+FILE: .\views\dashboard.ejs
+====================
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SI Mitra DUDIKA | Universitas Islam Batik</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* ========== MAIN WRAPPER ========== */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+    }
+    
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+    
+    /* ========== PAGE HEADER (MINIMAL) ========== */
+    .page-header {
+      padding: 30px 40px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .page-header h1 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      position: relative;
+      padding-left: 18px;
+    }
+    
+    .page-header h1::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 5px;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+      border-radius: 3px;
+    }
+    
+    /* ========== ALERT SECTION ========== */
+    .alert-section {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), rgba(245, 158, 11, 0.03));
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: var(--shadow-md);
+      margin: 0 40px 30px;
+      border: 2px solid rgba(239, 68, 68, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .alert-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--danger), var(--warning), var(--danger));
+      background-size: 200% 100%;
+      animation: gradientShift 3s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .alert-section h3 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--danger);
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(239, 68, 68, 0.1);
+    }
+    
+    .alert-section h3 .pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--danger);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .alert-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-radius: 12px;
+      border-left: 4px solid;
+      transition: all 0.3s;
+      cursor: pointer;
+      background: white;
+    }
+    
+    .alert-item:hover { 
+      transform: translateX(5px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .alert-item.critical { 
+      border-left-color: var(--danger); 
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.08), white);
+    }
+    .alert-item.warning { 
+      border-left-color: var(--warning); 
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), white);
+    }
+    
+    .alert-item .mitra-info h4 {
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    
+    .alert-item .mitra-info p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    
+    .alert-item .days-left {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    
+    .alert-item.critical .days-left { 
+      background: var(--danger); 
+      color: white;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      animation: shake 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+    
+    .alert-item.warning .days-left { 
+      background: var(--warning); 
+      color: white;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* ========== STATS CARDS ========== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      padding: 0 40px 35px;
+    }
+    
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(226, 232, 240, 0.6);
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+    }
+    
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      opacity: 0.08;
+      transition: all 0.4s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .stat-card:hover::after {
+      transform: scale(1.5);
+      opacity: 0.12;
+    }
+    
+    .stat-card.total::before { background: linear-gradient(180deg, var(--uniba-primary), var(--uniba-blue-light)); }
+    .stat-card.total::after { background: var(--uniba-primary); }
+    .stat-card.active::before { background: linear-gradient(180deg, var(--success), #34d399); }
+    .stat-card.active::after { background: var(--success); }
+    .stat-card.warning::before { background: linear-gradient(180deg, var(--warning), #fbbf24); }
+    .stat-card.warning::after { background: var(--warning); }
+    .stat-card.danger::before { background: linear-gradient(180deg, var(--danger), #f87171); }
+    .stat-card.danger::after { background: var(--danger); }
+    .stat-card.expired::before { background: linear-gradient(180deg, var(--expired), #94a3b8); }
+    .stat-card.expired::after { background: var(--expired); }
+    
+    .stat-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 1.4rem;
+    }
+    
+    .stat-card.total .stat-icon-wrapper { background: rgba(26, 58, 92, 0.1); }
+    .stat-card.active .stat-icon-wrapper { background: rgba(16, 185, 129, 0.1); }
+    .stat-card.warning .stat-icon-wrapper { background: rgba(245, 158, 11, 0.1); }
+    .stat-card.danger .stat-icon-wrapper { background: rgba(239, 68, 68, 0.1); }
+    .stat-card.expired .stat-icon-wrapper { background: rgba(100, 116, 139, 0.1); }
+    
+    .stat-card .stat-label { 
+      font-size: 0.8rem; 
+      color: var(--text-muted); 
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+    
+    .stat-card .stat-value { 
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.2rem; 
+      font-weight: 700; 
+      color: var(--text-dark);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    
+    .stat-card .stat-change { 
+      font-size: 0.75rem; 
+      color: var(--text-muted);
+      padding-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+    }
+    
+    /* ========== CHARTS SECTION ========== */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 20px;
+      padding: 0 40px 35px;
+    }
+    
+    .chart-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(226, 232, 240, 0.6);
+      transition: all 0.3s;
+    }
+    
+    .chart-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .chart-card h3 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .chart-card h3::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, #e2e8f0, transparent);
+    }
+    
+    /* ========== BUTTONS ========== */
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 0 40px 40px;
+    }
+    
+    .btn {
+      padding: 12px 22px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
+    }
+    
+    .btn-success { 
+      background: linear-gradient(135deg, var(--success), #34d399);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+    .btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+    
+    .btn-warning { 
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+    .btn-warning:hover { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+    
+    /* ========== MOBILE ========== */
+    @media (max-width: 768px) {
+      .main-wrapper { 
+        margin-left: 0;
+      }
+      .main-wrapper.expanded { 
+        margin-left: 0;
+      }
+      
+      .page-header { 
+        padding: 20px 20px 10px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .alert-section {
+        margin: 0 20px 20px;
+        padding: 20px;
+      }
+      
+      .stats-grid {
+        padding: 0 20px 25px;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .charts-grid { 
+        padding: 0 20px 25px;
+        grid-template-columns: 1fr; 
+      }
+      
+      .quick-actions {
+        padding: 0 20px 30px;
+      }
+      
+      .page-header h1 { font-size: 1.4rem; }
+      .alert-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .alert-item .days-left { align-self: flex-end; }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar { 
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track { 
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover { 
+      background: var(--uniba-dark);
+    }
+  </style>
+</head>
+<body>
+  <!-- Include Sidebar dari partials -->
+  <%- include('partials/_sidebar') %>
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>📊 Dashboard Overview</h1>
+    </div>
+    
+    <!-- Alert Section -->
+    <% if (segeraBerakhir && segeraBerakhir.length > 0) { %>
+      <div class="alert-section">
+        <h3>
+          <span class="pulse-dot"></span>
+          ⚠️ Peringatan: Mitra Segera Berakhir
+          <span style="margin-left: auto; font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">
+            <%= segeraBerakhir.length %> mitra perlu perhatian
+          </span>
+        </h3>
+        <div class="alert-list">
+          <% segeraBerakhir.slice(0, 5).forEach(m => { %>
+            <div class="alert-item <%= m.sisa_hari <= 7 ? 'critical' : 'warning' %>" onclick="window.location='/mitra/<%= m.id %>'">
+              <div class="mitra-info">
+                <h4><%= m.nama_instansi %></h4>
+                <p>📞 <%= m.no_hp_kontak || '-' %> &nbsp;|&nbsp; ✉️ <%= m.email_fakultas || '-' %></p>
+              </div>
+              <div class="days-left">
+                <%= m.sisa_hari %> hari
+              </div>
+            </div>
+          <% }) %>
+        </div>
+        <div class="quick-actions" style="padding: 20px 0 0;">
+          <a href="/mitra" class="btn">📋 Lihat Semua Mitra</a>
+          <% if (user && user.role === 'humas') { %>
+            <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Baru</a>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+    
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-icon-wrapper">🏢</div>
+        <div class="stat-label">Total Mitra</div>
+        <div class="stat-value"><%= stats.total %></div>
+        <div class="stat-change">Semua mitra terdaftar</div>
+      </div>
+      
+      <div class="stat-card active">
+        <div class="stat-icon-wrapper">✅</div>
+        <div class="stat-label">Mitra Aktif</div>
+        <div class="stat-value"><%= stats.aktif %></div>
+        <div class="stat-change">> 30 hari lagi</div>
+      </div>
+      
+      <div class="stat-card warning">
+        <div class="stat-icon-wrapper">⚠️</div>
+        <div class="stat-label">Akan Berakhir</div>
+        <div class="stat-value"><%= stats.akan_berakhir %></div>
+        <div class="stat-change">8-30 hari lagi</div>
+      </div>
+      
+      <div class="stat-card danger">
+        <div class="stat-icon-wrapper">🚨</div>
+        <div class="stat-label">Segera Berakhir</div>
+        <div class="stat-value"><%= stats.segera_berakhir %></div>
+        <div class="stat-change">≤ 7 hari lagi</div>
+      </div>
+      
+      <div class="stat-card expired">
+        <div class="stat-icon-wrapper">⏰</div>
+        <div class="stat-label">Expired</div>
+        <div class="stat-value"><%= stats.expired %></div>
+        <div class="stat-change">Perlu perpanjangan</div>
+      </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📈 Status Mitra</h3>
+        <canvas id="statusChart"></canvas>
+      </div>
+      
+      <div class="chart-card">
+        <h3>🎯 Distribusi Status</h3>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <% if (user && user.role === 'humas') { %>
+        <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
+        <a href="/test-alert" class="btn btn-warning">🧪 Test Email Alert</a>
+      <% } %>
+      <a href="/mitra" class="btn">📋 Lihat Semua Mitra</a>
+    </div>
+  </div>
+  
+  <script>
+    // Logic untuk Toggle Sidebar dengan Chevron
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          mainWrapper.classList.remove('expanded');
+          sidebarToggle.classList.remove('shifted');
+        }
+      });
+    }
+    
+    // Chart.js Global Config
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#64748b';
+    
+    // Bar Chart
+    new Chart(document.getElementById('statusChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Total', 'Aktif', 'Akan Berakhir', 'Segera', 'Expired'],
+        datasets: [{
+          label: 'Jumlah Mitra',
+          data: [<%= stats.total %>, <%= stats.aktif %>, <%= stats.akan_berakhir %>, <%= stats.segera_berakhir %>, <%= stats.expired %>],
+          backgroundColor: [
+            'rgba(26, 58, 92, 0.85)',
+            'rgba(16, 185, 129, 0.85)',
+            'rgba(245, 158, 11, 0.85)',
+            'rgba(239, 68, 68, 0.85)',
+            'rgba(100, 116, 139, 0.85)'
+          ],
+          borderRadius: 10,
+          borderSkipped: false,
+          barThickness: 40
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15, 36, 57, 0.95)',
+            padding: 12,
+            cornerRadius: 8,
+            titleFont: { weight: '600' }
+          }
+        },
+        scales: { 
+          y: { 
+            beginAtZero: true, 
+            ticks: { stepSize: 1 },
+            grid: { color: 'rgba(226, 232, 240, 0.5)' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
+    
+    // Doughnut Chart
+    new Chart(document.getElementById('pieChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Aktif', 'Akan Berakhir', 'Segera Berakhir', 'Expired'],
+        datasets: [{
+          data: [<%= stats.aktif %>, <%= stats.akan_berakhir %>, <%= stats.segera_berakhir %>, <%= stats.expired %>],
+          backgroundColor: [
+            '#10b981',
+            '#f59e0b',
+            '#ef4444',
+            '#64748b'
+          ],
+          borderWidth: 4,
+          borderColor: '#ffffff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '65%',
+        plugins: {
+          legend: { 
+            position: 'bottom', 
+            labels: { 
+              padding: 15, 
+              usePointStyle: true,
+              pointStyle: 'circle'
+            } 
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 36, 57, 0.95)',
+            padding: 12,
+            cornerRadius: 8
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+====================
+FILE: .\views\detail-mitra.ejs
+====================
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Mitra: <%= mitra.nama_instansi %> - SI Mitra DUDIKA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      
+      --border: #e2e8f0;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      overflow-x: hidden;
+    }
+    
+    /* ========== MAIN WRAPPER ========== */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+      padding: 30px 40px 40px;
+    }
+    
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ========== HEADER ========== */
+    .header {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--uniba-gold), var(--uniba-primary), var(--uniba-gold));
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .header-info h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--uniba-primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .header-info .kode {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08));
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: inline-block;
+      color: var(--uniba-primary);
+      font-weight: 700;
+      border: 1px solid rgba(26, 58, 92, 0.15);
+      letter-spacing: 0.5px;
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: white;
+      color: var(--uniba-primary);
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 2px solid var(--border);
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    
+    .back-link:hover {
+      border-color: var(--uniba-primary);
+      background: #f8fafc;
+      transform: translateX(-5px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* ========== CARDS ========== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+    }
+    
+    .card h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--uniba-primary);
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* ========== INFO GRID ========== */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 15px 25px;
+      align-items: center;
+    }
+    
+    .info-grid strong {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .info-grid div {
+      color: var(--text-dark);
+      font-size: 15px;
+    }
+    
+    .info-grid a {
+      color: var(--uniba-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .info-grid a:hover {
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
+    
+    /* ========== STATUS BADGE ========== */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      letter-spacing: 0.3px;
+      margin-left: 10px;
+    }
+    
+    /* ========== DOCUMENT ITEMS ========== */
+    .doc-item {
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.9));
+      border-radius: 12px;
+      border-left: 4px solid var(--uniba-primary);
+      margin-bottom: 15px;
+      position: relative;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+    }
+    
+    .doc-item:hover {
+      transform: translateX(5px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .doc-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .doc-item.read-only {
+      opacity: 0.85;
+      border-left-color: var(--expired);
+    }
+    
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .doc-header strong {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--uniba-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .doc-status {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .doc-status.uploaded {
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .doc-status.missing {
+      color: var(--text-muted);
+      background: rgba(100, 116, 139, 0.1);
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+    
+    /* ========== BUTTONS ========== */
+    .doc-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.3);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #34d399);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-outline {
+      background: white;
+      border: 2px solid var(--uniba-primary);
+      color: var(--uniba-primary);
+      box-shadow: none;
+    }
+    
+    .btn-outline:hover {
+      background: var(--uniba-primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    /* ========== UPLOAD FORM ========== */
+    .upload-form {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px dashed var(--border);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .upload-form input[type="file"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      transition: all 0.3s;
+    }
+    
+    .upload-form input[type="file"]:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+    
+    /* ========== NOTE ========== */
+    .note {
+      font-size: 14px;
+      color: #92400e;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+      padding: 16px 20px;
+      border-radius: 12px;
+      border-left: 4px solid var(--warning);
+      margin-top: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .note strong {
+      color: #78350f;
+    }
+    
+    /* ========== FOOTER ACTIONS ========== */
+    .footer-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .footer-actions .btn {
+      padding: 14px 28px;
+      font-size: 15px;
+    }
+    
+    /* ========== ACCESS BADGE ========== */
+    .access-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: #78350f;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .main-wrapper {
+        margin-left: 0;
+        padding: 20px 15px;
+      }
+      
+      .main-wrapper.expanded {
+        margin-left: 0;
+      }
+      
+      .container {
+        max-width: 100%;
+      }
+      
+      .header {
+        padding: 20px;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .header-info h1 {
+        font-size: 1.4rem;
+      }
+      
+      .back-link {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .card h3 {
+        font-size: 1.1rem;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      
+      .info-grid strong {
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      
+      .info-grid strong:first-child {
+        margin-top: 0;
+      }
+      
+      .doc-item {
+        padding: 15px;
+      }
+      
+      .doc-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .doc-actions {
+        width: 100%;
+      }
+      
+      .doc-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+      
+      .upload-form {
+        flex-direction: column;
+      }
+      
+      .upload-form input[type="file"] {
+        width: 100%;
+      }
+      
+      .upload-form .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .footer-actions {
+        flex-direction: column;
+      }
+      
+      .footer-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--uniba-dark);
+    }
+  </style>
+</head>
+<body>
+  <!-- Include Sidebar dari partials -->
+  <%- include('partials/_sidebar') %>
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-content">
+          <div class="header-info">
+            <h1>📋 <%= mitra.nama_instansi %></h1>
+            <span class="kode">Kode: <%= mitra.kode_mitra %></span>
+          </div>
+          <a href="/mitra" class="back-link">← Kembali ke Daftar Mitra</a>
+        </div>
+      </div>
+
+      <!-- 📇 Informasi Kontak -->
+      <div class="card">
+        <h3>📇 Informasi Kontak</h3>
+        <div class="info-grid">
+          <strong>Nama Kontak</strong>
+          <div><%= mitra.nama_kontak || '-' %></div>
+          
+          <strong>Jabatan</strong>
+          <div><%= mitra.jabatan || '-' %></div>
+          
+          <strong>Nomor HP</strong>
+          <div>
+            <% if (mitra.no_hp_kontak) { %>
+              <a href="tel:<%= mitra.no_hp_kontak %>"><%= mitra.no_hp_kontak %></a>
+            <% } else { %>
+              -
+            <% } %>
+          </div>
+          
+          <strong>Email Fakultas</strong>
+          <div>
+            <% if (mitra.email_fakultas) { %>
+              <a href="mailto:<%= mitra.email_fakultas %>"><%= mitra.email_fakultas %></a>
+            <% } else { %>
+              -
+            <% } %>
+          </div>
+          
+          <strong>Alamat</strong>
+          <div><%= mitra.alamat || '-' %></div>
+        </div>
+      </div>
+
+      <!-- 📅 Masa Kerja Sama -->
+      <div class="card">
+        <h3>📅 Periode Kerja Sama</h3>
+        <div class="info-grid">
+          <strong>Tanggal Mulai</strong>
+          <div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+          
+          <strong>Tanggal Berakhir</strong>
+          <div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+          
+          <strong>Sisa Waktu</strong>
+          <div>
+            <span style="font-weight:700;color:<%= mitra.color %>;font-size:16px"><%= mitra.sisa_hari %> hari</span>
+            <span class="status-badge" style="background:<%= mitra.color %>"><%= mitra.status %></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📎 Dokumen Legalitas -->
+      <div class="card">
+        <h3>📎 Dokumen Legalitas</h3>
+        
+        <% 
+          const canEdit = user?.role === 'humas' || 
+                         (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id));
+        %>
+        
+        <% ['mou', 'moa', 'ia', 'pks'].forEach(jenis => {
+           const label = jenis.toUpperCase();
+           const fieldName = 'file_' + jenis;
+           const fileUrl = mitra[fieldName];
+           const isEditable = canEdit;
+        %>
+          <div class="doc-item <%= !isEditable ? 'read-only' : '' %>">
+            
+            <% if (!isEditable && user?.role === 'admin_fakultas') { %>
+              <span class="access-badge">🔒 Fakultas Lain</span>
+            <% } %>
+            
+            <div class="doc-header">
+              <strong>📄 <%= label %></strong>
+              <span class="doc-status <%= fileUrl ? 'uploaded' : 'missing' %>">
+                <%= fileUrl ? '✅ Sudah diupload' : '⏳ Belum diupload' %>
+              </span>
+            </div>
+
+            <% if (fileUrl) { %>
+              <div class="doc-actions">
+                <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
+                <a href="<%= fileUrl %>" download class="btn btn-success">⬇️ Download</a>
+              </div>
+            <% } %>
+
+            <% if (isEditable) { %>
+              <form method="POST" action="/mitra/<%= mitra.id %>/upload" enctype="multipart/form-data" class="upload-form">
+                <input type="hidden" name="jenis_file" value="<%= jenis %>">
+                <input type="file" name="file_pdf" accept=".pdf" required>
+                <button type="submit" class="btn <%= fileUrl ? 'btn-outline' : 'btn-primary' %>">
+                  <%= fileUrl ? '🔄 Ganti' : '⬆️ Upload' %> <%= label %>
+                </button>
+              </form>
+            <% } else if (user?.role === 'guest') { %>
+              <p style="font-size:13px;color:var(--text-muted);margin-top:10px">
+                👁️ Guest mode: Hanya dapat melihat dokumen. Hubungi Humas untuk upload.
+              </p>
+            <% } else if (user?.role === 'admin_fakultas') { %>
+              <p style="font-size:13px;color:var(--text-muted);margin-top:10px">
+                🔒 Dokumen ini milik fakultas lain. Hubungi Humas untuk perubahan.
+              </p>
+            <% } %>
+          </div>
+        <% }) %>
+        
+        <div class="note">
+          <span style="font-size:1.2rem">💡</span>
+          <div>
+            <strong>Catatan:</strong> Dokumen dapat diupload kapan saja. Tanggal upload tidak mempengaruhi masa berlaku kerja sama yang tercantum di atas.
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="footer-actions">
+        <% if (user?.role === 'humas' || (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id))) { %>
+          <a href="/mitra/<%= mitra.id %>/edit" class="btn btn-primary">✏️ Edit Data Mitra</a>
+        <% } else if (user?.role === 'guest') { %>
+          <span style="font-size:14px;color:var(--text-muted)">👁️ Mode Baca Saja — Hubungi Humas untuk perubahan data</span>
+        <% } else if (user?.role === 'admin_fakultas') { %>
+          <span style="font-size:14px;color:var(--text-muted)">🔒 Data milik fakultas lain — Hubungi Humas untuk edit</span>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Toggle Script -->
+  <script>
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          mainWrapper.classList.remove('expanded');
+          sidebarToggle.classList.remove('shifted');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+====================
+FILE: .\views\form-mitra.ejs
+====================
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= action === 'tambah' ? 'Tambah' : 'Edit' %> Mitra - SI Mitra DUDIKA | UNIBA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --border: #e2e8f0;
+      
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      overflow-x: hidden;
+    }
+    
+    /* ========== MAIN WRAPPER ========== */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+    
+    /* ========== FORM CONTAINER ========== */
+    .form-container {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(255, 255, 255, 0.97);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(226, 232, 240, 0.6);
+      backdrop-filter: blur(10px);
+      animation: slideUp 0.5s ease;
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ========== HEADER ========== */
+    .form-header {
+      text-align: center;
+      margin-bottom: 35px;
+      position: relative;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .form-header .logo-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 15px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: white;
+      box-shadow: 0 8px 20px rgba(26, 58, 92, 0.25);
+    }
+    
+    .form-header h1 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    
+    .form-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    
+    /* ========== FORM GRID ========== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+    
+    .form-group label {
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .required { 
+      color: var(--danger); 
+      font-weight: 700;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+      background: #f8fafc;
+      color: var(--text-dark);
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+    
+    .form-group textarea { 
+      resize: vertical; 
+      min-height: 100px; 
+    }
+    
+    /* ========== ACTIONS ========== */
+    .form-actions {
+      margin-top: 35px;
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
+    }
+    
+    .btn-secondary {
+      background: white;
+      color: var(--text-muted);
+      border: 2px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--uniba-primary);
+      color: var(--uniba-primary);
+      background: #f8fafc;
+    }
+    
+    /* ========== INFO BOX ========== */
+    .info-box {
+      margin-top: 30px;
+      padding: 16px 20px;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.02));
+      border-left: 4px solid var(--warning);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #92400e;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .info-box strong { color: #78350f; }
+    
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .main-wrapper { 
+        margin-left: 0;
+        padding: 20px;
+      }
+      .main-wrapper.expanded { 
+        margin-left: 0;
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .form-container { padding: 25px 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+      .form-actions { flex-direction: column-reverse; width: 100%; }
+      .btn { width: 100%; justify-content: center; }
+      .form-header h1 { font-size: 1.3rem; }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar { 
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track { 
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover { 
+      background: var(--uniba-dark);
+    }
+  </style>
+</head>
+<body>
+  <!-- Include Sidebar dari partials -->
+  <%- include('partials/_sidebar') %>
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <div class="form-container">
+      <!-- Header -->
+      <div class="form-header">
+        <div class="logo-icon">🤝</div>
+        <h1><%= action === 'tambah' ? 'Tambah Mitra Baru' : 'Edit Data Mitra' %></h1>
+        <p>SI Mitra DUDIKA — Universitas Islam Batik Surakarta</p>
+      </div>
+      
+      <!-- Form -->
+      <form method="POST" action="<%= action === 'tambah' ? '/mitra' : `/mitra/${mitra?.id}/update` %>">
+        <div class="form-grid">
+          
+          <!-- Nama Instansi (Full Width) -->
+          <div class="form-group full-width">
+            <label for="nama_instansi">🏢 Nama Instansi / Perusahaan <span class="required">*</span></label>
+            <input type="text" id="nama_instansi" name="nama_instansi" required value="<%= mitra?.nama_instansi || '' %>" placeholder="Contoh: PT. Maju Bersama">
+          </div>
+
+          <!-- Nama Kontak -->
+          <div class="form-group">
+            <label for="nama_kontak">👤 Nama Kontak Person</label>
+            <input type="text" id="nama_kontak" name="nama_kontak" value="<%= mitra?.nama_kontak || '' %>" placeholder="Nama penanggung jawab">
+          </div>
+
+          <!-- Jabatan -->
+          <div class="form-group">
+            <label for="jabatan">💼 Jabatan</label>
+            <input type="text" id="jabatan" name="jabatan" value="<%= mitra?.jabatan || '' %>" placeholder="Contoh: HRD Manager">
+          </div>
+
+          <!-- No HP -->
+          <div class="form-group">
+            <label for="no_hp_kontak">📱 Nomor HP Kontak <span class="required">*</span></label>
+            <input type="tel" id="no_hp_kontak" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxxxxxx">
+          </div>
+
+          <!-- Email Fakultas -->
+          <div class="form-group">
+            <label for="email_fakultas">📧 Email Fakultas Bertanggung Jawab <span class="required">*</span></label>
+            <input type="email" id="email_fakultas" name="email_fakultas" required value="<%= mitra?.email_fakultas || '' %>" placeholder="fti@uniba.ac.id">
+          </div>
+
+          <!-- Tanggal Mulai -->
+          <div class="form-group">
+            <label for="tanggal_mulai">📅 Tanggal Mulai Kerja Sama <span class="required">*</span></label>
+            <input type="date" id="tanggal_mulai" name="tanggal_mulai" required value="<%= mitra?.tanggal_mulai || '' %>">
+          </div>
+
+          <!-- Tanggal Berakhir -->
+          <div class="form-group">
+            <label for="tanggal_berakhir">📅 Tanggal Berakhir Kerja Sama <span class="required">*</span></label>
+            <input type="date" id="tanggal_berakhir" name="tanggal_berakhir" required value="<%= mitra?.tanggal_berakhir || '' %>">
+          </div>
+
+          <!-- Alamat (Full Width) -->
+          <div class="form-group full-width">
+            <label for="alamat">📍 Alamat Lengkap</label>
+            <textarea id="alamat" name="alamat" rows="3" placeholder="Alamat lengkap instansi..."><%= mitra?.alamat || '' %></textarea>
+          </div>
+          
+        </div>
+        
+        <!-- Actions -->
+        <div class="form-actions">
+          <a href="/mitra" class="btn btn-secondary">← Kembali ke Daftar</a>
+          <button type="submit" class="btn btn-primary">💾 Simpan Data</button>
+        </div>
+      </form>
+      
+      <!-- Info Box -->
+      <div class="info-box">
+        <span style="font-size: 1.2rem;">💡</span>
+        <div>
+          <strong>Catatan Penting:</strong> 
+          Upload dokumen legalitas (MoU, MoA, IA, PKS) dilakukan <strong>setelah</strong> data mitra berhasil disimpan, melalui halaman Detail Mitra.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Logic untuk Toggle Sidebar dengan Chevron
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          mainWrapper.classList.remove('expanded');
+          sidebarToggle.classList.remove('shifted');
+        }
+      });
+    }
+    
+    // Auto-focus ke field pertama saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', () => {
+      const firstInput = document.querySelector('input[required]');
+      if (firstInput) firstInput.focus();
+    });
+  </script>
+</body>
+</html>
+
+
+====================
+FILE: .\views\login.ejs
+====================
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - SI Mitra DUDIKA | Universitas Islam Batik Surakarta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-gradient: linear-gradient(135deg, #1a3a5c 0%, #0f2439 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-gradient);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before, body::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: 0;
+      opacity: 0.35;
+    }
+    body::before {
+      width: 400px; height: 400px;
+      background: var(--uniba-gold);
+      top: -100px; left: -100px;
+      animation: float 8s ease-in-out infinite;
+    }
+    body::after {
+      width: 300px; height: 300px;
+      background: var(--uniba-secondary);
+      bottom: -50px; right: -50px;
+      animation: float 10s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, 30px); }
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
+      padding: 48px 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .logo-area {
+      margin-bottom: 24px;
+    }
+    
+    .logo-uniba {
+      width: 110px;
+      height: auto;
+      margin-bottom: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      filter: drop-shadow(0 4px 12px rgba(26, 58, 92, 0.25));
+      transition: transform 0.3s ease;
+    }
+
+    .logo-uniba:hover {
+      transform: scale(1.05);
+    }
+
+    .login-box h2 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .login-box p {
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .login-box p strong {
+      color: var(--uniba-primary);
+      font-weight: 600;
+      display: block;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 0.85rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: var(--text-muted);
+      transition: color 0.3s;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 14px 14px 44px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+      background: #f8fafc;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+
+    .input-wrapper:focus-within svg {
+      color: var(--uniba-primary);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(26, 58, 92, 0.35);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .error {
+      color: #991b1b;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      <% if (typeof error !== 'undefined' && error) { %>
+        display: flex;
+      <% } else { %>
+        display: none;
+      <% } %>
+      animation: slideDown 0.4s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .footer {
+      margin-top: 32px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      line-height: 1.6;
+    }
+
+    .footer strong {
+      color: var(--uniba-primary);
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 32px 24px;
+      }
+      .logo-uniba {
+        width: 90px;
+      }
+      .login-box h2 {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="logo-area">
+      <img src="/images/logo-uniba.png" alt="Logo Universitas Islam Batik Surakarta" class="logo-uniba">
+      <h2>SI Mitra DUDIKA</h2>
+      <p>
+        Sistem Manajemen Kemitraan & Dokumen Legal<br>
+        <strong>Universitas Islam Batik Surakarta</strong>
+      </p>
+    </div>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="error" id="errorMsg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span><%= error %></span>
+      </div>
+    <% } %>
+    
+    <form action="/login" method="POST" id="loginForm">
+      <div class="form-group">
+        <label for="email">Email Fakultas/Humas</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <input type="email" id="email" name="email" required placeholder="fakultas@uniba.ac.id" autocomplete="email">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <input type="password" id="password" name="password" required placeholder="Masukkan password Anda" autocomplete="current-password">
+        </div>
+      </div>
+      
+      <button type="submit" id="submitBtn">
+        <span>Masuk ke Sistem</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+    </form>
+    
+    <div class="footer">
+      &copy; <%= new Date().getFullYear() %> <strong>Universitas Islam Batik Surakarta</strong><br>
+      Sistem Informasi Kemitraan DUDIKA Terintegrasi
+    </div>
+  </div>
+
+  <script>
+    // Auto-hide error message after 5 seconds
+    const err = document.getElementById('errorMsg');
+    if (err && err.style.display !== 'none') {
+      setTimeout(() => {
+        err.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        err.style.opacity = '0';
+        err.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          err.style.display = 'none';
+        }, 500);
+      }, 5000);
+    }
+
+    // Loading state on form submit
+    const form = document.getElementById('loginForm');
+    const btn = document.getElementById('submitBtn');
+    
+    form.addEventListener('submit', function() {
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
+        </svg>
+        <span>Memproses...</span>
+      `;
+      btn.style.opacity = '0.8';
+      btn.style.cursor = 'not-allowed';
+      btn.disabled = true;
+    });
+
+    // Add spin animation
+    const style = document.createElement('style');
+    style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>
+
+
+====================
+FILE: .\views\mitra-table.ejs
+====================
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Mitra - SI Mitra DUDIKA | Universitas Islam Batik</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      
+      --border: #e2e8f0;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* ========== MAIN WRAPPER ========== */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+    }
+    
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+    
+    /* ========== PAGE HEADER ========== */
+    .page-header {
+      padding: 30px 40px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .page-header h1 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      position: relative;
+      padding-left: 18px;
+    }
+    
+    .page-header h1::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 5px;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+      border-radius: 3px;
+    }
+    
+    /* ========== STATS BAR ========== */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px 40px 25px;
+    }
+    
+    .stat-item {
+      background: var(--bg-card);
+      padding: 18px 22px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s;
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .stat-icon.total { background: rgba(26, 58, 92, 0.1); }
+    .stat-icon.active { background: rgba(16, 185, 129, 0.1); }
+    .stat-icon.warning { background: rgba(245, 158, 11, 0.1); }
+    .stat-icon.expired { background: rgba(100, 116, 139, 0.1); }
+    
+    .stat-info h3 {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .stat-info p {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1;
+    }
+    
+    /* ========== TOOLBAR ========== */
+    .toolbar {
+      padding: 0 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 12px;
+      flex: 1;
+      max-width: 500px;
+      position: relative;
+    }
+    
+    .search-box input {
+      flex: 1;
+      padding: 12px 18px 12px 45px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s;
+      background: white;
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+    
+    .search-box::before {
+      content: '';
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      opacity: 0.5;
+      z-index: 1;
+    }
+    
+    .toolbar-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    /* ========== BUTTONS ========== */
+    .btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-success { 
+      background: linear-gradient(135deg, var(--success), #34d399);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+    .btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+    
+    .btn-outline {
+      background: white;
+      border: 2px solid var(--border);
+      color: var(--uniba-primary);
+    }
+    .btn-outline:hover { 
+      border-color: var(--uniba-primary);
+      background: #f8fafc;
+    }
+    
+    /* ========== TABLE SECTION ========== */
+    .table-section {
+      padding: 25px 40px 40px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .table-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    
+    /* ========== TABLE DESKTOP DEFAULT ========== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 1100px;
+      display: table !important;
+    }
+    
+    thead {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: table-header-group !important;
+    }
+    
+    tbody {
+      display: table-row-group !important;
+    }
+    
+    tr {
+      display: table-row !important;
+      transition: all 0.2s;
+    }
+    
+    th, td {
+      display: table-cell !important;
+      padding: 16px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    th:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    th.sort-asc::after { 
+      content: " ▲"; 
+      font-size: 10px;
+      color: var(--uniba-gold);
+    }
+    th.sort-desc::after { 
+      content: " ▼"; 
+      font-size: 10px;
+      color: var(--uniba-gold);
+    }
+    
+    tbody tr:hover {
+      background: rgba(26, 58, 92, 0.03);
+      transform: scale(1.001);
+    }
+    
+    tbody tr:nth-child(even) {
+      background: rgba(248, 250, 252, 0.5);
+    }
+    
+    tbody tr:nth-child(even):hover {
+      background: rgba(26, 58, 92, 0.05);
+    }
+    
+    /* Hide data-label di desktop */
+    td::before {
+      display: none !important;
+    }
+    
+    /* ========== STATUS BADGES ========== */
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      text-align: center;
+      min-width: 120px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      letter-spacing: 0.3px;
+    }
+    
+    .status-active { 
+      background: linear-gradient(135deg, var(--success), #34d399);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    .status-warning { 
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    .status-danger { 
+      background: linear-gradient(135deg, var(--danger), #f87171);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .status-expired { 
+      background: linear-gradient(135deg, var(--expired), #94a3b8);
+      box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
+    }
+    
+    /* ========== KODE MITRA ========== */
+    .kode-mitra {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08));
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: inline-block;
+      color: var(--uniba-primary);
+      font-weight: 700;
+      border: 1px solid rgba(26, 58, 92, 0.15);
+      letter-spacing: 0.5px;
+    }
+    
+    /* ========== ACTION BUTTONS ========== */
+    .action-btns { 
+      display: flex; 
+      gap: 8px; 
+      flex-wrap: wrap;
+    }
+    
+    .action-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-btn.detail { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+    }
+    
+    .action-btn.edit { 
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: white;
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* ========== CONTACT & EMAIL ========== */
+    .contact-cell { 
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .contact-cell strong {
+      color: var(--text-dark);
+      font-weight: 600;
+    }
+    
+    .contact-cell small { 
+      color: var(--text-muted);
+      display: block; 
+      margin-top: 4px;
+      font-size: 12px;
+    }
+    
+    .contact-cell a {
+      color: var(--uniba-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .contact-cell a:hover {
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
+    
+    .email-link { 
+      color: var(--uniba-primary); 
+      text-decoration: none; 
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .email-link:hover { 
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
+    
+    /* ========== DOCUMENT STATUS ========== */
+    .doc-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: default;
+      transition: all 0.2s;
+      border: 1px solid;
+    }
+    
+    .doc-status:hover {
+      transform: scale(1.05);
+    }
+    
+    .doc-uploaded { 
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+      color: #065f46;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .doc-missing { 
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.1));
+      color: #991b1b;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    /* ========== EMPTY STATE ========== */
+    .empty-state { 
+      text-align: center; 
+      padding: 80px 20px; 
+      color: var(--text-muted);
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+    
+    .empty-state h3 { 
+      margin: 10px 0; 
+      color: var(--text-dark);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.3rem;
+    }
+    
+    .empty-state p {
+      margin: 10px 0 25px;
+      font-size: 0.95rem;
+    }
+    
+    /* ========== TABLE FOOTER ========== */
+    .table-footer {
+      padding: 18px 24px;
+      background: rgba(248, 250, 252, 0.8);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .table-footer span:first-child {
+      font-weight: 600;
+      color: var(--uniba-primary);
+    }
+    
+    /* ========== MOBILE RESPONSIVE - CARD LAYOUT ========== */
+    @media (max-width: 768px) {
+      .main-wrapper { 
+        margin-left: 0;
+      }
+      .main-wrapper.expanded { 
+        margin-left: 0;
+      }
+      
+      .page-header { 
+        padding: 20px 20px 10px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .stats-bar {
+        padding: 15px 20px 20px;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .toolbar { 
+        padding: 0 20px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .search-box { 
+        max-width: 100%;
+        width: 100%;
+      }
+      
+      .toolbar-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+      
+      .toolbar-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+      
+      .table-section { 
+        padding: 20px 15px 20px;
+      }
+      
+      /* Card Layout untuk Mobile */
+      .table-container {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        overflow: visible;
+      }
+      
+      table {
+        display: block !important;
+        min-width: 0;
+      }
+      
+      thead {
+        display: none !important;
+      }
+      
+      tbody {
+        display: flex !important;
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      tbody tr {
+        display: block !important;
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border);
+        position: relative;
+        transition: all 0.3s;
+      }
+      
+      tbody tr:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+      }
+      
+      tbody tr td {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border: none;
+        border-bottom: 1px dashed rgba(226, 232, 240, 0.6);
+        font-size: 14px;
+        text-align: left;
+      }
+      
+      tbody tr td:last-child {
+        border-bottom: none;
+      }
+      
+      tbody tr td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        margin-right: 15px;
+        min-width: 100px;
+      }
+      
+      /* Header Card (Kode + Instansi) */
+      tbody tr td:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 5px;
+      }
+      
+      tbody tr td:first-child::before {
+        display: none;
+      }
+      
+      tbody tr td:first-child .kode-mitra {
+        margin-bottom: 8px;
+        font-size: 12px;
+      }
+      
+      tbody tr td:first-child strong {
+        font-size: 16px;
+        color: var(--uniba-primary);
+        line-height: 1.3;
+      }
+      
+      /* Kontak Cell */
+      tbody tr td .contact-cell {
+        text-align: right;
+        flex: 1;
+      }
+      
+      /* Status Badge */
+      tbody tr td .status-badge {
+        min-width: auto;
+        padding: 6px 14px;
+        font-size: 12px;
+      }
+      
+      /* Dokumen Status */
+      tbody tr td:nth-child(8) {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      
+      tbody tr td:nth-child(8) .doc-status {
+        font-size: 10px;
+        padding: 4px 8px;
+      }
+      
+      /* Action Buttons */
+      tbody tr td:last-child {
+        flex-direction: row;
+        align-items: stretch;
+        padding-top: 15px;
+        border-top: 2px solid var(--border);
+        border-bottom: none;
+        margin-top: 5px;
+      }
+      
+      tbody tr td:last-child::before {
+        display: none;
+      }
+      
+      tbody tr td:last-child .action-btns {
+        flex-direction: row;
+        width: 100%;
+        gap: 10px;
+      }
+      
+      tbody tr td:last-child .action-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+      }
+      
+      /* Sisa Hari - Highlight */
+      tbody tr td:nth-child(6) {
+        font-weight: 700;
+      }
+      
+      .table-footer {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px 20px;
+        background: white;
+        border-radius: 12px;
+        margin-top: 10px;
+      }
+      
+      /* Empty State di Mobile */
+      .empty-state {
+        padding: 40px 20px;
+      }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar { 
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track { 
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover { 
+      background: var(--uniba-dark);
+    }
+  </style>
+</head>
+<body>
+  <!-- Include Sidebar dari partials -->
+  <%- include('partials/_sidebar') %>
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Page Header (Minimal) -->
+    <div class="page-header">
+      <h1>📋 Daftar Mitra Kerja Sama</h1>
+    </div>
+    
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-icon total">🏢</div>
+        <div class="stat-info">
+          <h3>Total Mitra</h3>
+          <p id="statTotal"><%= mitra?.length || 0 %></p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon active">✅</div>
+        <div class="stat-info">
+          <h3>Aktif</h3>
+          <p id="statActive">0</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon warning">⚠️</div>
+        <div class="stat-info">
+          <h3>Segera Berakhir</h3>
+          <p id="statWarning">0</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon expired">⏰</div>
+        <div class="stat-info">
+          <h3>Expired</h3>
+          <p id="statExpired">0</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Cari instansi, kontak, atau email...">
+      </div>
+      <div class="toolbar-actions">
+        <% if (user && user.role === 'humas') { %>
+          <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
+        <% } %>
+        <button class="btn" onclick="exportTable()">📥 Export CSV</button>
+      </div>
+    </div>
+    
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="table-container">
+        <table id="mitraTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Kode</th>
+              <th onclick="sortTable(1)">Instansi</th>
+              <th onclick="sortTable(2)">Kontak</th>
+              <th onclick="sortTable(3)">Email Fakultas</th>
+              <th onclick="sortTable(4)">Berakhir</th>
+              <th onclick="sortTable(5)">Sisa Hari</th>
+              <th onclick="sortTable(6)">Status</th>
+              <th>Dokumen</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (mitra && mitra.length > 0) { %>
+              <% mitra.forEach(m => { %>
+                <tr>
+                  <td data-label="Kode">
+                    <span class="kode-mitra"><%= m.kode_mitra %></span>
+                    <br><strong style="display:none" class="mobile-instansi"><%= m.nama_instansi %></strong>
+                  </td>
+                  <td data-label="Instansi"><strong><%= m.nama_instansi %></strong></td>
+                  <td data-label="Kontak" class="contact-cell">
+                    <strong><%= m.nama_kontak || '-' %></strong>
+                    <% if (m.no_hp_kontak) { %>
+                      <small>📞 <a href="tel:<%= m.no_hp_kontak %>"><%= m.no_hp_kontak %></a></small>
+                    <% } %>
+                  </td>
+                  <td data-label="Email">
+                    <% if (m.email_fakultas) { %>
+                      <a href="mailto:<%= m.email_fakultas %>" class="email-link"><%= m.email_fakultas %></a>
+                    <% } else { %>
+                      <span style="color: var(--text-muted)">-</span>
+                    <% } %>
+                  </td>
+                  <td data-label="Berakhir">
+                    <%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %>
+                  </td>
+                  <td data-label="Sisa Hari" style="font-weight:700;color:<%= m.color %>;font-size:15px">
+                    <%= m.sisa_hari %>
+                  </td>
+                  <td data-label="Status">
+                    <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
+                  </td>
+                  <td data-label="Dokumen">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      <span class="doc-status <%= m.file_mou ? 'doc-uploaded' : 'doc-missing' %>" title="MoU">
+                        <%= m.file_mou ? '✅ MoU' : '❌ MoU' %>
+                      </span>
+                      <span class="doc-status <%= m.file_moa ? 'doc-uploaded' : 'doc-missing' %>" title="MoA">
+                        <%= m.file_moa ? '✅ MoA' : '❌ MoA' %>
+                      </span>
+                      <span class="doc-status <%= m.file_ia ? 'doc-uploaded' : 'doc-missing' %>" title="IA">
+                        <%= m.file_ia ? '✅ IA' : '❌ IA' %>
+                      </span>
+                      <span class="doc-status <%= m.file_pks ? 'doc-uploaded' : 'doc-missing' %>" title="PKS">
+                        <%= m.file_pks ? '✅ PKS' : '❌ PKS' %>
+                      </span>
+                    </div>
+                  </td>
+                  <td data-label="Aksi">
+                    <div class="action-btns">
+                      <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
+                      <% if (user && user.role === 'humas') { %>
+                        <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️ Edit</a>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="9">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>Belum Ada Data Mitra</h3>
+                    <p>Mulai kelola kerja sama DUDIKA dengan menambahkan mitra pertama.</p>
+                    <% if (user && user.role === 'humas') { %>
+                      <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Pertama</a>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+	  </div>
+      
+      <!-- Table Footer -->
+      <div class="table-footer">
+        <span id="resultCount"><%= mitra?.length || 0 %> mitra ditemukan</span>
+        <span>💡 Klik header untuk sort • Ctrl+K untuk search</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script>
+    // Logic untuk Toggle Sidebar dengan Chevron
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          mainWrapper.classList.remove('expanded');
+          sidebarToggle.classList.remove('shifted');
+        }
+      });
+    }
+    
+    // Update Stats
+    function updateStats() {
+      const rows = document.querySelectorAll('#mitraTable tbody tr');
+      let active = 0, warning = 0, expired = 0;
+      
+      rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        const badge = row.querySelector('.status-badge');
+        if (!badge) return;
+        
+        if (badge.classList.contains('status-active')) active++;
+        else if (badge.classList.contains('status-warning')) warning++;
+        else if (badge.classList.contains('status-expired')) expired++;
+      });
+      
+      document.getElementById('statActive').textContent = active;
+      document.getElementById('statWarning').textContent = warning;
+      document.getElementById('statExpired').textContent = expired;
+    }
+    
+    // Search & Sort Logic
+    const searchInput = document.getElementById('searchInput');
+    const table = document.getElementById('mitraTable');
+    const rows = table.querySelectorAll('tbody tr');
+    const resultCount = document.getElementById('resultCount');
+    
+    searchInput.addEventListener('input', function() {
+      const term = this.value.toLowerCase();
+      let visible = 0;
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(term)) { 
+          row.style.display = ''; 
+          visible++;
+          row.style.animation = 'fadeIn 0.3s ease';
+        } else { 
+          row.style.display = 'none'; 
+        }
+      });
+      resultCount.textContent = `${visible} mitra ditemukan`;
+      updateStats();
+    });
+    
+    let sortDir = {};
+    function sortTable(colIndex) {
+      const headers = table.querySelectorAll('thead th');
+      const tbody = table.querySelector('tbody');
+      const rowsArray = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('td'));
+      
+      sortDir[colIndex] = sortDir[colIndex] === 'asc' ? 'desc' : 'asc';
+      headers.forEach((th, i) => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (i === colIndex) th.classList.add(`sort-${sortDir[colIndex]}`);
+      });
+      
+      rowsArray.sort((a, b) => {
+        const aText = a.querySelectorAll('td')[colIndex].textContent.trim();
+        const bText = b.querySelectorAll('td')[colIndex].textContent.trim();
+        
+        if (colIndex === 5) {
+          const aNum = parseInt(aText) || 0;
+          const bNum = parseInt(bText) || 0;
+          return sortDir[colIndex] === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        if (colIndex === 4) {
+          const aDate = new Date(aText);
+          const bDate = new Date(bText);
+          return sortDir[colIndex] === 'asc' ? aDate - bDate : bDate - aDate;
+        }
+        return sortDir[colIndex] === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+      });
+      rowsArray.forEach(row => tbody.appendChild(row));
+    }
+    
+    function exportTable() {
+      let csv = 'Kode,Instansi,Kontak,No HP,Email,Berakhir,Sisa Hari,Status,MoU,MoA,IA,PKS\n';
+      rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 7) return;
+        
+        const getVal = (sel) => cells[sel]?.textContent.trim() || '-';
+        const getFileStatus = (colIdx, type) => cells[colIdx]?.querySelector(`[title="${type}"]`)?.textContent.includes('✅') ? 'Sudah' : 'Belum';
+        
+        csv += [
+          cells[0].querySelector('.kode-mitra')?.textContent || '',
+          cells[0].querySelector('strong')?.textContent || '',
+          cells[1].querySelector('strong')?.textContent || '-',
+          cells[1].querySelector('a')?.textContent || '-',
+          cells[2].textContent.trim(),
+          cells[3].textContent.trim(),
+          cells[4].textContent.trim(),
+          cells[5].querySelector('.status-badge')?.textContent || '',
+          getFileStatus(6, 'MoU'),
+          getFileStatus(6, 'MoA'),
+          getFileStatus(6, 'IA'),
+          getFileStatus(6, 'PKS')
+        ].map(v => `"${v}"`).join(',') + '\n';
+      });
+      
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `mitra-dudika-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+    
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+    
+    // Init stats on load
+    updateStats();
+  </script>
+</body>
+</html>
+
+
+====================
+FILE: .\views\test-alert.ejs
+====================
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Alert Manual - SI Mitra DUDIKA | UNIBA</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ========== MAIN WRAPPER ========== */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+    }
+    
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+
+    /* ========== PAGE HEADER ========== */
+    .page-header {
+      padding: 30px 40px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .page-header h1 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      position: relative;
+      padding-left: 18px;
+    }
+    
+    .page-header h1::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 5px;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+      border-radius: 3px;
+    }
+
+    /* ========== INFO GRID ========== */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 0 40px 30px;
+    }
+    
+    .info-card {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+    
+    .info-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .info-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    
+    .info-value {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--uniba-primary);
+    }
+    
+    .info-value.highlight {
+      color: var(--danger);
+    }
+
+    /* ========== TABLE SECTION ========== */
+    .table-section {
+      padding: 0 40px 30px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .table-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      min-width: 800px;
+    }
+    
+    thead {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+    }
+    
+    th {
+      padding: 16px 20px;
+      text-align: left;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    
+    tbody tr {
+      transition: all 0.2s;
+    }
+    
+    tbody tr:hover {
+      background: rgba(26, 58, 92, 0.03);
+    }
+    
+    .badge-days {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    
+    .btn-send {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(26, 58, 92, 0.2);
+    }
+    
+    .btn-send:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.3);
+    }
+
+    /* ========== EMPTY STATE ========== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    /* ========== BUTTONS ========== */
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: white;
+      color: var(--uniba-primary);
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 2px solid var(--border);
+      transition: all 0.3s;
+      margin: 0 40px 40px;
+    }
+    
+    .btn-back:hover {
+      border-color: var(--uniba-primary);
+      background: #f8fafc;
+      transform: translateX(-5px);
+    }
+
+    /* ========== MOBILE ========== */
+    @media (max-width: 768px) {
+      .main-wrapper {
+        margin-left: 0;
+      }
+      .main-wrapper.expanded {
+        margin-left: 0;
+      }
+      
+      .page-header {
+        padding: 20px 20px 10px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .page-header h1 {
+        font-size: 1.4rem;
+      }
+      
+      .info-grid {
+        padding: 0 20px 20px;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .table-section {
+        padding: 0 20px 20px;
+      }
+      
+      .table-container {
+        overflow-x: auto;
+      }
+      
+      .btn-back {
+        margin: 0 20px 30px;
+      }
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--uniba-dark);
+    }
+  </style>
+</head>
+<body>
+  <!-- Include Sidebar dari partials -->
+  <%- include('partials/_sidebar') %>
+  
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <div class="page-header">
+      <h1>🧪 Test Alert Manual</h1>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="info-grid">
+      <div class="info-card">
+        <span class="info-label">Waktu Server</span>
+        <span class="info-value"><%= serverTime %></span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Rentang Cek</span>
+        <span class="info-value"><%= todayStr %> s/d <%= maxDateStr %></span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Total Mitra</span>
+        <span class="info-value"><%= totalMitra %></span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Perlu Perhatian</span>
+        <span class="info-value highlight"><%= inRangeCount %></span>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+      <div class="table-container">
+        <% if (mitraList && mitraList.length > 0) { %>
+          <table>
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Instansi</th>
+                <th>Email Fakultas</th>
+                <th>Berakhir</th>
+                <th>Sisa Hari</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% mitraList.forEach(m => { %>
+                <tr>
+                  <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:0.85rem; font-weight:600;"><%= m.kode_mitra %></code></td>
+                  <td style="font-weight:600;"><%= m.nama_instansi %></td>
+                  <td><a href="mailto:<%= m.email_fakultas %>" style="color:var(--uniba-primary); text-decoration:none; font-weight:500;"><%= m.email_fakultas %></a></td>
+                  <td><%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID') %></td>
+                  <td><span class="badge-days"><%= m.sisa_hari %> hari</span></td>
+                  <td>
+                    <form method="POST" action="/test-alert/send" style="display:inline;">
+                      <input type="hidden" name="mitra_id" value="<%= m.id %>">
+                      <button type="submit" class="btn-send">📧 Kirim Test</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-icon">✅</div>
+            <h3>Tidak Ada Mitra yang Perlu Di-alert</h3>
+            <p>Semua kerja sama masih aman atau belum ada data dalam rentang 30 hari ke depan.</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <a href="/dashboard" class="btn-back">← Kembali ke Dashboard</a>
+  </div>
+
+  <script>
+    // Logic Toggle Sidebar
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          mainWrapper.classList.remove('expanded');
+          sidebarToggle.classList.remove('shifted');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+====================
+FILE: .\views\partials\_header.ejs
+====================
+
+<!-- Page Header dengan User Info & Logout -->
+<div class="page-header">
+  <h1><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Dashboard Overview' %></h1>
+  
+  <% if (typeof user !== 'undefined' && user) { %>
+    <div class="user-info">
+      <div class="user-avatar">
+        <%= user.email ? user.email.charAt(0).toUpperCase() : 'U' %>
+      </div>
+      <div class="user-details">
+        <div class="user-name">
+          <%= user.email ? user.email.split('@')[0] : 'User' %>
+        </div>
+        <div class="user-role">
+          <%= user.role ? user.role.toUpperCase() : 'USER' %>
+        </div>
+        <% if (user.fakultas_id) { %>
+          <div class="user-fakultas">🎓 <%= user.fakultas_id.toUpperCase() %></div>
+        <% } %>
+      </div>
+      <a href="/logout" class="logout-link">Logout →</a>
+    </div>
+  <% } else { %>
+    <a href="/login" class="btn">🔐 Login</a>
+  <% } %>
+</div>
+
+
+====================
+FILE: .\views\partials\_sidebar.ejs
+====================
+
+<style>
+  /* ========== CSS VARIABLES ========== */
+  :root {
+    --uniba-primary: #1a3a5c;
+    --uniba-secondary: #8b6f47;
+    --uniba-gold: #d4a017;
+    --uniba-blue-light: #2c5282;
+    --uniba-dark: #0f2439;
+    --sidebar-width: 280px;
+  }
+
+  /* ========== SIDEBAR ========== */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, var(--uniba-primary) 0%, var(--uniba-dark) 100%);
+    color: white;
+    padding: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(0);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar.hidden {
+    transform: translateX(-100%);
+  }
+
+  .sidebar::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 200px;
+    height: 200px;
+    background: var(--uniba-gold);
+    border-radius: 50%;
+    opacity: 0.08;
+    filter: blur(60px);
+  }
+
+  /* ========== SIDEBAR HEADER ========== */
+  .sidebar-header {
+    text-align: center;
+    padding: 30px 20px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header .logo-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 8px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(212, 160, 23, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header .logo-wrapper:hover {
+    transform: scale(1.05) rotate(3deg);
+  }
+
+  .sidebar-header .logo-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .sidebar-header h2 { 
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem; 
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-header p { 
+    font-size: 0.75rem; 
+    opacity: 0.7; 
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ========== USER PROFILE SECTION ========== */
+  .user-profile {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .user-profile .avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--uniba-dark);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
+  }
+
+  .user-profile .user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-profile .user-info strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-profile .user-info small {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-profile .role-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  /* ========== NAV MENU ========== */
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .nav-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.5;
+    margin: 20px 0 10px 16px;
+    font-weight: 600;
+  }
+
+  .nav-section-title:first-child {
+    margin-top: 0;
+  }
+
+  .nav-menu { list-style: none; }
+  .nav-menu li { margin-bottom: 6px; }
+  
+  .nav-menu a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nav-menu a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--uniba-gold), transparent);
+    opacity: 0.15;
+    transition: width 0.3s ease;
+  }
+
+  .nav-menu a:hover::before { width: 100%; }
+
+  .nav-menu a:hover {
+    color: white;
+    transform: translateX(5px);
+  }
+
+  /* ========== BETTER ACTIVE STATE ========== */
+  .nav-menu a.active {
+    background: rgba(212, 160, 23, 0.15);
+    color: white;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .nav-menu a.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background: var(--uniba-gold);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
+  }
+
+  .nav-menu a .nav-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .nav-menu a .nav-text {
+    flex: 1;
+  }
+
+  /* ========== NOTIFICATION BADGE ========== */
+  .nav-menu a .badge {
+    background: var(--danger, #ef4444);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /* ========== SIDEBAR FOOTER ========== */
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar-footer .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .sidebar-footer .logout-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: white;
+    transform: translateX(5px);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+
+  .sidebar-footer .version {
+    text-align: center;
+    font-size: 0.7rem;
+    opacity: 0.4;
+    margin-top: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ========== TOGGLE BUTTON (CHEVRON) ========== */
+  .sidebar-toggle {
+    position: fixed;
+    left: var(--sidebar-width);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1001;
+    background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+    color: white;
+    border: none;
+    width: 32px;
+    height: 64px;
+    border-radius: 0 12px 12px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-toggle:hover {
+    background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+    color: var(--uniba-dark);
+    width: 36px;
+  }
+
+  .sidebar-toggle.shifted {
+    left: 0;
+  }
+
+  .sidebar-toggle .chevron {
+    transition: transform 0.4s ease;
+    display: inline-block;
+  }
+
+  .sidebar-toggle.shifted .chevron {
+    transform: rotate(180deg);
+  }
+
+  /* ========== MOBILE ========== */
+  @media (max-width: 768px) {
+    .sidebar { 
+      transform: translateX(-100%);
+      width: 260px;
+    }
+    .sidebar.active { 
+      transform: translateX(0);
+    }
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+    .sidebar-toggle {
+      left: 0;
+      top: 20px;
+      transform: none;
+      border-radius: 0 12px 12px 0;
+      width: 40px;
+      height: 40px;
+    }
+    .sidebar-toggle.shifted {
+      left: 260px;
+    }
+  }
+
+  /* Scrollbar */
+  .sidebar::-webkit-scrollbar { width: 8px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { 
+    background: rgba(255, 255, 255, 0.2); 
+    border-radius: 4px;
+  }
+  .sidebar::-webkit-scrollbar-thumb:hover { 
+    background: rgba(255, 255, 255, 0.3); 
+  }
+</style>
+
+<!-- Tombol Toggle Sidebar -->
+<button class="sidebar-toggle" id="sidebarToggle" title="Buka/Tutup Menu">
+  <span class="chevron">‹</span>
+</button>
+
+<aside class="sidebar" id="sidebar">
+  <!-- Header dengan Logo -->
+  <div class="sidebar-header">
+    <div class="logo-wrapper">
+      <img src="/images/logo-uniba.png" alt="Logo UNIBA">
+    </div>
+    <h2>Universitas Islam Batik</h2>
+    <p>SI Mitra DUDIKA</p>
+  </div>
+  
+  <!-- User Profile Section -->
+  <% if (typeof user !== 'undefined' && user) { %>
+    <div class="user-profile">
+      <div class="avatar">
+        <%= user.role === 'humas' ? 'HU' : 'US' %>
+      </div>
+      <div class="user-info">
+        <strong><%= user.name || 'User' %></strong>
+        <small><%= user.email || 'user@uniba.ac.id' %></small>
+        <span class="role-badge"><%= user.role %></span>
+      </div>
+    </div>
+  <% } %>
+  
+  <!-- Navigation Menu -->
+  <div class="sidebar-content">
+    <div class="nav-section-title">Menu Utama</div>
+    <ul class="nav-menu">
+      <li>
+        <a href="/dashboard" class="<%= (typeof activePage !== 'undefined' && activePage === 'dashboard') ? 'active' : '' %>">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="/mitra" class="<%= (typeof activePage !== 'undefined' && activePage === 'mitra') ? 'active' : '' %>">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Daftar Mitra</span>
+          <% if (typeof alertCount !== 'undefined' && alertCount > 0) { %>
+            <span class="badge"><%= alertCount %></span>
+          <% } %>
+        </a>
+      </li>
+    </ul>
+    
+    <!-- Menu Khusus Humas -->
+    <% if (typeof user !== 'undefined' && user && user.role === 'humas') { %>
+      <div class="nav-section-title">Kelola Data</div>
+      <ul class="nav-menu">
+        <li>
+          <a href="/mitra/tambah" class="<%= (typeof activePage !== 'undefined' && activePage === 'tambah') ? 'active' : '' %>">
+            <span class="nav-icon">➕</span>
+            <span class="nav-text">Tambah Mitra</span>
+          </a>
+        </li>
+        <li>
+          <a href="/test-alert" class="<%= (typeof activePage !== 'undefined' && activePage === 'alert') ? 'active' : '' %>">
+            <span class="nav-icon">🧪</span>
+            <span class="nav-text">Test Alert</span>
+          </a>
+        </li>
+      </ul>
+    <% } %>
+  </div>
+  
+  <!-- Footer dengan Logout -->
+  <div class="sidebar-footer">
+    <a href="/logout" class="logout-btn">
+      <span>🚪</span>
+      <span>Logout</span>
+    </a>
+    <div class="version">v1.0.0 • © 2026 UNIBA</div>
+  </div>
+</aside>

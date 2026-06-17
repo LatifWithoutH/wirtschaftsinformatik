@@ -7,7 +7,6 @@ const cron = require('node-cron');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 
-// 🔹 IMPORT GAS UPLOADER (Jembatan ke Google Drive)
 const { uploadFileToDrive } = require('./utils/gasUploader');
 
 const app = express();
@@ -17,6 +16,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', './views');
+
+// 🔧 FIXED: Inisialisasi Supabase DIPINDAH ke paling atas
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 // 🔹 Session Config
 app.use(session({
@@ -31,6 +36,16 @@ app.use(session({
   }
 }));
 
+// 🔹 FUNGSI: GENERATE PASSWORD ACAK YANG KUAT
+function generateRandomPassword(length = 12) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
 // 🔹 Middleware: Proteksi Route berdasarkan Role
 function requireAuth(...allowedRoles) {
   return (req, res, next) => {
@@ -42,24 +57,58 @@ function requireAuth(...allowedRoles) {
   };
 }
 
-// ✅ Inisialisasi Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+// 🔹 Middleware: Cek Status User Aktif di Setiap Request
+function checkUserActive(req, res, next) {
+  if (!req.session.user) return next();
+  
+  supabase
+    .from('users')
+    .select('is_active')
+    .eq('id', req.session.user.id)
+    .single()
+    .then(({ data, error }) => {
+      if (error || !data) {
+        req.session.destroy(() => res.redirect('/login'));
+        return;
+      }
+      
+      if (data.is_active === false) {
+        console.warn(`🚫 Session dihentikan: User nonaktif → ${req.session.user.email}`);
+        req.session.destroy(() => {
+          res.render('login', { 
+            error: '🚫 Akun Anda telah dinonaktifkan. Hubungi Humas.' 
+          });
+        });
+        return;
+      }
+      
+      next();
+    })
+    .catch(err => {
+      console.error('❌ Error cek status user:', err);
+      next();
+    });
+}
 
-// 🔹 SETUP MULTER (Upload Handler - Simpan di Memory)
+// 🔧 FIXED: Pasang middleware checkUserActive (supabase sudah ada di atas)
+app.use('/dashboard', checkUserActive);
+app.use('/mitra', checkUserActive);
+app.use('/users', checkUserActive);
+app.use('/test-alert', checkUserActive);
+app.use('/change-password', checkUserActive); // 🔧 FIXED: Tambahkan ini
+
+// 🔹 SETUP MULTER
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') cb(null, true);
     else cb(new Error('Hanya file PDF yang diperbolehkan!'), false);
   }
 });
 
-// 🔹 SETUP NODemailer (Email Transporter)
+// 🔹 SETUP NODemailer
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -119,6 +168,7 @@ app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
+// 🔧 FIXED: HAPUS route login yang pertama, hanya pakai yang ini
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -130,10 +180,23 @@ app.post('/login', async (req, res) => {
 
     if (error || !user) return res.render('login', { error: '❌ Email tidak ditemukan' });
 
+    // 🔒 CEK STATUS AKTIF
+    if (user.is_active === false) {
+      console.warn(`🚫 Login ditolak: Akun nonaktif → ${email}`);
+      return res.render('login', { 
+        error: '🚫 Akun Anda telah dinonaktifkan. Hubungi Humas.' 
+      });
+    }
+
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.render('login', { error: '❌ Password salah' });
 
-    req.session.user = { id: user.id, email: user.email, role: user.role, fakultas_id: user.fakultas_id };
+    req.session.user = { 
+      id: user.id, 
+      email: user.email, 
+      role: user.role, 
+      fakultas_id: user.fakultas_id 
+    };
     res.redirect('/dashboard');
   } catch (err) {
     console.error('Login error:', err);
@@ -145,7 +208,7 @@ app.get('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/login'));
 });
 
-// 🔹 DASHBOARD MODERN (Stats + Charts)
+// 🔹 DASHBOARD
 app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const today = new Date();
@@ -183,11 +246,11 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     });
   } catch (err) {
     console.error('❌ Error dashboard:', err.message);
-    res.status(500).send('Gagal memuat dashboard. Silakan coba lagi.');
+    res.status(500).send('Gagal memuat dashboard.');
   }
 });
 
-// 🔹 DAFTAR MITRA (Tabel Improved)
+// 🔹 DAFTAR MITRA
 app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const today = new Date();
@@ -217,7 +280,6 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
       return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
     });
 
-    // Hitung alert count untuk sidebar
     const alertCount = mitraDenganStatus.filter(m => m.sisa_hari > 0 && m.sisa_hari <= 30).length;
 
     res.render('mitra-table', { 
@@ -228,11 +290,11 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
     });
   } catch (err) {
     console.error('❌ Error table view:', err.message);
-    res.status(500).send('Gagal memuat daftar mitra. Silakan coba lagi.');
+    res.status(500).send('Gagal memuat daftar mitra.');
   }
 });
 
-// 🔹 FORM Tambah Mitra — HANYA HUMAS
+// 🔹 FORM Tambah Mitra
 app.get('/mitra/tambah', requireAuth('humas'), (req, res) => 
   res.render('form-mitra', { 
     mitra: null, 
@@ -243,7 +305,7 @@ app.get('/mitra/tambah', requireAuth('humas'), (req, res) =>
   })
 );
 
-// 🔹 POST Simpan Data Mitra + Generate kode_mitra
+// 🔹 POST Simpan Data Mitra
 app.post('/mitra', requireAuth('humas'), async (req, res) => {
   try {
     const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
@@ -254,17 +316,16 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
     res.redirect('/mitra');
   } catch (err) {
     console.error('❌ Error insert mitra:', err.message);
-    res.status(500).send('Gagal menyimpan data. Silakan coba lagi.');
+    res.status(500).send('Gagal menyimpan data.');
   }
 });
 
-// 🔹 UPLOAD PDF — ✅ GANTI KE GOOGLE DRIVE VIA GAS BRIDGE
+// 🔹 UPLOAD PDF
 app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.single('file_pdf'), async (req, res) => {
   try {
     const { id } = req.params;
     const { jenis_file } = req.body;
     
-    // 🔹 Cek: admin_fakultas hanya bisa upload untuk mitra fakultas sendiri
     if (req.session.user.role === 'admin_fakultas') {
       const { data: mitra, error: checkError } = await supabase
         .from('mitra')
@@ -280,19 +341,10 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
     if (!req.file) throw new Error('File tidak ditemukan');
     if (!['mou', 'moa', 'ia', 'pks'].includes(jenis_file)) throw new Error('Jenis file tidak valid');
     
-    console.log(`\n📤 [UPLOAD] Menerima file: ${req.file.originalname}`);
-    console.log(`   Jenis: ${jenis_file.toUpperCase()}`);
-    console.log(`   Ukuran: ${(req.file.size / 1024).toFixed(2)} KB`);
-    console.log(`   Mitra ID: ${id}`);
+    console.log(`\n📤 [UPLOAD] ${req.file.originalname} | ${jenis_file.toUpperCase()} | Mitra ID: ${id}`);
     
-    // 🚀 UPLOAD KE GOOGLE DRIVE VIA GAS BRIDGE
-    console.log('🚀 Mengirim ke Google Drive via GAS...');
     const driveLink = await uploadFileToDrive(req.file.buffer, req.file.originalname, req.file.mimetype);
     
-    console.log(`✅ File berhasil masuk Drive!`);
-    console.log(`🔗 Link: ${driveLink}`);
-    
-    // 💾 SIMPAN LINK KE DATABASE SUPABASE
     const fieldName = `file_${jenis_file}`;
     const { error: dbError } = await supabase
       .from('mitra')
@@ -301,9 +353,6 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
     
     if (dbError) throw dbError;
     
-    console.log(`💾 Link berhasil disimpan ke kolom ${fieldName} untuk Mitra ID ${id}`);
-    console.log('─'.repeat(50));
-    
     res.redirect(`/mitra/${id}`);
   } catch (err) {
     console.error('❌ Error upload:', err.message);
@@ -311,7 +360,7 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
       <div style="font-family: sans-serif; padding: 40px; text-align: center;">
         <h1 style="color: #dc3545;">❌ Upload Gagal</h1>
         <p>${err.message}</p>
-        <a href="/mitra/${req.params.id}" style="color: #003366;">← Kembali ke Detail Mitra</a>
+        <a href="/mitra/${req.params.id}">← Kembali</a>
       </div>
     `);
   }
@@ -321,16 +370,14 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
 app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('🔍 Mencari mitra dengan ID:', id);
     
     const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
-    if (error) { console.error('❌ Supabase Error:', error); return res.status(500).send('❌ Database Error. Silakan coba lagi.'); }
-    if (!mitra) { console.warn('⚠️ Mitra tidak ditemukan untuk ID:', id); return res.status(404).send('❌ Mitra tidak ditemukan'); }
+    if (error) return res.status(500).send('❌ Database Error');
+    if (!mitra) return res.status(404).send('❌ Mitra tidak ditemukan');
     
-    console.log('✅ Data mitra ditemukan:', mitra.nama_instansi);
     const today = new Date();
     const endDate = new Date(mitra.tanggal_berakhir);
-    if (isNaN(endDate.getTime())) { console.error('❌ Invalid date:', mitra.tanggal_berakhir); return res.status(500).send('❌ Format tanggal_berakhir tidak valid'); }
+    if (isNaN(endDate.getTime())) return res.status(500).send('❌ Format tanggal tidak valid');
     
     const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
     let status, color;
@@ -339,8 +386,6 @@ app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; }
     else { status = 'Aktif'; color = '#28a745'; }
     
-    console.log(`📊 Status: ${status} (${diffDays} hari)`);
-    
     res.render('detail-mitra', { 
       mitra: { ...mitra, sisa_hari: diffDays, status, color }, 
       user: req.session.user,
@@ -348,8 +393,8 @@ app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
       alertCount: 0
     });
   } catch (err) {
-    console.error('💥 Unexpected Error:', err);
-    res.status(500).send('Gagal memuat detail mitra. Silakan coba lagi.');
+    console.error('💥 Error:', err);
+    res.status(500).send('Gagal memuat detail mitra.');
   }
 });
 
@@ -360,7 +405,7 @@ app.get('/mitra/kode/:kode', requireAuth('humas', 'admin_fakultas', 'guest'), as
     const { data: mitra, error } = await supabase.from('mitra').select('id').eq('kode_mitra', kode.toUpperCase()).single();
     if (error || !mitra) throw new Error('Kode mitra tidak ditemukan');
     res.redirect(`/mitra/${mitra.id}`);
-  } catch (err) { res.status(404).send('❌ Mitra dengan kode tersebut tidak ditemukan'); }
+  } catch (err) { res.status(404).send('❌ Mitra tidak ditemukan'); }
 });
 
 // 🔹 FORM Edit
@@ -390,7 +435,7 @@ app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, r
       activePage: 'tambah',
       alertCount: 0
     });
-  } catch (err) { res.status(500).send('Gagal memuat form edit. Silakan coba lagi.'); }
+  } catch (err) { res.status(500).send('Gagal memuat form edit.'); }
 });
 
 // 🔹 UPDATE Data Mitra
@@ -414,7 +459,10 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
     const { error } = await supabase.from('mitra').update({ nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir }).eq('id', id);
     if (error) throw error;
     res.redirect(`/mitra/${id}`);
-  } catch (err) { console.error('❌ Error update:', err.message); res.status(500).send('Gagal update data. Silakan coba lagi.'); }
+  } catch (err) { 
+    console.error('❌ Error update:', err.message); 
+    res.status(500).send('Gagal update data.'); 
+  }
 });
 
 // 🔹 ROUTE: /test-alert
@@ -469,9 +517,302 @@ app.post('/test-alert/send', requireAuth('humas'), async (req, res) => {
     const sisa_hari = Math.ceil((endDate - today) / (1000*60*60*24));
     const subject = `🧪 [TEST MANUAL] Alert: "${mitra.nama_instansi}" Berakhir dalam ${sisa_hari} Hari`;
     const sent = await sendAlertEmail({ to: mitra.email_fakultas, subject, mitra: { ...mitra, sisa_hari } });
-    res.send(sent ? `✅ Email test terkirim ke ${mitra.email_fakultas}<br><a href="/test-alert">← Kembali</a>` : `❌ Gagal kirim. Cek terminal.`);
+    res.send(sent ? `✅ Email test terkirim ke ${mitra.email_fakultas}<br><a href="/test-alert">← Kembali</a>` : `❌ Gagal kirim.`);
   } catch (err) { res.status(500).send('❌ Gagal kirim email test.'); }
 });
 
+// ==========================================
+// 🔹 ROUTE: MANAJEMEN USER (KHUSUS HUMAS)
+// ==========================================
+
+app.get('/users', requireAuth('humas'), async (req, res) => {
+    try {
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.render('users', { 
+            users: users || [], 
+            user: req.session.user, 
+            activePage: 'users', 
+            alertCount: 0 
+        });
+    } catch (err) {
+        console.error('❌ Error fetching users:', err);
+        res.status(500).send('Gagal memuat data user.');
+    }
+});
+
+app.get('/users/tambah', requireAuth('humas'), (req, res) => {
+    res.render('form-user', { 
+        action: 'tambah', 
+        user: req.session.user, 
+        activePage: 'users', 
+        alertCount: 0 
+    });
+});
+
+app.post('/users', requireAuth('humas'), async (req, res) => {
+    try {
+        const { name, email, password, role, fakultas_id } = req.body;
+        
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(password, salt);
+
+        const insertData = {
+            name,
+            email,
+            password_hash,
+            role,
+            fakultas_id: role === 'admin_fakultas' ? fakultas_id : null,
+            is_active: true
+        };
+
+        const { error } = await supabase.from('users').insert(insertData);
+        if (error) throw error;
+
+        res.redirect('/users');
+    } catch (err) {
+        console.error('❌ Error adding user:', err);
+        res.status(500).send('Gagal menambah user. Pastikan email belum terdaftar.');
+    }
+});
+
+// 🔧 FIXED: Reset Password dengan Generator Random
+// 4. Reset Password User (Dengan Generator Random)
+app.post('/users/:id/reset-password', requireAuth('humas'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // 1. Ambil data user (HANYA email, karena tidak ada kolom 'name')
+        const { data: targetUser, error: fetchError } = await supabase
+            .from('users')
+            .select('email') // <-- DIPERBAIKI: Hapus 'name'
+            .eq('id', id)
+            .single();
+        if (fetchError) throw fetchError;
+
+        // 2. 🎲 GENERATE PASSWORD RANDOM (12 karakter)
+        const newPassword = generateRandomPassword(12);
+        
+        console.log(`\n [RESET PASSWORD]`);
+        console.log(`   User: ${targetUser.email}`);
+        console.log(`   New Password: ${newPassword}`);
+        
+        // 3. Hash password sebelum disimpan
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(newPassword, salt);
+
+        // 4. Update ke database
+        const { error } = await supabase
+            .from('users')
+            .update({ password_hash })
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        console.log(`   ✅ Password berhasil direset`);
+
+        // 5. 📋 TAMPILKAN PASSWORD BARU KE HUMAS
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Password Berhasil Direset</title>
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+                <style>
+                    body { 
+                        font-family: 'Inter', sans-serif; 
+                        background: linear-gradient(135deg, #1a3a5c 0%, #0f2439 100%);
+                        display: flex; 
+                        justify-content: center; 
+                        align-items: center; 
+                        height: 100vh; 
+                        margin: 0; 
+                    }
+                    .card { 
+                        background: white; 
+                        padding: 40px; 
+                        border-radius: 16px; 
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
+                        max-width: 500px; 
+                        text-align: center; 
+                        border-top: 5px solid #10b981;
+                    }
+                    .success-icon { font-size: 4rem; margin-bottom: 20px; }
+                    h2 { color: #10b981; margin-bottom: 10px; font-size: 1.5rem; }
+                    .user-info {
+                        background: #f1f5f9;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin: 20px 0;
+                    }
+                    .user-info strong { color: #1a3a5c; font-size: 1.1rem; }
+                    .pw-box { 
+                        background: linear-gradient(135deg, #fef3c7, #fde68a);
+                        padding: 20px; 
+                        border-radius: 12px; 
+                        font-family: 'Courier New', monospace;
+                        font-size: 1.4rem; 
+                        letter-spacing: 2px; 
+                        color: #92400e;
+                        font-weight: bold; 
+                        margin: 25px 0;
+                        border: 3px dashed #f59e0b;
+                        user-select: all;
+                        cursor: pointer;
+                    }
+                    .pw-box:hover { background: linear-gradient(135deg, #fde68a, #fcd34d); }
+                    .warning { 
+                        background: #fef3c7; 
+                        color: #92400e;
+                        padding: 15px; 
+                        border-radius: 8px; 
+                        font-size: 0.9rem; 
+                        margin-bottom: 25px;
+                        border-left: 4px solid #f59e0b;
+                        text-align: left;
+                    }
+                    .btn { 
+                        background: linear-gradient(135deg, #1a3a5c, #2c5282);
+                        color: white; 
+                        padding: 14px 28px; 
+                        border-radius: 10px; 
+                        text-decoration: none; 
+                        font-weight: 600;
+                        display: inline-block;
+                    }
+                    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26, 58, 92, 0.3); }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="success-icon">✅</div>
+                    <h2>Password Berhasil Direset!</h2>
+                    
+                    <div class="user-info">
+                        <strong>${targetUser.email}</strong><br>
+                        <small style="color: #64748b">Akun berhasil diperbarui</small>
+                    </div>
+                    
+                    <p style="color: #64748b; margin: 20px 0;">Password baru (klik untuk copy):</p>
+                    <div class="pw-box" onclick="navigator.clipboard.writeText('${newPassword}'); this.style.background='linear-gradient(135deg, #d1fae5, #a7f3d0)'; alert('✅ Password tersalin!')">${newPassword}</div>
+                    
+                    <div class="warning">
+                        <strong>⚠️ PENTING:</strong><br>
+                        • Password di atas <strong>hanya muncul sekali</strong><br>
+                        • Segera berikan password ini kepada user<br>
+                        • User dapat mengubah password setelah login
+                    </div>
+                    
+                    <a href="/users" class="btn">← Kembali ke Manajemen User</a>
+                </div>
+            </body>
+            </html>
+        `);
+    } catch (err) {
+        console.error('❌ Error reset password:', err);
+        res.status(500).send('Gagal reset password: ' + err.message);
+    }
+});
+app.post('/users/:id/toggle-status', requireAuth('humas'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data: currentUser } = await supabase.from('users').select('is_active').eq('id', id).single();
+        const newStatus = !currentUser.is_active;
+
+        const { error } = await supabase.from('users').update({ is_active: newStatus }).eq('id', id);
+        if (error) throw error;
+
+        res.redirect('/users');
+    } catch (err) {
+        console.error('❌ Error toggle status:', err);
+        res.status(500).send('Gagal mengubah status user.');
+    }
+});
+
+// ==========================================
+// 🔹 ROUTE: GANTI PASSWORD MANDIRI
+// ==========================================
+
+app.get('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), (req, res) => {
+    res.render('change-password', { 
+        user: req.session.user, 
+        error: null, 
+        success: null,
+        activePage: 'change-password',
+        alertCount: 0
+    });
+});
+
+app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+    try {
+        const { old_password, new_password, confirm_password } = req.body;
+        const userId = req.session.user.id;
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('password_hash, email')
+            .eq('id', userId)
+            .single();
+        if (error) throw error;
+
+        const isMatch = await bcrypt.compare(old_password, user.password_hash);
+        if (!isMatch) {
+            return res.render('change-password', { 
+                user: req.session.user, 
+                error: '❌ Password lama yang Anda masukkan salah!',
+                success: null,
+                activePage: 'change-password',
+                alertCount: 0
+            });
+        }
+
+        if (new_password !== confirm_password) {
+            return res.render('change-password', { 
+                user: req.session.user, 
+                error: '❌ Password baru dan Konfirmasi Password tidak cocok!',
+                success: null,
+                activePage: 'change-password',
+                alertCount: 0
+            });
+        }
+
+        if (new_password.length < 8) {
+            return res.render('change-password', { 
+                user: req.session.user, 
+                error: '❌ Password minimal harus 8 karakter!',
+                success: null,
+                activePage: 'change-password',
+                alertCount: 0
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const new_password_hash = await bcrypt.hash(new_password, salt);
+
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ password_hash: new_password_hash })
+            .eq('id', userId);
+        
+        if (updateError) throw updateError;
+
+        res.render('change-password', { 
+            user: req.session.user, 
+            error: null,
+            success: '✅ Password berhasil diubah!',
+            activePage: 'change-password',
+            alertCount: 0
+        });
+
+    } catch (err) {
+        console.error('❌ Error change password:', err);
+        res.status(500).send('Terjadi kesalahan sistem.');
+    }
+});
+
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server aktif di http://localhost:${PORT}`));
 app.listen(PORT, () => console.log(`🚀 Server aktif di http://localhost:${PORT}`));

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah User - SI Mitra DUDIKA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --uniba-primary: #1a3a5c; 
+            --uniba-blue-light: #2c5282; 
+            --uniba-gold: #d4a017; 
+            --text-dark: #1e293b; 
+            --text-muted: #64748b; 
+            --bg-light: #f8fafc; 
+            --border: #e2e8f0; 
+            --sidebar-width: 280px; 
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-light); color: var(--text-dark); min-height: 100vh; }
+        .main-wrapper { margin-left: var(--sidebar-width); display: flex; justify-content: center; align-items: center; padding: 40px 20px; min-height: 100vh; }
+        .form-container { width: 100%; max-width: 600px; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+        .form-header { text-align: center; margin-bottom: 30px; }
+        .form-header h1 { font-family: 'Poppins', sans-serif; color: var(--uniba-primary); font-size: 1.5rem; }
+        .form-header p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; margin-bottom: 8px; color: var(--text-dark); }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--uniba-primary); box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1); }
+        .form-actions { display: flex; gap: 12px; margin-top: 30px; }
+        .btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; border: none; font-size: 14px; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-primary { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35); }
+        .btn-secondary { background: white; border: 2px solid var(--border); color: var(--text-muted); }
+        .btn-secondary:hover { border-color: var(--uniba-primary); color: var(--uniba-primary); }
+        .info-box { margin-top: 20px; padding: 12px; background: rgba(212, 160, 23, 0.1); border-left: 4px solid var(--uniba-gold); border-radius: 6px; font-size: 13px; color: #92400e; }
+        .hidden { display: none; }
+        .required { color: var(--danger); }
+
+        /* ========== PASSWORD FIELD ENHANCEMENTS ========== */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .password-wrapper input {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            padding-right: 40px;
+        }
+        .password-actions {
+            display: flex;
+            gap: 6px;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .pw-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(26, 58, 92, 0.08);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: var(--uniba-primary);
+        }
+        .pw-btn:hover {
+            background: var(--uniba-primary);
+            color: white;
+            transform: scale(1.1);
+        }
+        .pw-btn.copied {
+            background: var(--success);
+            color: white;
+        }
+
+        /* ========== PASSWORD TOOLS (di bawah input) ========== */
+        .password-tools {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .tool-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+        .tool-btn:hover {
+            border-color: var(--uniba-primary);
+            color: var(--uniba-primary);
+            background: rgba(26, 58, 92, 0.03);
+        }
+        .tool-btn.generate:hover {
+            border-color: var(--uniba-gold);
+            color: #92400e;
+            background: rgba(212, 160, 23, 0.05);
+        }
+
+        /* ========== STRENGTH METER ========== */
+        .strength-meter {
+            margin-top: 10px;
+        }
+        .strength-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+        .strength-fill.weak { width: 25%; background: var(--danger); }
+        .strength-fill.fair { width: 50%; background: var(--warning); }
+        .strength-fill.good { width: 75%; background: #3b82f6; }
+        .strength-fill.strong { width: 100%; background: var(--success); }
+        .strength-text {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .strength-text.weak { color: var(--danger); }
+        .strength-text.fair { color: var(--warning); }
+        .strength-text.good { color: #3b82f6; }
+        .strength-text.strong { color: var(--success); }
+
+        /* ========== TOAST NOTIFICATION ========== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--uniba-primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success { background: var(--success); }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .main-wrapper { margin-left: 0; padding: 20px; }
+            .form-container { padding: 25px 20px; }
+            .password-tools { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/_sidebar') %>
+    <div class="main-wrapper">
+        <div class="form-container">
+            <div class="form-header">
+                <h1>➕ Tambah User Baru</h1>
+                <p>Kelola akses pengguna sistem SI Mitra DUDIKA</p>
+            </div>
+            
+            <form method="POST" action="/users" id="userForm">
+                <div class="form-group">
+                    <label>👤 Nama Lengkap <span class="required">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Budi Santoso, S.Kom.">
+                </div>
+                
+                <div class="form-group">
+                    <label>📧 Email <span class="required">*</span></label>
+                    <input type="email" name="email" required placeholder="user@uniba.ac.id">
+                </div>
+
+                <!-- ========== PASSWORD FIELD (ENHANCED) ========== -->
+                <div class="form-group">
+                    <label>🔑 Password Sementara <span class="required">*</span></label>
+                    <div class="password-wrapper">
+                        <input type="text" name="password" id="passwordInput" required readonly 
+                               placeholder="Klik 'Generate' untuk membuat password">
+                        <div class="password-actions">
+                            <button type="button" class="pw-btn" onclick="togglePasswordVisibility()" title="Lihat/Sembunyikan">
+                                <span id="eyeIcon">👁️</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Tools -->
+                    <div class="password-tools">
+                        <button type="button" class="tool-btn generate" onclick="generateAndSetPassword()">
+                            🎲 Generate Baru
+                        </button>
+                        <button type="button" class="tool-btn" onclick="copyPassword()">
+                            📋 Salin Password
+                        </button>
+                    </div>
+
+                    <!-- Strength Meter -->
+                    <div class="strength-meter">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <div class="strength-text" id="strengthText">Kekuatan password akan muncul di sini</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>🛡️ Role / Peran <span class="required">*</span></label>
+                    <select name="role" id="roleSelect" required onchange="toggleFakultas()">
+                        <option value="">-- Pilih Role --</option>
+                        <option value="admin_fakultas">🎓 Admin Fakultas</option>
+                        <option value="guest">👁️ Guest (Auditor / Eksternal)</option>
+                    </select>
+                </div>
+
+                <div class="form-group hidden" id="fakultasGroup">
+                    <label>🏛️ Fakultas <span class="required">*</span></label>
+                    <select name="fakultas_id">
+                        <option value="">-- Pilih Fakultas --</option>
+                        <option value="fti">Fakultas Teknologi Informasi (FTI)</option>
+                        <option value="fkip">Fakultas Keguruan dan Ilmu Pendidikan (FKIP)</option>
+                        <option value="fh">Fakultas Hukum (FH)</option>
+                        <option value="feb">Fakultas Ekonomi dan Bisnis (FEB)</option>
+                        <option value="fek">Fakultas Ekonomi Kreatif (FEK)</option>
+                        <option value="fikom">Fakultas Ilmu Komunikasi (FIKOM)</option>
+                    </select>
+                </div>
+
+                <div class="info-box">
+                    💡 <strong>Tips:</strong> 
+                    <ul style="margin-top: 6px; padding-left: 20px; line-height: 1.8;">
+                        <li>Password di-generate otomatis dengan kombinasi huruf besar, kecil, angka & simbol</li>
+                        <li>Klik <strong>"🎲 Generate Baru"</strong> jika ingin password berbeda</li>
+                        <li>Segera berikan password ini ke user setelah akun dibuat</li>
+                        <li>User dapat mengganti password sendiri setelah login pertama</li>
+                    </ul>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/users" class="btn btn-secondary">← Batal</a>
+                    <button type="submit" class="btn btn-primary">💾 Simpan User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ========== GENERATE PASSWORD RANDOM ==========
+        function generatePassword(length = 14) {
+            const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lower = 'abcdefghijklmnopqrstuvwxyz';
+            const numbers = '0123456789';
+            const symbols = '!@#$%^&*';
+            const allChars = upper + lower + numbers + symbols;
+            
+            // Pastikan ada minimal 1 dari setiap kategori
+            let password = '';
+            password += upper[Math.floor(Math.random() * upper.length)];
+            password += lower[Math.floor(Math.random() * lower.length)];
+            password += numbers[Math.floor(Math.random() * numbers.length)];
+            password += symbols[Math.floor(Math.random() * symbols.length)];
+            
+            // Isi sisanya dengan karakter acak
+            for (let i = password.length; i < length; i++) {
+                password += allChars[Math.floor(Math.random() * allChars.length)];
+            }
+            
+            // Shuffle agar tidak predictable
+            return password.split('').sort(() => Math.random() - 0.5).join('');
+        }
+
+        // ========== SET PASSWORD KE INPUT ==========
+        function generateAndSetPassword() {
+            const input = document.getElementById('passwordInput');
+            input.value = generatePassword(14);
+            input.type = 'text'; // Selalu tampilkan saat generate
+            document.getElementById('eyeIcon').textContent = '🙈';
+            updateStrengthMeter();
+            showToast('✅ Password baru telah di-generate!', 'success');
+        }
+
+        // ========== TOGGLE SHOW/HIDE PASSWORD ==========
+        function togglePasswordVisibility() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁️';
+            }
+        }
+
+        // ========== COPY PASSWORD ==========
+        function copyPassword() {
+            const input = document.getElementById('passwordInput');
+            if (!input.value) {
+                showToast('⚠️ Generate password terlebih dahulu!', '');
+                return;
+            }
+            
+            // Jika hidden, tampilkan sebentar untuk copy
+            const originalType = input.type;
+            input.type = 'text';
+            input.select();
+            
+            try {
+                navigator.clipboard.writeText(input.value).then(() => {
+                    showToast('📋 Password berhasil disalin ke clipboard!', 'success');
+                }).catch(() => {
+                    document.execCommand('copy');
+                    showToast('📋 Password berhasil disalin!', 'success');
+                });
+            } catch (err) {
+                showToast('❌ Gagal menyalin password', '');
+            }
+            
+            // Kembalikan ke tipe semula
+            input.type = originalType;
+        }
+
+        // ========== PASSWORD STRENGTH METER ==========
+        function updateStrengthMeter() {
+            const password = document.getElementById('passwordInput').value;
+            const fill = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
+            
+            if (!password) {
+                fill.className = 'strength-fill';
+                text.textContent = 'Kekuatan password akan muncul di sini';
+                text.className = 'strength-text';
+                return;
+            }
+            
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (password.length >= 12) score++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+            if (/\d/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            fill.className = 'strength-fill';
+            text.className = 'strength-text';
+            
+            if (score <= 2) {
+                fill.classList.add('weak');
+                text.classList.add('weak');
+                text.textContent = '⚠️ Lemah - Mudah ditebak';
+            } else if (score === 3) {
+                fill.classList.add('fair');
+                text.classList.add('fair');
+                text.textContent = '🟡 Cukup - Bisa lebih kuat';
+            } else if (score === 4) {
+                fill.classList.add('good');
+                text.classList.add('good');
+                text.textContent = '🔵 Bagus - Cukup aman';
+            } else {
+                fill.classList.add('strong');
+                text.classList.add('strong');
+                text.textContent = '🟢 Sangat Kuat - Excellent!';
+            }
+        }
+
+        // ========== TOAST NOTIFICATION ==========
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 2500);
+        }
+
+        // ========== TOGGLE FAKULTAS ==========
+        function toggleFakultas() {
+            const role = document.getElementById('roleSelect').value;
+            const fakultasGroup = document.getElementById('fakultasGroup');
+            const fakultasInput = fakultasGroup.querySelector('select');
+            
+            if (role === 'admin_fakultas') {
+                fakultasGroup.classList.remove('hidden');
+                fakultasInput.setAttribute('required', 'required');
+            } else {
+                fakultasGroup.classList.add('hidden');
+                fakultasInput.removeAttribute('required');
+                fakultasInput.value = '';
+            }
+        }
+
+        // ========== VALIDASI FORM ==========
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('passwordInput').value;
+            if (!password || password.length < 8) {
+                e.preventDefault();
+                showToast('⚠️ Password harus minimal 8 karakter!', '');
+                return false;
+            }
+        });
+
+        // ========== INIT: Generate password saat halaman load ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            generateAndSetPassword();
+            // Auto-focus ke field nama
+            document.querySelector('input[name="name"]').focus();
+        });
+
+        // Update strength meter saat user mengetik manual (jika readonly dihapus)
+        document.getElementById('passwordInput').addEventListener('input', updateStrengthMeter);
+    </script>
+</body>
+</html>

@@ -6,6 +6,7 @@
     --uniba-gold: #d4a017;
     --uniba-blue-light: #2c5282;
     --uniba-dark: #0f2439;
+    --danger: #ef4444; /* Ditambahkan untuk badge notifikasi */
     --sidebar-width: 280px;
   }
 
@@ -247,7 +248,7 @@
 
   /* ========== NOTIFICATION BADGE ========== */
   .nav-menu a .badge {
-    background: var(--danger, #ef4444);
+    background: var(--danger);
     color: white;
     font-size: 0.7rem;
     font-weight: 700;
@@ -381,7 +382,7 @@
 </style>
 
 <!-- Tombol Toggle Sidebar -->
-<button class="sidebar-toggle" id="sidebarToggle" title="Buka/Tutup Menu">
+<button class="sidebar-toggle" id="sidebarToggle" title="Buka/Tutup Menu" aria-label="Toggle Sidebar">
   <span class="chevron">‹</span>
 </button>
 
@@ -399,12 +400,14 @@
   <% if (typeof user !== 'undefined' && user) { %>
     <div class="user-profile">
       <div class="avatar">
-        <%= user.role === 'humas' ? 'HU' : 'US' %>
+        <!-- Logic inisial avatar yang lebih pintar -->
+        <%= user.role === 'humas' ? 'HU' : (user.role === 'admin_fakultas' ? 'AF' : 'GU') %>
       </div>
       <div class="user-info">
-        <strong><%= user.name || 'User' %></strong>
+        <!-- Fallback ke bagian depan email jika 'name' tidak ada di session -->
+        <strong><%= user.name || user.email.split('@')[0] || 'User' %></strong>
         <small><%= user.email || 'user@uniba.ac.id' %></small>
-        <span class="role-badge"><%= user.role %></span>
+        <span class="role-badge"><%= user.role.replace('_', ' ') %></span>
       </div>
     </div>
   <% } %>
@@ -423,9 +426,6 @@
         <a href="/mitra" class="<%= (typeof activePage !== 'undefined' && activePage === 'mitra') ? 'active' : '' %>">
           <span class="nav-icon">📋</span>
           <span class="nav-text">Daftar Mitra</span>
-          <% if (typeof alertCount !== 'undefined' && alertCount > 0) { %>
-            <span class="badge"><%= alertCount %></span>
-          <% } %>
         </a>
       </li>
     </ul>
@@ -441,14 +441,32 @@
           </a>
         </li>
         <li>
+          <a href="/users" class="<%= (typeof activePage !== 'undefined' && activePage === 'users') ? 'active' : '' %>">
+            <span class="nav-icon">👥</span>
+            <span class="nav-text">Manajemen User</span>
+          </a>
+        </li>
+        <li>
           <a href="/test-alert" class="<%= (typeof activePage !== 'undefined' && activePage === 'alert') ? 'active' : '' %>">
             <span class="nav-icon">🧪</span>
             <span class="nav-text">Test Alert</span>
           </a>
         </li>
+      <!-- Menu Ganti Password (Untuk Semua User yang Login) -->
+      <div class="nav-section-title">Akun Saya</div>
+      <ul class="nav-menu">
+          <li>
+              <a href="/change-password" class="<%= (typeof activePage !== 'undefined' && activePage === 'change-password') ? 'active' : '' %>">
+                  <span class="nav-icon">🔐</span>
+                  <span class="nav-text">Ganti Password</span>
+              </a>
+          </li>
+      </ul>
       </ul>
     <% } %>
   </div>
+
+
   
   <!-- Footer dengan Logout -->
   <div class="sidebar-footer">
