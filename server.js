@@ -183,9 +183,14 @@ app.get('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/login'));
 });
 
+// ========================================================================
+// 🚨 ROUTE DASHBOARD (SUDAH DIPERBAIKI: RESET JAM KE 00:00:00)
+// ========================================================================
 app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // ✅ RESET JAM KE 00:00:00
+    
     let query = supabase.from('mitra').select('*');
     if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
       query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
@@ -199,8 +204,11 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     
     (allMitra || []).forEach(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0); // ✅ RESET JAM KE 00:00:00
+      
       if (isNaN(endDate.getTime())) return;
       const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
+      
       if (diffDays < 0) stats.expired++;
       else if (diffDays <= 7) { stats.segera_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays, color: '#dc3545' }); }
       else if (diffDays <= 30) { stats.akan_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays, color: '#ffc107' }); }
@@ -216,9 +224,14 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
   }
 });
 
+// ========================================================================
+// 🚨 ROUTE DAFTAR MITRA (SUDAH DIPERBAIKI: RESET JAM KE 00:00:00)
+// ========================================================================
 app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // ✅ RESET JAM
+    
     let query = supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
     if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
       query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
@@ -229,6 +242,8 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
 
     const mitraDenganStatus = (mitraList || []).map(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0); // ✅ RESET JAM
+      
       if (isNaN(endDate.getTime())) return { ...mitra, sisa_hari: 0, status: 'Invalid', color: '#999', badgeClass: 'expired' };
       
       const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
@@ -363,6 +378,9 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
 });
 // ========================================================================
 
+// ========================================================================
+// 🚨 ROUTE DETAIL MITRA (SUDAH DIPERBAIKI: RESET JAM KE 00:00:00)
+// ========================================================================
 app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -371,7 +389,11 @@ app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     if (!mitra) return res.status(404).send('❌ Mitra tidak ditemukan');
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // ✅ RESET JAM
+    
     const endDate = new Date(mitra.tanggal_berakhir);
+    endDate.setHours(0, 0, 0, 0); // ✅ RESET JAM
+    
     if (isNaN(endDate.getTime())) return res.status(500).send('❌ Format tanggal tidak valid');
     
     const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
@@ -431,9 +453,14 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
   }
 });
 
+// ========================================================================
+// 🚨 ROUTE TEST ALERT (SUDAH DIPERBAIKI: RESET JAM KE 00:00:00)
+// ========================================================================
 app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   try {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // ✅ RESET JAM
+    
     const formatDateLocal = (date) => date.toISOString().split('T')[0];
     const todayStr = formatDateLocal(today);
     const maxDate = new Date(); maxDate.setDate(today.getDate() + 30);
@@ -444,9 +471,14 @@ app.get('/test-alert', requireAuth('humas'), async (req, res) => {
 
     const mitraInRange = (allMitra || []).filter(m => {
       const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0); // ✅ RESET JAM
       const sisa = Math.ceil((endDate - today) / (1000*60*60*24));
       return sisa >= 0 && sisa <= 30;
-    }).map(m => ({ ...m, sisa_hari: Math.ceil((new Date(m.tanggal_berakhir) - today) / (1000*60*60*24)) }));
+    }).map(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0); // ✅ RESET JAM
+      return { ...m, sisa_hari: Math.ceil((endDate - today) / (1000*60*60*24)) };
+    });
 
     res.render('test-alert', { serverTime: today.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'medium' }), todayStr, maxDateStr, totalMitra: (allMitra || []).length, inRangeCount: mitraInRange.length, mitraList: mitraInRange, user: req.session.user, activePage: 'alert', alertCount: mitraInRange.length });
   } catch (err) {
@@ -455,6 +487,9 @@ app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   }
 });
 
+// ========================================================================
+// 🚨 ROUTE KIRIM EMAIL TEST (SUDAH DIPERBAIKI: RESET JAM KE 00:00:00)
+// ========================================================================
 app.post('/test-alert/send', requireAuth('humas'), async (req, res) => {
   try {
     const { mitra_id } = req.body;
@@ -462,7 +497,11 @@ app.post('/test-alert/send', requireAuth('humas'), async (req, res) => {
     if (error || !mitra) return res.status(404).json({ success: false, message: 'Mitra tidak ditemukan' });
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // ✅ RESET JAM
+    
     const endDate = new Date(mitra.tanggal_berakhir);
+    endDate.setHours(0, 0, 0, 0); // ✅ RESET JAM
+    
     const sisa_hari = Math.ceil((endDate - today) / (1000*60*60*24));
     const subject = `🧪 [TEST MANUAL] Alert: "${mitra.nama_instansi}" Berakhir dalam ${sisa_hari} Hari`;
     
