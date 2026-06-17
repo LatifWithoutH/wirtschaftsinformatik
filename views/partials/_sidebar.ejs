@@ -6,7 +6,7 @@
     --uniba-gold: #d4a017;
     --uniba-blue-light: #2c5282;
     --uniba-dark: #0f2439;
-    --danger: #ef4444; /* Ditambahkan untuk badge notifikasi */
+    --danger: #ef4444;
     --sidebar-width: 280px;
   }
 
@@ -177,7 +177,7 @@
     margin-top: 0;
   }
 
-  .nav-menu { list-style: none; }
+  .nav-menu { list-style: none; padding: 0; margin: 0; }
   .nav-menu li { margin-bottom: 6px; }
   
   .nav-menu a {
@@ -246,24 +246,8 @@
     flex: 1;
   }
 
-  /* ========== NOTIFICATION BADGE ========== */
-  .nav-menu a .badge {
-    background: var(--danger);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    min-width: 20px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-    animation: pulse 2s ease-in-out infinite;
-  }
 
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
+
 
   /* ========== SIDEBAR FOOTER ========== */
   .sidebar-footer {
@@ -400,11 +384,9 @@
   <% if (typeof user !== 'undefined' && user) { %>
     <div class="user-profile">
       <div class="avatar">
-        <!-- Logic inisial avatar yang lebih pintar -->
         <%= user.role === 'humas' ? 'HU' : (user.role === 'admin_fakultas' ? 'AF' : 'GU') %>
       </div>
       <div class="user-info">
-        <!-- Fallback ke bagian depan email jika 'name' tidak ada di session -->
         <strong><%= user.name || user.email.split('@')[0] || 'User' %></strong>
         <small><%= user.email || 'user@uniba.ac.id' %></small>
         <span class="role-badge"><%= user.role.replace('_', ' ') %></span>
@@ -414,6 +396,7 @@
   
   <!-- Navigation Menu -->
   <div class="sidebar-content">
+    <!-- ========== MENU UTAMA (Untuk Semua User) ========== -->
     <div class="nav-section-title">Menu Utama</div>
     <ul class="nav-menu">
       <li>
@@ -430,7 +413,7 @@
       </li>
     </ul>
     
-    <!-- Menu Khusus Humas -->
+    <!-- ========== MENU KHUSUS HUMAS ========== -->
     <% if (typeof user !== 'undefined' && user && user.role === 'humas') { %>
       <div class="nav-section-title">Kelola Data</div>
       <ul class="nav-menu">
@@ -452,22 +435,21 @@
             <span class="nav-text">Test Alert</span>
           </a>
         </li>
-      <!-- Menu Ganti Password (Untuk Semua User yang Login) -->
-      <div class="nav-section-title">Akun Saya</div>
-      <ul class="nav-menu">
-          <li>
-              <a href="/change-password" class="<%= (typeof activePage !== 'undefined' && activePage === 'change-password') ? 'active' : '' %>">
-                  <span class="nav-icon">🔐</span>
-                  <span class="nav-text">Ganti Password</span>
-              </a>
-          </li>
-      </ul>
       </ul>
     <% } %>
+
+    <!-- ========== MENU AKUN SAYA (Untuk SEMUA User yang Login) ========== -->
+    <div class="nav-section-title">Akun Saya</div>
+    <ul class="nav-menu">
+      <li>
+        <a href="/change-password" class="<%= (typeof activePage !== 'undefined' && activePage === 'change-password') ? 'active' : '' %>">
+          <span class="nav-icon">🔐</span>
+          <span class="nav-text">Ganti Password</span>
+        </a>
+      </li>
+    </ul>
   </div>
 
-
-  
   <!-- Footer dengan Logout -->
   <div class="sidebar-footer">
     <a href="/logout" class="logout-btn">

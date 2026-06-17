@@ -507,20 +507,46 @@ app.get('/test-alert', requireAuth('humas'), async (req, res) => {
 });
 
 // 🔹 POST: Kirim Email Test
+// 🔹 POST: Kirim Email Test (Return JSON untuk AJAX)
 app.post('/test-alert/send', requireAuth('humas'), async (req, res) => {
   try {
     const { mitra_id } = req.body;
     const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', mitra_id).single();
-    if (error || !mitra) return res.status(404).send('Mitra tidak ditemukan');
+    if (error || !mitra) return res.status(404).json({ success: false, message: 'Mitra tidak ditemukan' });
+    
     const today = new Date();
     const endDate = new Date(mitra.tanggal_berakhir);
     const sisa_hari = Math.ceil((endDate - today) / (1000*60*60*24));
     const subject = `🧪 [TEST MANUAL] Alert: "${mitra.nama_instansi}" Berakhir dalam ${sisa_hari} Hari`;
-    const sent = await sendAlertEmail({ to: mitra.email_fakultas, subject, mitra: { ...mitra, sisa_hari } });
-    res.send(sent ? `✅ Email test terkirim ke ${mitra.email_fakultas}<br><a href="/test-alert">← Kembali</a>` : `❌ Gagal kirim.`);
-  } catch (err) { res.status(500).send('❌ Gagal kirim email test.'); }
+    
+    const sent = await sendAlertEmail({ 
+      to: mitra.email_fakultas, 
+      subject, 
+      mitra: { ...mitra, sisa_hari } 
+    });
+    
+    // Return JSON (bukan HTML)
+    if (sent) {
+      res.json({ 
+        success: true, 
+        message: 'Email alert berhasil dikirim!',
+        data: {
+          email: mitra.email_fakultas,
+          nama_instansi: mitra.nama_instansi,
+          sisa_hari: sisa_hari
+        }
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        message: 'Gagal mengirim email. Cek konfigurasi SMTP di server.' 
+      });
+    }
+  } catch (err) {
+    console.error('❌ Error kirim email test:', err);
+    res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem: ' + err.message });
+  }
 });
-
 // ==========================================
 // 🔹 ROUTE: MANAJEMEN USER (KHUSUS HUMAS)
 // ==========================================

@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="theme-color" content="#1a3a5c">
   <title>Login - SI Mitra DUDIKA | Universitas Islam Batik Surakarta</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <style>
@@ -14,52 +15,69 @@
       --text-dark: #1e293b;
       --text-muted: #64748b;
       --bg-gradient: linear-gradient(135deg, #1a3a5c 0%, #0f2439 100%);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      /* Mencegah zoom tidak sengaja di iOS saat input di-focus */
+      -webkit-text-size-adjust: 100%;
+    }
 
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg-gradient);
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start; /* Diubah dari center ke flex-start untuk mobile */
       min-height: 100vh;
+      min-height: 100dvh; /* Dynamic viewport height - solusi keyboard mobile */
       padding: 20px;
+      padding-top: calc(20px + var(--safe-top));
+      padding-bottom: calc(20px + var(--safe-bottom));
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto; /* Diubah dari hidden ke auto */
     }
 
+    /* Background decoration - DIKURANGI efeknya di mobile untuk performa */
     body::before, body::after {
       content: '';
-      position: absolute;
+      position: fixed; /* Diubah dari absolute ke fixed */
       border-radius: 50%;
       filter: blur(80px);
       z-index: 0;
-      opacity: 0.35;
+      opacity: 0.25; /* Dikurangi dari 0.35 */
+      pointer-events: none;
+      will-change: transform; /* Optimasi performa */
     }
+    
     body::before {
-      width: 400px; height: 400px;
+      width: 300px; height: 300px; /* Dikurangi dari 400px */
       background: var(--uniba-gold);
-      top: -100px; left: -100px;
-      animation: float 8s ease-in-out infinite;
+      top: -80px; left: -80px;
+      animation: float 12s ease-in-out infinite; /* Diperlambat untuk hemat baterai */
     }
+    
     body::after {
-      width: 300px; height: 300px;
+      width: 250px; height: 250px; /* Dikurangi dari 300px */
       background: var(--uniba-secondary);
       bottom: -50px; right: -50px;
-      animation: float 10s ease-in-out infinite reverse;
+      animation: float 15s ease-in-out infinite reverse;
     }
 
     @keyframes float {
       0%, 100% { transform: translate(0, 0); }
-      50% { transform: translate(20px, 30px); }
+      50% { transform: translate(15px, 20px); }
     }
 
     .login-box {
       background: rgba(255, 255, 255, 0.97);
       backdrop-filter: blur(10px);
-      padding: 48px 40px;
+      -webkit-backdrop-filter: blur(10px); /* Safari support */
+      padding: 40px 36px;
       border-radius: 20px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
       width: 100%;
@@ -68,6 +86,13 @@
       position: relative;
       z-index: 1;
       border: 1px solid rgba(255, 255, 255, 0.2);
+      margin: auto; /* Centering yang lebih baik */
+      animation: slideUp 0.5s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .logo-area {
@@ -75,9 +100,9 @@
     }
     
     .logo-uniba {
-      width: 110px;
+      width: 100px;
       height: auto;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       display: block;
       margin-left: auto;
       margin-right: auto;
@@ -92,15 +117,15 @@
     .login-box h2 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       margin-bottom: 8px;
       letter-spacing: -0.5px;
     }
 
     .login-box p {
       color: var(--text-muted);
-      margin-bottom: 32px;
-      font-size: 0.9rem;
+      margin-bottom: 28px;
+      font-size: 0.88rem;
       line-height: 1.5;
     }
 
@@ -109,11 +134,11 @@
       font-weight: 600;
       display: block;
       margin-top: 6px;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
     }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       text-align: left;
       position: relative;
     }
@@ -139,6 +164,7 @@
       height: 18px;
       color: var(--text-muted);
       transition: color 0.3s;
+      pointer-events: none;
     }
 
     .form-group input {
@@ -146,10 +172,13 @@
       padding: 14px 14px 14px 44px;
       border: 2px solid #e2e8f0;
       border-radius: 10px;
-      font-size: 0.95rem;
+      font-size: 16px; /* PENTING: 16px mencegah auto-zoom di iOS */
       font-family: 'Inter', sans-serif;
       transition: all 0.3s ease;
       background: #f8fafc;
+      color: var(--text-dark);
+      -webkit-appearance: none; /* Hilangkan style default iOS */
+      appearance: none;
     }
 
     .form-group input:focus {
@@ -180,6 +209,9 @@
       justify-content: center;
       gap: 8px;
       font-family: 'Poppins', sans-serif;
+      -webkit-tap-highlight-color: transparent; /* Hilangkan highlight biru di mobile */
+      touch-action: manipulation; /* Optimasi touch */
+      min-height: 48px; /* Minimum touch target size */
     }
 
     button:hover {
@@ -197,7 +229,7 @@
       border: 1px solid #fecaca;
       padding: 12px 16px;
       border-radius: 10px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       font-size: 0.85rem;
       display: flex;
       align-items: center;
@@ -208,6 +240,11 @@
         display: none;
       <% } %>
       animation: slideDown 0.4s ease;
+      text-align: left;
+    }
+
+    .error svg {
+      flex-shrink: 0;
     }
 
     @keyframes slideDown {
@@ -216,11 +253,11 @@
     }
 
     .footer {
-      margin-top: 32px;
+      margin-top: 28px;
       font-size: 0.75rem;
       color: var(--text-muted);
       border-top: 1px solid #e2e8f0;
-      padding-top: 20px;
+      padding-top: 18px;
       line-height: 1.6;
     }
 
@@ -229,15 +266,161 @@
       font-weight: 600;
     }
 
-    @media (max-width: 480px) {
+    /* ========== TABLET (768px) ========== */
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+        align-items: center;
+      }
+      
       .login-box {
-        padding: 32px 24px;
+        padding: 36px 28px;
       }
+    }
+
+    /* ========== MOBILE KECIL (480px) ========== */
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(12px + var(--safe-bottom));
+      }
+
+      .login-box {
+        padding: 28px 20px;
+        border-radius: 16px;
+      }
+
       .logo-uniba {
-        width: 90px;
+        width: 80px;
+        margin-bottom: 14px;
       }
+
       .login-box h2 {
-        font-size: 1.3rem;
+        font-size: 1.25rem;
+      }
+
+      .login-box p {
+        font-size: 0.82rem;
+        margin-bottom: 22px;
+      }
+
+      .login-box p strong {
+        font-size: 0.88rem;
+      }
+
+      .form-group {
+        margin-bottom: 14px;
+      }
+
+      .form-group input {
+        padding: 13px 12px 13px 40px;
+        font-size: 16px;
+      }
+
+      .input-wrapper svg {
+        left: 12px;
+        width: 16px;
+        height: 16px;
+      }
+
+      button {
+        padding: 13px;
+        font-size: 0.95rem;
+      }
+
+      .footer {
+        margin-top: 22px;
+        padding-top: 14px;
+        font-size: 0.7rem;
+      }
+
+      /* Kurangi efek blur di HP kecil untuk performa */
+      body::before, body::after {
+        filter: blur(50px);
+        opacity: 0.18;
+      }
+    }
+
+    /* ========== MOBILE SANGAT KECIL (360px) ========== */
+    @media (max-width: 360px) {
+      .login-box {
+        padding: 24px 16px;
+      }
+
+      .logo-uniba {
+        width: 70px;
+      }
+
+      .login-box h2 {
+        font-size: 1.15rem;
+      }
+
+      .login-box p {
+        font-size: 0.78rem;
+      }
+
+      .form-group input {
+        padding: 12px 10px 12px 38px;
+        font-size: 16px;
+      }
+
+      .input-wrapper svg {
+        left: 10px;
+      }
+    }
+
+    /* ========== LANDSCAPE MOBILE ========== */
+    @media (max-height: 500px) and (orientation: landscape) {
+      body {
+        align-items: flex-start;
+        padding: 10px;
+      }
+
+      .login-box {
+        padding: 20px 24px;
+        margin: 10px auto;
+      }
+
+      .logo-area {
+        margin-bottom: 12px;
+      }
+
+      .logo-uniba {
+        width: 60px;
+        margin-bottom: 10px;
+      }
+
+      .login-box h2 {
+        font-size: 1.1rem;
+        margin-bottom: 4px;
+      }
+
+      .login-box p {
+        margin-bottom: 14px;
+        font-size: 0.8rem;
+      }
+
+      .form-group {
+        margin-bottom: 10px;
+      }
+
+      .footer {
+        margin-top: 14px;
+        padding-top: 10px;
+      }
+    }
+
+    /* ========== DARK MODE SUPPORT (Opsional) ========== */
+    @media (prefers-color-scheme: dark) {
+      /* Bisa ditambahkan nanti jika perlu */
+    }
+
+    /* ========== REDUCED MOTION ========== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
       }
     }
   </style>
@@ -264,14 +447,14 @@
       </div>
     <% } %>
     
-    <form action="/login" method="POST" id="loginForm">
+    <form action="/login" method="POST" id="loginForm" autocomplete="on">
       <div class="form-group">
-        <label for="email">Email Fakultas/Humas</label>
+        <label for="email">Email</label>
         <div class="input-wrapper">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          <input type="email" id="email" name="email" required placeholder="fakultas@uniba.ac.id" autocomplete="email">
+          <input type="email" id="email" name="email" required placeholder="fakultas@uniba.ac.id" autocomplete="email" inputmode="email">
         </div>
       </div>
       
@@ -335,6 +518,13 @@
     const style = document.createElement('style');
     style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
     document.head.appendChild(style);
+
+    // Scroll ke form jika ada error (penting untuk mobile)
+    if (err && err.style.display !== 'none') {
+      setTimeout(() => {
+        err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
   </script>
 </body>
 </html>

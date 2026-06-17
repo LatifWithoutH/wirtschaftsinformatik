@@ -23,7 +23,8 @@
     "multer": "^2.1.1",
     "mysql2": "^3.22.3",
     "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.7"
+    "nodemailer": "^8.0.7",
+    "puppeteer": "^25.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
