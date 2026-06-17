@@ -1,8 +1,8 @@
 // 📂 FILE: utils/gasUploader.js
 // Helper untuk lempar file ke Google Drive via GAS Web App
 
-async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
-    console.log(`🚀 [GAS Bridge] Mengirim ${fileName} ke Google Drive...`);
+async function uploadFileToDrive(fileBuffer, fileName, mimeType, namaInstansi) {
+    console.log(`🚀 [GAS Bridge] Mengirim ${fileName} ke folder: ${namaInstansi}...`);
 
     // 1. Ubah Buffer file jadi format Base64 (teks)
     const base64File = fileBuffer.toString('base64');
@@ -11,12 +11,12 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
     const payload = {
         fileName: fileName,
         fileBase64: base64File,
-        mimeType: mimeType
+        mimeType: mimeType,
+        nama_instansi: namaInstansi || 'Mitra Tanpa Nama' // <-- TAMBAHIN INI
     };
 
     try {
         // 3. Kirim POST request ke URL GAS Web App
-        // (Node.js v22 udah support native fetch, jadi gak perlu install node-fetch)
         const response = await fetch(process.env.GAS_WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' }, // Trik biar gak kena CORS
@@ -27,7 +27,7 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
 
         // 4. Cek balasan dari GAS
         if (result.success) {
-            console.log(`✅ [GAS Bridge] Sukses! Link: ${result.previewLink}`);
+            console.log(`✅ [GAS Bridge] Sukses! File masuk folder: ${result.savedInFolder}`);
             return result.previewLink; // Kembalikan link Drive-nya
         } else {
             throw new Error(result.error || 'Gagal upload ke Drive');
@@ -38,5 +38,5 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
     }
 }
 
-// Biar bisa dipanggil dari file lain (test-tampilan.js)
+// Biar bisa dipanggil dari file lain
 module.exports = { uploadFileToDrive };
