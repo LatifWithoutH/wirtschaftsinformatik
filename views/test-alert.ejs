@@ -398,6 +398,32 @@
       transform: translateX(-5px);
     }
 
+    /* ========== INFO BADGE GAS ========== */
+    .gas-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--success);
+    }
+    .gas-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
     @media (max-width: 768px) {
       .main-wrapper { margin-left: 0; }
       .main-wrapper.expanded { margin-left: 0; }
@@ -421,7 +447,10 @@
   
   <div class="main-wrapper">
     <div class="page-header">
-      <h1>🧪 Test Alert Manual</h1>
+      <div>
+        <h1>🧪 Test Alert Manual</h1>
+        <div class="gas-badge" style="margin-top: 12px;">Dikirim via Google Apps Script</div>
+      </div>
     </div>
 
     <div class="info-grid">
@@ -525,6 +554,9 @@
   </div>
 
   <script>
+    // ========== URL GAS WEB APP ==========
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwon958oHrc0l2gHOMEQN2G4oU0GFsmMPB6VlooCaY8cxVO4X0Nw-lFp3Fu4Vk46xv6/exec';
+
     // ========== SIDEBAR TOGGLE ==========
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
@@ -553,7 +585,7 @@
       });
     }
 
-    // ========== KIRIM EMAIL VIA AJAX ==========
+    // ========== KIRIM EMAIL VIA GAS ==========
     let countdownInterval;
 
     async function sendTestEmail(button) {
@@ -567,10 +599,17 @@
       button.classList.add('sending');
 
       try {
-        const response = await fetch('/test-alert/send', {
+        // ⚠️ PENTING: Tidak menggunakan headers 'Content-Type: application/json'
+        // karena akan memicu CORS preflight yang ditolak oleh Google Apps Script
+        const response = await fetch(GAS_WEB_APP_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mitra_id: mitraId })
+          body: JSON.stringify({
+            mitra_id: mitraId,
+            nama_instansi: mitraName,
+            email_fakultas: mitraEmail,
+            sisa_hari: sisaHari
+          }),
+          redirect: 'follow' // Wajib agar browser mengikuti redirect otentikasi GAS
         });
 
         const result = await response.json();
@@ -579,13 +618,13 @@
           // Ubah tombol jadi hijau "Terkirim"
           button.classList.remove('sending');
           button.classList.add('sent');
-          button.innerHTML = '✅ Terkirim';
+          button.innerHTML = '✅ Terkirim via GAS';
           
           // Tampilkan modal sukses
           showModal({
             success: true,
-            title: 'Email Berhasil Dikirim!',
-            message: `Notifikasi peringatan telah dikirim ke email fakultas. Silakan cek inbox (atau folder spam) dalam beberapa menit.`,
+            title: 'Email Berhasil Dikirim via GAS!',
+            message: `Notifikasi peringatan telah dikirim melalui Google Apps Script. Silakan cek inbox (atau folder spam) dalam beberapa menit.`,
             data: {
               email: result.data.email,
               nama_instansi: result.data.nama_instansi,
@@ -600,19 +639,20 @@
           showModal({
             success: false,
             title: 'Gagal Mengirim Email',
-            message: result.message || 'Terjadi kesalahan saat mengirim email.',
+            message: result.message || 'Terjadi kesalahan saat mengirim email via GAS.',
             data: null
           });
         }
       } catch (err) {
+        console.error('Error:', err);
         button.classList.remove('sending');
         button.disabled = false;
         button.innerHTML = '🔄 Coba Lagi';
         
         showModal({
           success: false,
-          title: 'Koneksi Gagal',
-          message: 'Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil.',
+          title: 'Koneksi ke GAS Gagal',
+          message: 'Tidak dapat terhubung ke Google Apps Script. Pastikan URL Web App sudah benar dan deployment aktif.',
           data: null
         });
       }

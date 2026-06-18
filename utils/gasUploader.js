@@ -40,10 +40,7 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType, namaInstansi, k
             
             console.log(`✅ [GAS] Sukses dalam ${duration}s`);
             
-            return {
-                previewLink: responseData.previewLink,
-                fileName: responseData.fileName
-            };
+            return responseData.previewLink;
             
         } catch (error) {
             lastError = error;
