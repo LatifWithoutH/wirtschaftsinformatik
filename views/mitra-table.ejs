@@ -288,6 +288,11 @@
       transition: all 0.2s;
     }
     
+    /* ✨ TAMBAHAN: CLASS UNTUK SEARCH (FIX BUG) ✨ */
+    tr.search-hidden {
+      display: none !important;
+    }
+    
     th, td {
       display: table-cell !important;
       padding: 16px 18px;
@@ -628,6 +633,11 @@
         box-shadow: var(--shadow-lg);
       }
       
+      /* ✨ FIX SEARCH DI MOBILE JUGA ✨ */
+      tbody tr.search-hidden {
+        display: none !important;
+      }
+      
       tbody tr td {
         display: flex !important;
         justify-content: space-between;
@@ -908,7 +918,12 @@
                   <td data-label="Aksi">
                     <div class="action-btns">
                       <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
-                      <% if (user && user.role === 'humas') { %>
+                      <% 
+                        // ✨ LOGIKA EDIT: Humas = semua mitra, Admin Fakultas = hanya mitra fakultasnya ✨
+                        const canEdit = user?.role === 'humas' || 
+                          (user?.role === 'admin_fakultas' && m.email_fakultas?.includes(user.fakultas_id));
+                      %>
+                      <% if (canEdit) { %>
                         <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️ Edit</a>
                       <% } %>
                     </div>
@@ -971,13 +986,14 @@
       });
     }
     
-    // Update Stats
+    // Update Stats - ✨ DIPERBAIKI: pakai classList bukan style.display ✨
     function updateStats() {
       const rows = document.querySelectorAll('#mitraTable tbody tr');
       let active = 0, warning = 0, expired = 0;
       
       rows.forEach(row => {
-        if (row.style.display === 'none') return;
+        // ✨ FIX: cek class search-hidden, bukan style.display ✨
+        if (row.classList.contains('search-hidden')) return;
         const badge = row.querySelector('.status-badge');
         if (!badge) return;
         
@@ -997,17 +1013,21 @@
     const rows = table.querySelectorAll('tbody tr');
     const resultCount = document.getElementById('resultCount');
     
+    // ✨ DIPERBAIKI: pakai classList add/remove, bukan style.display ✨
     searchInput.addEventListener('input', function() {
       const term = this.value.toLowerCase();
       let visible = 0;
       rows.forEach(row => {
+        // Skip baris empty state
+        if (row.querySelector('.empty-state')) return;
+        
         const text = row.textContent.toLowerCase();
         if (text.includes(term)) { 
-          row.style.display = ''; 
+          row.classList.remove('search-hidden'); // ✨ Tampilkan baris ✨
           visible++;
           row.style.animation = 'fadeIn 0.3s ease';
         } else { 
-          row.style.display = 'none'; 
+          row.classList.add('search-hidden'); // ✨ Sembunyikan baris ✨
         }
       });
       resultCount.textContent = `${visible} mitra ditemukan`;
@@ -1045,10 +1065,15 @@
       rowsArray.forEach(row => tbody.appendChild(row));
     }
     
+    // ✨ DIPERBAIKI: export juga cek class search-hidden ✨
     function exportTable() {
       let csv = 'Kode,Instansi,Kontak,No HP,Email,Berakhir,Sisa Hari,Status,MoU,MoA,IA,PKS\n';
       rows.forEach(row => {
-        if (row.style.display === 'none') return;
+        // ✨ FIX: cek class search-hidden, bukan style.display ✨
+        if (row.classList.contains('search-hidden')) return;
+        // Skip baris empty state
+        if (row.querySelector('.empty-state')) return;
+        
         const cells = row.querySelectorAll('td');
         if (cells.length < 7) return;
         

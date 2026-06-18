@@ -5,12 +5,18 @@ const path = require('path');
 // 🔹 KONFIGURASI
 const BASE_URL = 'http://localhost:3000';
 const LOGIN_EMAIL = 'humas@uniba.ac.id';
-const LOGIN_PASSWORD = 'Humas2026!'; // Ganti dengan password asli humas
+const LOGIN_PASSWORD = 'akugantipass'; // Ganti dengan password asli humas
 const OUTPUT_DIR = './docs/screenshots';
 
 // 🔹 DAFTAR HALAMAN
 const pages = [
-  { url: '/mitra/a66fce92-5e37-42d9-9dd2-578933246778/edit', name: '09-detail-mitra', wait: 2000 },
+  { url: '/dashboard', name: '01-dashboard', waitFor: 'body' },
+  { url: '/mitra', name: '02-daftar-mitra', waitFor: 'table' },
+  { url: '/mitra/tambah', name: '03-tambah-mitra', waitFor: 'form' },
+  { url: '/users', name: '04-manajemen-user', waitFor: 'table' },
+  { url: '/users/tambah', name: '05-tambah-user', waitFor: 'form' },
+  { url: '/test-alert', name: '06-test-alert', waitFor: 'table' },
+  { url: '/change-password', name: '07-ganti-password', waitFor: 'form' },
 ];
 
 //  FUNGSI UTAMA

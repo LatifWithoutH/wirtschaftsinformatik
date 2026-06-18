@@ -15,6 +15,9 @@
       --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04); --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
       --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12); --border: #e2e8f0;
     }
+    
+    html { scroll-behavior: smooth; }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.6; min-height: 100vh; background-image: radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%); overflow-x: hidden; }
     .main-wrapper { margin-left: var(--sidebar-width); transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1); min-height: 100vh; padding: 30px 40px 40px; }
@@ -64,6 +67,68 @@
     .footer-actions { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; align-items: center; }
     .footer-actions .btn { padding: 14px 28px; font-size: 15px; }
     .access-badge { position: absolute; top: 15px; right: 15px; background: linear-gradient(135deg, var(--warning), #fbbf24); color: #78350f; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); display: flex; align-items: center; gap: 5px; }
+    .faculty-info { display: inline-block; background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08)); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--uniba-primary); font-weight: 600; border: 1px solid rgba(26, 58, 92, 0.15); margin-left: 8px; }
+
+    .quick-nav {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 900;
+    }
+    .quick-nav-btn {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      text-decoration: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      border: none;
+      cursor: pointer;
+    }
+    .quick-nav-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+    .quick-nav-btn.doc-jump {
+      background: linear-gradient(135deg, var(--uniba-gold), var(--uniba-secondary));
+      color: white;
+    }
+    .quick-nav-btn.top-jump {
+      background: white;
+      color: var(--uniba-primary);
+      border: 2px solid var(--border);
+    }
+    .quick-nav-btn::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      right: 65px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--uniba-dark);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+    }
+    .quick-nav-btn:hover::after {
+      opacity: 1;
+      right: 70px;
+    }
+
     @media (max-width: 768px) {
       .main-wrapper { margin-left: 0; padding: 20px 15px; }
       .main-wrapper.expanded { margin-left: 0; }
@@ -86,7 +151,11 @@
       .upload-form .btn { width: 100%; justify-content: center; }
       .footer-actions { flex-direction: column; }
       .footer-actions .btn { width: 100%; justify-content: center; }
+      .quick-nav { bottom: 20px; right: 15px; gap: 10px; }
+      .quick-nav-btn { width: 48px; height: 48px; font-size: 18px; }
+      .quick-nav-btn::after { display: none; }
     }
+
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; }
     ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); border-radius: 5px; }
@@ -96,19 +165,50 @@
 <body>
   <%- include('partials/_sidebar') %>
   
+  <%
+    // ========================================================================
+    // 🔒 HELPER: Exact match fakultas (bukan includes!)
+    // ========================================================================
+    const extractFakultasCode = (email) => {
+      if (!email || typeof email !== 'string') return null;
+      return email.split('@')[0].toLowerCase().trim();
+    };
+    
+    const isSameFaculty = (userFakultasId, mitraEmail) => {
+      const userCode = (userFakultasId || '').toLowerCase().trim();
+      const mitraCode = extractFakultasCode(mitraEmail);
+      if (!userCode || !mitraCode) return false;
+      return userCode === mitraCode;
+    };
+    
+    // 🔒 LOGIKA AKSES YANG BENAR (exact match)
+    const isHumas = user?.role === 'humas';
+    const isAdminFakultas = user?.role === 'admin_fakultas';
+    const isGuest = user?.role === 'guest';
+    const isOwnFaculty = isAdminFakultas && isSameFaculty(user.fakultas_id, mitra.email_fakultas);
+    
+    // Humas: full access
+    // Admin fakultas: hanya boleh edit kalau mitra milik fakultasnya
+    const canEdit = isHumas || isOwnFaculty;
+    const mitraFakultasCode = extractFakultasCode(mitra.email_fakultas);
+  %>
+  
   <div class="main-wrapper">
     <div class="container">
-      <div class="header">
+      <div class="header" id="section-top">
         <div class="header-content">
           <div class="header-info">
             <h1>📋 <%= mitra.nama_instansi %></h1>
             <span class="kode">Kode: <%= mitra.kode_mitra %></span>
+            <% if (mitraFakultasCode) { %>
+              <span class="faculty-info">🏛️ Fakultas: <%= mitraFakultasCode.toUpperCase() %></span>
+            <% } %>
           </div>
           <a href="/mitra" class="back-link">← Kembali ke Daftar Mitra</a>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="section-kontak">
         <h3>📇 Informasi Kontak</h3>
         <div class="info-grid">
           <strong>Nama Kontak</strong><div><%= mitra.nama_kontak || '-' %></div>
@@ -116,12 +216,18 @@
           <strong>Nomor HP</strong>
           <div><% if (mitra.no_hp_kontak) { %><a href="tel:<%= mitra.no_hp_kontak %>"><%= mitra.no_hp_kontak %></a><% } else { %>-<% } %></div>
           <strong>Email Fakultas</strong>
-          <div><% if (mitra.email_fakultas) { %><a href="mailto:<%= mitra.email_fakultas %>"><%= mitra.email_fakultas %></a><% } else { %>-<% } %></div>
+          <div>
+            <% if (mitra.email_fakultas) { %>
+              <a href="mailto:<%= mitra.email_fakultas %>"><%= mitra.email_fakultas %></a>
+            <% } else { %>
+              -
+            <% } %>
+          </div>
           <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="section-periode">
         <h3>📅 Periode Kerja Sama</h3>
         <div class="info-grid">
           <strong>Tanggal Mulai</strong>
@@ -136,20 +242,16 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="section-dokumen">
         <h3>📎 Dokumen Legalitas</h3>
-        <% 
-          const canEdit = user?.role === 'humas' || (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id));
-        %>
         
         <% ['mou', 'moa', 'ia', 'pks'].forEach(jenis => {
            const label = jenis.toUpperCase();
            const fieldName = 'file_' + jenis;
            const fileUrl = mitra[fieldName];
-           const isEditable = canEdit;
         %>
-          <div class="doc-item <%= !isEditable ? 'read-only' : '' %>">
-            <% if (!isEditable && user?.role === 'admin_fakultas') { %>
+          <div class="doc-item <%= !canEdit ? 'read-only' : '' %>">
+            <% if (!canEdit && isAdminFakultas && !isOwnFaculty) { %>
               <span class="access-badge">🔒 Fakultas Lain</span>
             <% } %>
             
@@ -163,14 +265,13 @@
             <% if (fileUrl) { %>
               <div class="doc-actions">
                 <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
-                <!-- ✨ TOMBOL DOWNLOAD YANG DIPERBARUI ✨ -->
                 <button type="button" class="btn btn-success" onclick="forceDownload('<%= fileUrl %>', '<%= mitra.nama_instansi %>-<%= label %>')">
                   ⬇️ Download
                 </button>
               </div>
             <% } %>
 
-            <% if (isEditable) { %>
+            <% if (canEdit) { %>
               <form method="POST" action="/mitra/<%= mitra.id %>/upload" enctype="multipart/form-data" class="upload-form">
                 <input type="hidden" name="jenis_file" value="<%= jenis %>">
                 <input type="file" name="file_pdf" accept=".pdf" required>
@@ -178,10 +279,10 @@
                   <%= fileUrl ? '🔄 Ganti' : '⬆️ Upload' %> <%= label %>
                 </button>
               </form>
-            <% } else if (user?.role === 'guest') { %>
+            <% } else if (isGuest) { %>
               <p style="font-size:13px;color:var(--text-muted);margin-top:10px">👁️ Guest mode: Hanya dapat melihat dokumen. Hubungi Humas untuk upload.</p>
-            <% } else if (user?.role === 'admin_fakultas') { %>
-              <p style="font-size:13px;color:var(--text-muted);margin-top:10px">🔒 Dokumen ini milik fakultas lain. Hubungi Humas untuk perubahan.</p>
+            <% } else if (isAdminFakultas && !isOwnFaculty) { %>
+              <p style="font-size:13px;color:var(--text-muted);margin-top:10px">🔒 Dokumen ini milik fakultas <strong><%= mitraFakultasCode?.toUpperCase() || 'lain' %></strong>. Hubungi Humas untuk perubahan.</p>
             <% } %>
           </div>
         <% }) %>
@@ -193,18 +294,22 @@
       </div>
 
       <div class="footer-actions">
-        <% if (user?.role === 'humas' || (user?.role === 'admin_fakultas' && mitra.email_fakultas?.includes(user.fakultas_id))) { %>
+        <% if (canEdit) { %>
           <a href="/mitra/<%= mitra.id %>/edit" class="btn btn-primary">✏️ Edit Data Mitra</a>
-        <% } else if (user?.role === 'guest') { %>
+        <% } else if (isGuest) { %>
           <span style="font-size:14px;color:var(--text-muted)">👁️ Mode Baca Saja — Hubungi Humas untuk perubahan data</span>
-        <% } else if (user?.role === 'admin_fakultas') { %>
-          <span style="font-size:14px;color:var(--text-muted)">🔒 Data milik fakultas lain — Hubungi Humas untuk edit</span>
+        <% } else if (isAdminFakultas && !isOwnFaculty) { %>
+          <span style="font-size:14px;color:var(--text-muted)">🔒 Data milik fakultas <strong><%= mitraFakultasCode?.toUpperCase() || 'lain' %></strong> — Hubungi Humas untuk edit</span>
         <% } %>
       </div>
     </div>
   </div>
 
-  <!-- Loading Overlay -->
+  <div class="quick-nav">
+    <a href="#section-dokumen" class="quick-nav-btn doc-jump" data-tooltip="Lompat ke Dokumen">📄</a>
+    <a href="#section-top" class="quick-nav-btn top-jump" data-tooltip="Kembali ke Atas">⬆️</a>
+  </div>
+
   <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 36, 57, 0.85); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
     <div style="width: 60px; height: 60px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid #d4a017; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
     <div style="color: white; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; text-align: center;">
@@ -222,115 +327,54 @@
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   </style>
 
-  <!-- ======================================================================== -->
-  <!-- 🚀 FUNGSI DOWNLOAD LANGSUNG + AJAX UPLOAD -->
-  <!-- ======================================================================== -->
   <script>
-    /**
-     * 🎯 KONVERSI URL GOOGLE DRIVE KE FORMAT DIRECT DOWNLOAD
-     * Mendukung berbagai format URL Google Drive:
-     * - https://drive.google.com/file/d/FILE_ID/view
-     * - https://drive.google.com/open?id=FILE_ID
-     * - https://drive.google.com/uc?id=FILE_ID
-     */
     function getDirectDownloadUrl(url) {
       if (!url) return url;
-      
-      // Format 1: /file/d/FILE_ID/...
       const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-      if (match1) {
-        return `https://drive.google.com/uc?export=download&id=${match1[1]}`;
-      }
-      
-      // Format 2: ?id=FILE_ID atau &id=FILE_ID
+      if (match1) return `https://drive.google.com/uc?export=download&id=${match1[1]}`;
       const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-      if (match2 && url.includes('google.com')) {
-        return `https://drive.google.com/uc?export=download&id=${match2[1]}`;
-      }
-      
-      // Bukan Google Drive, return apa adanya
+      if (match2 && url.includes('google.com')) return `https://drive.google.com/uc?export=download&id=${match2[1]}`;
       return url;
     }
 
-    /**
-     * ⬇️ PAKSA DOWNLOAD FILE
-     * Mencoba download langsung, jika gagal (CORS) akan fallback ke tab baru
-     */
     async function forceDownload(url, filename = 'dokumen') {
       const directUrl = getDirectDownloadUrl(url);
-      
-      // Bersihkan nama file dari karakter tidak valid
       const safeFilename = filename.replace(/[^a-z0-9\-_]/gi, '_') + '.pdf';
-      
       try {
-        // Coba fetch dulu (bekerja untuk file same-origin atau Google Drive file kecil)
         const response = await fetch(directUrl, { mode: 'cors' });
-        
         if (!response.ok) throw new Error('Network error');
-        
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
-        
         const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = safeFilename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        // Cleanup setelah 1 detik
+        a.href = blobUrl; a.download = safeFilename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-        
       } catch (error) {
-        // 🔄 FALLBACK: Jika CORS gagal (umum untuk Google Drive), buka URL langsung
-        // Google Drive akan otomatis trigger download untuk format uc?export=download
         console.warn('Direct download gagal, menggunakan fallback:', error.message);
-        
         const a = document.createElement('a');
-        a.href = directUrl;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.href = directUrl; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
       }
     }
 
-    // ========================================================================
-    // AJAX UPLOAD HANDLER
-    // ========================================================================
     document.querySelectorAll('form.upload-form').forEach(form => {
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         const fileInput = form.querySelector('input[type="file"]');
         const submitBtn = form.querySelector('button[type="submit"]');
         const jenisFile = form.querySelector('input[name="jenis_file"]').value;
-        
-        if (!fileInput.files || fileInput.files.length === 0) {
-          alert('⚠️ Pilih file PDF terlebih dahulu!');
-          return;
-        }
+        if (!fileInput.files || fileInput.files.length === 0) { alert('⚠️ Pilih file PDF terlebih dahulu!'); return; }
 
         const overlay = document.getElementById('loadingOverlay');
         document.getElementById('loadingText').textContent = `Mengupload: ${fileInput.files[0].name}`;
         overlay.style.display = 'flex';
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '⏳ Memproses...';
-
+        submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Memproses...';
         const formData = new FormData(form);
 
         try {
-          const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData
-          });
-
+          const response = await fetch(form.action, { method: 'POST', body: formData });
           const result = await response.json();
-
-          overlay.style.display = 'none';
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '🔄 Ganti';
+          overlay.style.display = 'none'; submitBtn.disabled = false; submitBtn.innerHTML = '🔄 Ganti';
 
           if (result.success) {
             const toast = document.getElementById('successToast');
@@ -340,37 +384,23 @@
 
             const docItem = form.closest('.doc-item');
             form.style.display = 'none';
-            
             let actionsDiv = docItem.querySelector('.doc-actions');
             if (!actionsDiv) {
               actionsDiv = document.createElement('div');
               actionsDiv.className = 'doc-actions';
               form.parentNode.insertBefore(actionsDiv, form);
             }
-            
-            // ✨ Tombol download baru juga menggunakan forceDownload
             const label = jenisFile.toUpperCase();
             actionsDiv.innerHTML = `
               <a href="${result.previewLink}" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
-              <button type="button" class="btn btn-success" onclick="forceDownload('${result.previewLink}', '<%= mitra.nama_instansi %>-${label}')">
-                ⬇️ Download
-              </button>
+              <button type="button" class="btn btn-success" onclick="forceDownload('${result.previewLink}', '<%= mitra.nama_instansi %>-${label}')">⬇️ Download</button>
             `;
-
             const statusBadge = docItem.querySelector('.doc-status');
-            if (statusBadge) {
-              statusBadge.className = 'doc-status uploaded';
-              statusBadge.innerHTML = '✅ Sudah diupload';
-            }
-          } else {
-            alert('❌ Gagal: ' + result.message);
-          }
+            if (statusBadge) { statusBadge.className = 'doc-status uploaded'; statusBadge.innerHTML = '✅ Sudah diupload'; }
+          } else { alert('❌ Gagal: ' + result.message); }
         } catch (error) {
-          overlay.style.display = 'none';
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '⬆️ Upload';
-          alert('❌ Terjadi kesalahan jaringan. Coba lagi.');
-          console.error('AJAX Error:', error);
+          overlay.style.display = 'none'; submitBtn.disabled = false; submitBtn.innerHTML = '⬆️ Upload';
+          alert('❌ Terjadi kesalahan jaringan. Coba lagi.'); console.error('AJAX Error:', error);
         }
       });
     });
@@ -384,22 +414,14 @@
     if (sidebarToggle && sidebar) {
       sidebarToggle.addEventListener('click', () => {
         if (window.innerWidth <= 768) {
-          sidebar.classList.toggle('active');
-          sidebarToggle.classList.toggle('shifted');
+          sidebar.classList.toggle('active'); sidebarToggle.classList.toggle('shifted');
         } else {
-          sidebar.classList.toggle('hidden');
-          mainWrapper.classList.toggle('expanded');
-          sidebarToggle.classList.toggle('shifted');
+          sidebar.classList.toggle('hidden'); mainWrapper.classList.toggle('expanded'); sidebarToggle.classList.toggle('shifted');
         }
       });
       window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
-          sidebar.classList.remove('active');
-        } else {
-          sidebar.classList.remove('hidden');
-          mainWrapper.classList.remove('expanded');
-          sidebarToggle.classList.remove('shifted');
-        }
+        if (window.innerWidth > 768) { sidebar.classList.remove('active'); }
+        else { sidebar.classList.remove('hidden'); mainWrapper.classList.remove('expanded'); sidebarToggle.classList.remove('shifted'); }
       });
     }
   </script>
