@@ -478,6 +478,12 @@
       border: 1px solid;
     }
     
+    /* Tambahan: Styling khusus untuk link preview agar tidak bergaris bawah */
+    a.doc-status {
+      text-decoration: none;
+      cursor: pointer;
+    }
+    
     .doc-status:hover {
       transform: scale(1.05);
     }
@@ -869,22 +875,36 @@
                   <td data-label="Status">
                     <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
                   </td>
+                  
+                  <!-- ✨ KOLOM DOKUMEN YANG SUDAH DIPERBARUI ✨ -->
                   <td data-label="Dokumen">
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                      <span class="doc-status <%= m.file_mou ? 'doc-uploaded' : 'doc-missing' %>" title="MoU">
-                        <%= m.file_mou ? '✅ MoU' : '❌ MoU' %>
-                      </span>
-                      <span class="doc-status <%= m.file_moa ? 'doc-uploaded' : 'doc-missing' %>" title="MoA">
-                        <%= m.file_moa ? '✅ MoA' : '❌ MoA' %>
-                      </span>
-                      <span class="doc-status <%= m.file_ia ? 'doc-uploaded' : 'doc-missing' %>" title="IA">
-                        <%= m.file_ia ? '✅ IA' : '❌ IA' %>
-                      </span>
-                      <span class="doc-status <%= m.file_pks ? 'doc-uploaded' : 'doc-missing' %>" title="PKS">
-                        <%= m.file_pks ? '✅ PKS' : '❌ PKS' %>
-                      </span>
+                      <% if (m.file_mou) { %>
+                        <a href="<%= m.file_mou %>" target="_blank" class="doc-status doc-uploaded" title="MoU">✅ MoU</a>
+                      <% } else { %>
+                        <span class="doc-status doc-missing" title="MoU">❌ MoU</span>
+                      <% } %>
+                      
+                      <% if (m.file_moa) { %>
+                        <a href="<%= m.file_moa %>" target="_blank" class="doc-status doc-uploaded" title="MoA">✅ MoA</a>
+                      <% } else { %>
+                        <span class="doc-status doc-missing" title="MoA">❌ MoA</span>
+                      <% } %>
+                      
+                      <% if (m.file_ia) { %>
+                        <a href="<%= m.file_ia %>" target="_blank" class="doc-status doc-uploaded" title="IA">✅ IA</a>
+                      <% } else { %>
+                        <span class="doc-status doc-missing" title="IA">❌ IA</span>
+                      <% } %>
+                      
+                      <% if (m.file_pks) { %>
+                        <a href="<%= m.file_pks %>" target="_blank" class="doc-status doc-uploaded" title="PKS">✅ PKS</a>
+                      <% } else { %>
+                        <span class="doc-status doc-missing" title="PKS">❌ PKS</span>
+                      <% } %>
                     </div>
                   </td>
+
                   <td data-label="Aksi">
                     <div class="action-btns">
                       <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
@@ -1044,10 +1064,10 @@
           cells[3].textContent.trim(),
           cells[4].textContent.trim(),
           cells[5].querySelector('.status-badge')?.textContent || '',
-          getFileStatus(6, 'MoU'),
-          getFileStatus(6, 'MoA'),
-          getFileStatus(6, 'IA'),
-          getFileStatus(6, 'PKS')
+          getFileStatus(7, 'MoU'),
+          getFileStatus(7, 'MoA'),
+          getFileStatus(7, 'IA'),
+          getFileStatus(7, 'PKS')
         ].map(v => `"${v}"`).join(',') + '\n';
       });
       

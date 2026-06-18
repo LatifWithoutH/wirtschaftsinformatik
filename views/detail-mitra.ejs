@@ -163,7 +163,10 @@
             <% if (fileUrl) { %>
               <div class="doc-actions">
                 <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
-                <a href="<%= fileUrl %>" download class="btn btn-success">⬇️ Download</a>
+                <!-- ✨ TOMBOL DOWNLOAD YANG DIPERBARUI ✨ -->
+                <button type="button" class="btn btn-success" onclick="forceDownload('<%= fileUrl %>', '<%= mitra.nama_instansi %>-<%= label %>')">
+                  ⬇️ Download
+                </button>
               </div>
             <% } %>
 
@@ -201,9 +204,7 @@
     </div>
   </div>
 
-  <!-- ======================================================================== -->
-  <!-- 🚨 SCRIPT AJAX UPLOAD & LOADING OVERLAY (DITAMBAHKAN DI SINI) -->
-  <!-- ======================================================================== -->
+  <!-- Loading Overlay -->
   <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 36, 57, 0.85); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
     <div style="width: 60px; height: 60px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid #d4a017; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
     <div style="color: white; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; text-align: center;">
@@ -221,10 +222,86 @@
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   </style>
 
+  <!-- ======================================================================== -->
+  <!-- 🚀 FUNGSI DOWNLOAD LANGSUNG + AJAX UPLOAD -->
+  <!-- ======================================================================== -->
   <script>
+    /**
+     * 🎯 KONVERSI URL GOOGLE DRIVE KE FORMAT DIRECT DOWNLOAD
+     * Mendukung berbagai format URL Google Drive:
+     * - https://drive.google.com/file/d/FILE_ID/view
+     * - https://drive.google.com/open?id=FILE_ID
+     * - https://drive.google.com/uc?id=FILE_ID
+     */
+    function getDirectDownloadUrl(url) {
+      if (!url) return url;
+      
+      // Format 1: /file/d/FILE_ID/...
+      const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match1) {
+        return `https://drive.google.com/uc?export=download&id=${match1[1]}`;
+      }
+      
+      // Format 2: ?id=FILE_ID atau &id=FILE_ID
+      const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match2 && url.includes('google.com')) {
+        return `https://drive.google.com/uc?export=download&id=${match2[1]}`;
+      }
+      
+      // Bukan Google Drive, return apa adanya
+      return url;
+    }
+
+    /**
+     * ⬇️ PAKSA DOWNLOAD FILE
+     * Mencoba download langsung, jika gagal (CORS) akan fallback ke tab baru
+     */
+    async function forceDownload(url, filename = 'dokumen') {
+      const directUrl = getDirectDownloadUrl(url);
+      
+      // Bersihkan nama file dari karakter tidak valid
+      const safeFilename = filename.replace(/[^a-z0-9\-_]/gi, '_') + '.pdf';
+      
+      try {
+        // Coba fetch dulu (bekerja untuk file same-origin atau Google Drive file kecil)
+        const response = await fetch(directUrl, { mode: 'cors' });
+        
+        if (!response.ok) throw new Error('Network error');
+        
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = safeFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Cleanup setelah 1 detik
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+        
+      } catch (error) {
+        // 🔄 FALLBACK: Jika CORS gagal (umum untuk Google Drive), buka URL langsung
+        // Google Drive akan otomatis trigger download untuk format uc?export=download
+        console.warn('Direct download gagal, menggunakan fallback:', error.message);
+        
+        const a = document.createElement('a');
+        a.href = directUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    }
+
+    // ========================================================================
+    // AJAX UPLOAD HANDLER
+    // ========================================================================
     document.querySelectorAll('form.upload-form').forEach(form => {
       form.addEventListener('submit', async function(e) {
-        e.preventDefault(); // MENCEGAH RELOAD HALAMAN
+        e.preventDefault();
         
         const fileInput = form.querySelector('input[type="file"]');
         const submitBtn = form.querySelector('button[type="submit"]');
@@ -235,18 +312,15 @@
           return;
         }
 
-        // 1. Tampilkan Loading
         const overlay = document.getElementById('loadingOverlay');
         document.getElementById('loadingText').textContent = `Mengupload: ${fileInput.files[0].name}`;
         overlay.style.display = 'flex';
         submitBtn.disabled = true;
         submitBtn.innerHTML = '⏳ Memproses...';
 
-        // 2. Siapkan Data untuk dikirim (FormData)
         const formData = new FormData(form);
 
         try {
-          // 3. Kirim ke Server via Fetch (AJAX)
           const response = await fetch(form.action, {
             method: 'POST',
             body: formData
@@ -254,22 +328,18 @@
 
           const result = await response.json();
 
-          // 4. Sembunyikan Loading
           overlay.style.display = 'none';
           submitBtn.disabled = false;
           submitBtn.innerHTML = '🔄 Ganti';
 
-          // 5. Handle Respon
           if (result.success) {
-            // Tampilkan Notifikasi Sukses
             const toast = document.getElementById('successToast');
             document.getElementById('toastMessage').textContent = result.message;
             toast.style.display = 'block';
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
 
-            // 🪄 MAGIC: Update Tampilan DOM secara dinamis tanpa reload!
             const docItem = form.closest('.doc-item');
-            form.style.display = 'none'; // Sembunyikan form upload
+            form.style.display = 'none';
             
             let actionsDiv = docItem.querySelector('.doc-actions');
             if (!actionsDiv) {
@@ -278,9 +348,13 @@
               form.parentNode.insertBefore(actionsDiv, form);
             }
             
+            // ✨ Tombol download baru juga menggunakan forceDownload
+            const label = jenisFile.toUpperCase();
             actionsDiv.innerHTML = `
               <a href="${result.previewLink}" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
-              <a href="${result.previewLink}" download class="btn btn-success">⬇️ Download</a>
+              <button type="button" class="btn btn-success" onclick="forceDownload('${result.previewLink}', '<%= mitra.nama_instansi %>-${label}')">
+                ⬇️ Download
+              </button>
             `;
 
             const statusBadge = docItem.querySelector('.doc-status');
@@ -301,7 +375,6 @@
       });
     });
   </script>
-  <!-- ======================================================================== -->
 
   <script>
     const sidebarToggle = document.getElementById('sidebarToggle');
