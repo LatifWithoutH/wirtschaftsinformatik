@@ -42,7 +42,6 @@
       overflow-x: hidden;
     }
     
-    /* ========== MAIN WRAPPER ========== */
     .main-wrapper {
       margin-left: var(--sidebar-width);
       transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -53,11 +52,8 @@
       padding: 40px 20px;
     }
     
-    .main-wrapper.expanded {
-      margin-left: 0;
-    }
+    .main-wrapper.expanded { margin-left: 0; }
     
-    /* ========== FORM CONTAINER ========== */
     .form-container {
       width: 100%;
       max-width: 800px;
@@ -75,7 +71,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
-    /* ========== HEADER ========== */
     .form-header {
       text-align: center;
       margin-bottom: 35px;
@@ -107,26 +102,16 @@
       margin-bottom: 6px;
     }
     
-    .form-header p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
+    .form-header p { color: var(--text-muted); font-size: 0.9rem; }
     
-    /* ========== FORM GRID ========== */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
     
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .form-group.full-width {
-      grid-column: span 2;
-    }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full-width { grid-column: span 2; }
     
     .form-group label {
       font-weight: 600;
@@ -138,10 +123,7 @@
       gap: 6px;
     }
     
-    .required { 
-      color: var(--danger); 
-      font-weight: 700;
-    }
+    .required { color: var(--danger); font-weight: 700; }
     
     .form-group input,
     .form-group textarea {
@@ -164,12 +146,41 @@
       box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
     }
     
-    .form-group textarea { 
-      resize: vertical; 
-      min-height: 100px; 
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    
+    /* ✨ TAMBAHAN: Style untuk input readonly */
+    .form-group input[readonly] {
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: not-allowed;
+      opacity: 0.8;
+      font-weight: 600;
+      border-color: #e2e8f0;
     }
     
-    /* ========== ACTIONS ========== */
+    .form-group input[readonly]:focus {
+      border-color: #e2e8f0;
+      box-shadow: none;
+      background: #f1f5f9;
+    }
+    
+    /* ✨ TAMBAHAN: Info box khusus faculty lock */
+    .faculty-lock-info {
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
+      border-left: 3px solid var(--warning);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #92400e;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.5;
+    }
+    
+    .faculty-lock-info strong { color: #78350f; }
+    
     .form-actions {
       margin-top: 35px;
       display: flex;
@@ -217,7 +228,6 @@
       background: #f8fafc;
     }
     
-    /* ========== INFO BOX ========== */
     .info-box {
       margin-top: 30px;
       padding: 16px 20px;
@@ -233,15 +243,9 @@
     
     .info-box strong { color: #78350f; }
     
-    /* ========== RESPONSIVE ========== */
     @media (max-width: 768px) {
-      .main-wrapper { 
-        margin-left: 0;
-        padding: 20px;
-      }
-      .main-wrapper.expanded { 
-        margin-left: 0;
-      }
+      .main-wrapper { margin-left: 0; padding: 20px; }
+      .main-wrapper.expanded { margin-left: 0; }
     }
     
     @media (max-width: 640px) {
@@ -253,42 +257,33 @@
       .form-header h1 { font-size: 1.3rem; }
     }
     
-    /* ========== SCROLLBAR ========== */
-    ::-webkit-scrollbar { 
-      width: 10px;
-      height: 10px;
-    }
-    
-    ::-webkit-scrollbar-track { 
-      background: #f1f5f9;
-      border-radius: 5px;
-    }
-    
-    ::-webkit-scrollbar-thumb { 
-      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
-      border-radius: 5px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover { 
-      background: var(--uniba-dark);
-    }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--uniba-dark); }
   </style>
 </head>
 <body>
-  <!-- Include Sidebar dari partials -->
   <%- include('partials/_sidebar') %>
   
-  <!-- Main Wrapper -->
+  <%
+    // ========================================================================
+    // 🔒 LOGIKA: Siapa yang boleh edit email_fakultas?
+    // - action === 'tambah' → hanya humas yang bisa akses (sudah di-lock di server.js)
+    // - action === 'edit' + humas → boleh edit
+    // - action === 'edit' + admin_fakultas → TIDAK BOLEH (readonly)
+    // ========================================================================
+    const canEditFakultasField = (action === 'tambah') || (user?.role === 'humas');
+  %>
+  
   <div class="main-wrapper">
     <div class="form-container">
-      <!-- Header -->
       <div class="form-header">
         <div class="logo-icon">🤝</div>
         <h1><%= action === 'tambah' ? 'Tambah Mitra Baru' : 'Edit Data Mitra' %></h1>
         <p>SI Mitra DUDIKA — Universitas Islam Batik Surakarta</p>
       </div>
       
-      <!-- Form -->
       <form method="POST" action="<%= action === 'tambah' ? '/mitra' : `/mitra/${mitra?.id}/update` %>">
         <div class="form-grid">
           
@@ -316,10 +311,41 @@
             <input type="tel" id="no_hp_kontak" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxxxxxx">
           </div>
 
-          <!-- Email Fakultas -->
+          <!-- ✨ EMAIL FAKULTAS — FIELD YANG DIPERBAIKI ✨ -->
           <div class="form-group">
-            <label for="email_fakultas">📧 Email Fakultas Bertanggung Jawab <span class="required">*</span></label>
-            <input type="email" id="email_fakultas" name="email_fakultas" required value="<%= mitra?.email_fakultas || '' %>" placeholder="fti@uniba.ac.id">
+            <label for="email_fakultas">
+              📧 Email Fakultas Bertanggung Jawab <span class="required">*</span>
+            </label>
+            
+            <% if (canEditFakultasField) { %>
+              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
+              <input type="email" 
+                     id="email_fakultas" 
+                     name="email_fakultas" 
+                     required 
+                     value="<%= mitra?.email_fakultas || '' %>" 
+                     placeholder="fti@uniba.ac.id"
+                     style="text-transform: lowercase;">
+              <!-- <small style="color:var(--text-muted);font-size:0.75rem;margin-top:6px;display:block"> -->
+                <!-- 💡 Format: <code>[kode_fakultas]@uniba.ac.id</code> (contoh: ft, fh, fkedokteran, fti) -->
+              <!-- </small> -->
+            <% } else { %>
+              <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
+              <input type="email" 
+                     id="email_fakultas_display" 
+                     value="<%= mitra?.email_fakultas || '' %>" 
+                     readonly 
+                     aria-label="Email fakultas (tidak dapat diubah)">
+              <input type="hidden" name="email_fakultas" value="<%= mitra?.email_fakultas || '' %>">
+              
+              <div class="faculty-lock-info">
+                <span style="font-size:1rem">🔒</span>
+                <div>
+                  <strong>Hanya Humas yang dapat mengubah fakultas penanggung jawab.</strong><br>
+                  Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
+                </div>
+              </div>
+            <% } %>
           </div>
 
           <!-- Tanggal Mulai -->
@@ -361,7 +387,6 @@
   </div>
 
   <script>
-    // Logic untuk Toggle Sidebar dengan Chevron
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
     const mainWrapper = document.querySelector('.main-wrapper');
@@ -389,9 +414,8 @@
       });
     }
     
-    // Auto-focus ke field pertama saat halaman dimuat
     document.addEventListener('DOMContentLoaded', () => {
-      const firstInput = document.querySelector('input[required]');
+      const firstInput = document.querySelector('input[required]:not([readonly])');
       if (firstInput) firstInput.focus();
     });
   </script>
