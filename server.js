@@ -32,6 +32,38 @@ app.use(session({
   }
 }));
 
+// ========================================================================
+// 🔒 HELPER: Cek kesamaan fakultas berdasarkan fakultas_id (RELASI EKSPLISIT)
+// ========================================================================
+function isSameFaculty(userFakultasId, mitraFakultasId) {
+  if (!userFakultasId || !mitraFakultasId) return false;
+  return userFakultasId === mitraFakultasId;
+}
+
+function filterMitraByFaculty(mitraList, user) {
+  if (!mitraList) return [];
+  if (user.role === 'humas') return mitraList;
+  
+  if (user.role === 'admin_fakultas' && user.fakultas_id) {
+    return mitraList.filter(m => m.fakultas_id === user.fakultas_id);
+  }
+  
+  return [];
+}
+
+// ========================================================================
+// 🔒 HELPER: Escape CSV field (handle quotes, comma, newline)
+// ========================================================================
+function escapeCsv(value) {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  const escaped = str.replace(/"/g, '""');
+  if (/[",\n\r]/.test(str)) {
+    return `"${escaped}"`;
+  }
+  return str;
+}
+
 function generateRandomPassword(length = 12) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
     let password = '';
@@ -95,12 +127,6 @@ const upload = multer({
   }
 });
 
-// 📌 CATATAN PENTING:
-// - Tidak ada nodemailer
-// - Tidak ada node-cron  
-// - Tidak ada route POST /test-alert/send
-// - Semua pengiriman email 100% via Google Apps Script
-
 app.get('/', (req, res) => res.redirect('/dashboard'));
 
 app.get('/login', (req, res) => {
@@ -138,18 +164,15 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let query = supabase.from('mitra').select('*');
-    if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
-      query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
-    }
-    
-    const { data: allMitra, error } = await query;
+    const { data: allMitra, error } = await supabase.from('mitra').select('*');
     if (error) throw error;
+    
+    const filteredMitra = filterMitraByFaculty(allMitra, req.session.user);
     
     const stats = { total: 0, aktif: 0, akan_berakhir: 0, segera_berakhir: 0, expired: 0 };
     const segeraBerakhir = [];
     
-    (allMitra || []).forEach(mitra => {
+    filteredMitra.forEach(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
       endDate.setHours(0, 0, 0, 0);
       
@@ -161,7 +184,7 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
       else if (diffDays <= 30) { stats.akan_berakhir++; segeraBerakhir.push({ ...mitra, sisa_hari: diffDays, color: '#ffc107' }); }
       else stats.aktif++;
     });
-    stats.total = (allMitra || []).length;
+    stats.total = filteredMitra.length;
     segeraBerakhir.sort((a,b) => a.sisa_hari - b.sisa_hari);
     
     res.render('dashboard', { stats, segeraBerakhir, user: req.session.user, activePage: 'dashboard', alertCount: segeraBerakhir.length });
@@ -176,15 +199,12 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let query = supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
-    if (req.session.user.role === 'admin_fakultas' && req.session.user.fakultas_id) {
-      query = query.ilike('email_fakultas', `%${req.session.user.fakultas_id}%`);
-    }
-    
-    const { data: mitraList, error } = await query;
+    const { data: allMitra, error } = await supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
     if (error) throw error;
+    
+    const filteredMitra = filterMitraByFaculty(allMitra, req.session.user);
 
-    const mitraDenganStatus = (mitraList || []).map(mitra => {
+    const mitraDenganStatus = filteredMitra.map(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
       endDate.setHours(0, 0, 0, 0);
       
@@ -207,17 +227,189 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
   }
 });
 
-app.get('/mitra/tambah', requireAuth('humas'), (req, res) => 
-  res.render('form-mitra', { mitra: null, action: 'tambah', user: req.session.user, activePage: 'tambah', alertCount: 0 })
-);
+// ========================================================================
+// 📊 EXPORT CSV - Backend (AMAN & CEPAT)
+// ========================================================================
+app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { data: allMitra, error } = await supabase
+      .from('mitra')
+      .select('*')
+      .order('tanggal_berakhir', { ascending: true });
+    
+    if (error) throw error;
+    
+    let mitraList = filterMitraByFaculty(allMitra || [], req.session.user);
+    
+    const searchTerm = (req.query.search || '').toLowerCase().trim();
+    if (searchTerm) {
+      mitraList = mitraList.filter(m => 
+        (m.nama_instansi || '').toLowerCase().includes(searchTerm) ||
+        (m.nama_kontak || '').toLowerCase().includes(searchTerm) ||
+        (m.email_fakultas || '').toLowerCase().includes(searchTerm) ||
+        (m.kode_mitra || '').toLowerCase().includes(searchTerm) ||
+        (m.no_hp_kontak || '').toLowerCase().includes(searchTerm) ||
+        (m.alamat || '').toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    const headers = [
+      'Kode Mitra',
+      'Nama Instansi',
+      'Nama Kontak',
+      'Jabatan',
+      'No HP',
+      'Email Fakultas',
+      'Alamat',
+      'Tanggal Mulai',
+      'Tanggal Berakhir',
+      'Sisa Hari',
+      'Status',
+      'File MoU',
+      'File MoA',
+      'File IA',
+      'File PKS'
+    ];
+    
+    const csvRows = [headers.map(escapeCsv).join(',')];
+    
+    mitraList.forEach(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
+      
+      let status;
+      if (isNaN(endDate.getTime())) {
+        status = 'Invalid';
+      } else if (diffDays < 0) {
+        status = 'Expired';
+      } else if (diffDays <= 7) {
+        status = 'Segera Berakhir';
+      } else if (diffDays <= 30) {
+        status = 'Akan Berakhir';
+      } else {
+        status = 'Aktif';
+      }
+      
+      const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+          return new Date(dateStr).toLocaleDateString('id-ID', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+          });
+        } catch { return dateStr; }
+      };
+      
+      const row = [
+        m.kode_mitra || '',
+        m.nama_instansi || '',
+        m.nama_kontak || '',
+        m.jabatan || '',
+        m.no_hp_kontak || '',
+        m.email_fakultas || '',
+        (m.alamat || '').replace(/\n/g, ' ').replace(/\r/g, ''),
+        formatDate(m.tanggal_mulai),
+        formatDate(m.tanggal_berakhir),
+        isNaN(diffDays) ? '0' : String(diffDays),
+        status,
+        m.file_mou ? 'Sudah' : 'Belum',
+        m.file_moa ? 'Sudah' : 'Belum',
+        m.file_ia ? 'Sudah' : 'Belum',
+        m.file_pks ? 'Sudah' : 'Belum'
+      ];
+      
+      csvRows.push(row.map(escapeCsv).join(','));
+    });
+    
+    const csvContent = csvRows.join('\n');
+    
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const filename = `mitra-dudika-${dateStr}_${timeStr}.csv`;
+    
+    console.log(`📊 [EXPORT CSV] User: ${req.session.user.email} (${req.session.user.role}) | Total: ${mitraList.length} mitra | Search: "${searchTerm || '-'}"`);
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
+    res.send('\ufeff' + csvContent);
+    
+  } catch (err) {
+    console.error('❌ Error export CSV:', err.message);
+    res.status(500).send('❌ Gagal export CSV: ' + err.message);
+  }
+});
+
+app.get('/mitra/tambah', requireAuth('humas'), async (req, res) => {
+  try {
+    // 🔽 AMBIL DATA FAKULTAS DARI DATABASE
+    const { data: fakultas, error } = await supabase
+      .from('fakultas')
+      .select('id, nama, singkatan')
+      .eq('is_active', true)
+      .order('urutan', { ascending: true });
+    
+    if (error) {
+      console.error('❌ Error fetch fakultas:', error);
+      return res.status(500).send('Gagal memuat data fakultas');
+    }
+    
+    res.render('form-mitra', { 
+      mitra: null, 
+      action: 'tambah', 
+      user: req.session.user, 
+      activePage: 'tambah', 
+      alertCount: 0,
+      fakultas: fakultas || []
+    });
+  } catch (err) {
+    console.error('❌ Error loading form mitra:', err);
+    res.status(500).send('Gagal memuat form tambah mitra.');
+  }
+});
 
 app.post('/mitra', requireAuth('humas'), async (req, res) => {
   try {
-    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
+    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
+    
+    // 🔒 Validasi fakultas_id
+    if (fakultas_id) {
+      const { data: cekFakultas } = await supabase
+        .from('fakultas')
+        .select('id')
+        .eq('id', fakultas_id)
+        .single();
+      
+      if (!cekFakultas) {
+        return res.status(400).send('❌ Fakultas tidak valid');
+      }
+    }
+    
     const { count } = await supabase.from('mitra').select('*', { count: 'exact', head: true });
     const kode_mitra = `MITRA-${String((count || 0) + 1).padStart(4, '0')}`;
-    const { error } = await supabase.from('mitra').insert({ kode_mitra, nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir });
+    
+    const insertData = { 
+      kode_mitra, 
+      nama_instansi, 
+      nama_kontak, 
+      jabatan, 
+      alamat, 
+      no_hp_kontak, 
+      email_fakultas, 
+      fakultas_id: fakultas_id || null,
+      tanggal_mulai, 
+      tanggal_berakhir 
+    };
+    
+    const { error } = await supabase.from('mitra').insert(insertData);
     if (error) throw error;
+    
+    console.log(`✅ Mitra baru ditambahkan: ${nama_instansi} - Fakultas: ${fakultas_id || '-'}`);
     res.redirect('/mitra');
   } catch (err) {
     console.error('❌ Error insert mitra:', err.message);
@@ -231,8 +423,8 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
     const { jenis_file } = req.body;
     
     if (req.session.user.role === 'admin_fakultas') {
-      const { data: mitra, error: checkError } = await supabase.from('mitra').select('email_fakultas').eq('id', id).single();
-      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+      const { data: mitra, error: checkError } = await supabase.from('mitra').select('fakultas_id').eq('id', id).single();
+      if (checkError || !isSameFaculty(req.session.user.fakultas_id, mitra?.fakultas_id)) {
         return res.status(403).json({ success: false, message: '❌ Anda hanya dapat mengupload dokumen untuk mitra fakultas Anda' });
       }
     }
@@ -287,6 +479,13 @@ app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     if (error) return res.status(500).send('❌ Database Error');
     if (!mitra) return res.status(404).send('❌ Mitra tidak ditemukan');
     
+    // 🔒 Cek ownership untuk admin_fakultas & guest
+    if (req.session.user.role === 'admin_fakultas' || req.session.user.role === 'guest') {
+      if (!isSameFaculty(req.session.user.fakultas_id, mitra.fakultas_id)) {
+        return res.status(403).send('❌ Akses ditolak: Mitra ini bukan milik fakultas Anda');
+      }
+    }
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -322,28 +521,73 @@ app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, r
   try {
     const { id } = req.params;
     if (req.session.user.role === 'admin_fakultas') {
-      const { data: mitra, error: checkError } = await supabase.from('mitra').select('email_fakultas').eq('id', id).single();
-      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+      const { data: mitra, error: checkError } = await supabase.from('mitra').select('fakultas_id').eq('id', id).single();
+      if (checkError || !isSameFaculty(req.session.user.fakultas_id, mitra?.fakultas_id)) {
         return res.status(403).send('❌ Anda hanya dapat mengedit mitra fakultas Anda');
       }
     }
     const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
     if (error || !mitra) return res.status(404).send('Mitra tidak ditemukan');
-    res.render('form-mitra', { mitra, action: 'edit', user: req.session.user, activePage: 'tambah', alertCount: 0 });
-  } catch (err) { res.status(500).send('Gagal memuat form edit.'); }
+    
+    // 🔽 AMBIL DATA FAKULTAS
+    const { data: fakultas } = await supabase
+      .from('fakultas')
+      .select('id, nama, singkatan')
+      .eq('is_active', true)
+      .order('urutan', { ascending: true });
+    
+    res.render('form-mitra', { 
+      mitra, 
+      action: 'edit', 
+      user: req.session.user, 
+      activePage: 'tambah', 
+      alertCount: 0,
+      canEditFakultas: req.session.user.role === 'humas',
+      fakultas: fakultas || []
+    });
+  } catch (err) { 
+    console.error('❌ Error loading form edit:', err);
+    res.status(500).send('Gagal memuat form edit.'); 
+  }
 });
 
 app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // 🔒 Cek ownership dulu
+    const { data: currentMitra, error: checkError } = await supabase
+      .from('mitra')
+      .select('fakultas_id')
+      .eq('id', id)
+      .single();
+    
+    if (checkError || !currentMitra) {
+      return res.status(404).send('❌ Mitra tidak ditemukan');
+    }
+    
     if (req.session.user.role === 'admin_fakultas') {
-      const { data: mitra, error: checkError } = await supabase.from('mitra').select('email_fakultas').eq('id', id).single();
-      if (checkError || !mitra.email_fakultas?.includes(req.session.user.fakultas_id)) {
+      if (!isSameFaculty(req.session.user.fakultas_id, currentMitra.fakultas_id)) {
         return res.status(403).send('❌ Anda hanya dapat mengupdate mitra fakultas Anda');
       }
     }
-    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir } = req.body;
-    const { error } = await supabase.from('mitra').update({ nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, tanggal_mulai, tanggal_berakhir }).eq('id', id);
+    
+    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
+    
+    const updateData = { 
+      nama_instansi, nama_kontak, jabatan, alamat, 
+      no_hp_kontak, tanggal_mulai, tanggal_berakhir 
+    };
+    
+    if (req.session.user.role === 'humas') {
+      updateData.email_fakultas = email_fakultas;
+      updateData.fakultas_id = fakultas_id || null;
+    } else {
+      updateData.fakultas_id = currentMitra.fakultas_id;
+      console.log(`🔒 Admin fakultas ${req.session.user.fakultas_id} mencoba ubah fakultas_id → DIBLOKIR`);
+    }
+    
+    const { error } = await supabase.from('mitra').update(updateData).eq('id', id);
     if (error) throw error;
     res.redirect(`/mitra/${id}`);
   } catch (err) { 
@@ -352,9 +596,6 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
   }
 });
 
-// ========================================================================
-// 🚨 ROUTE TEST ALERT (HANYA GET - TIDAK ADA POST)
-// ========================================================================
 app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   try {
     const today = new Date();
@@ -396,8 +637,6 @@ app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   }
 });
 
-// 📌 TIDAK ADA route app.post('/test-alert/send', ...) di sini!
-
 app.get('/users', requireAuth('humas'), async (req, res) => {
     try {
         const { data: users, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
@@ -409,22 +648,91 @@ app.get('/users', requireAuth('humas'), async (req, res) => {
     }
 });
 
-app.get('/users/tambah', requireAuth('humas'), (req, res) => {
-    res.render('form-user', { action: 'tambah', user: req.session.user, activePage: 'users', alertCount: 0 });
+app.get('/users/tambah', requireAuth('humas'), async (req, res) => {
+    try {
+        console.log('\n🔍 [DEBUG] Mengambil data fakultas...');
+        
+        // 🔥 HAPUS FILTER is_active untuk testing
+        const { data: fakultas, error } = await supabase
+            .from('fakultas')
+            .select('id, nama, singkatan')
+            // .eq('is_active', true)  // ← COMMENT OUT SEMENTARA
+            .order('urutan', { ascending: true });
+        
+        console.log('📊 [DEBUG] Hasil query:', {
+            jumlah: fakultas?.length || 0,
+            error: error?.message || null,
+            data: JSON.stringify(fakultas, null, 2)
+        });
+        
+        if (error) {
+            console.error('❌ Error fetch fakultas:', error);
+            return res.status(500).send('Gagal memuat data fakultas');
+        }
+        
+        console.log('✅ [DEBUG] Render form-user dengan fakultas:', fakultas?.length, 'data');
+        
+        res.render('form-user', { 
+            action: 'tambah', 
+            user: req.session.user, 
+            activePage: 'users', 
+            alertCount: 0,
+            fakultas: fakultas || []
+        });
+    } catch (err) {
+        console.error('❌ Error loading form user:', err);
+        res.status(500).send('Gagal memuat form tambah user.');
+    }
 });
 
 app.post('/users', requireAuth('humas'), async (req, res) => {
     try {
         const { name, email, password, role, fakultas_id } = req.body;
+        
+        // 🔒 VALIDASI: kalau admin_fakultas, fakultas_id harus valid
+        if (role === 'admin_fakultas') {
+            if (!fakultas_id) {
+                return res.status(400).send('❌ Fakultas harus dipilih untuk Admin Fakultas');
+            }
+            
+            const { data: cekFakultas } = await supabase
+                .from('fakultas')
+                .select('id')
+                .eq('id', fakultas_id)
+                .eq('is_active', true)
+                .single();
+            
+            if (!cekFakultas) {
+                return res.status(400).send('❌ Fakultas tidak valid atau sudah non-aktif');
+            }
+        }
+        
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
-        const insertData = { name, email, password_hash, role, fakultas_id: role === 'admin_fakultas' ? fakultas_id : null, is_active: true };
+        
+        const insertData = { 
+            name, 
+            email, 
+            password_hash, 
+            role, 
+            fakultas_id: role === 'admin_fakultas' ? fakultas_id : null, 
+            is_active: true 
+        };
+        
         const { error } = await supabase.from('users').insert(insertData);
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Supabase insert error:', error);
+            if (error.code === '23505') {
+                return res.status(400).send('❌ Email sudah terdaftar. Gunakan email lain.');
+            }
+            throw error;
+        }
+        
+        console.log(`✅ User baru ditambahkan: ${email} (${role}) - Fakultas: ${fakultas_id || '-'}`);
         res.redirect('/users');
     } catch (err) {
         console.error('❌ Error adding user:', err);
-        res.status(500).send('Gagal menambah user. Pastikan email belum terdaftar.');
+        res.status(500).send('Gagal menambah user: ' + err.message);
     }
 });
 

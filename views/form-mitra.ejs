@@ -126,6 +126,7 @@
     .required { color: var(--danger); font-weight: 700; }
     
     .form-group input,
+    .form-group select,
     .form-group textarea {
       width: 100%;
       padding: 12px 16px;
@@ -138,7 +139,18 @@
       color: var(--text-dark);
     }
     
+    .form-group select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 18px;
+      padding-right: 40px;
+    }
+    
     .form-group input:focus,
+    .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
       border-color: var(--uniba-primary);
@@ -148,8 +160,9 @@
     
     .form-group textarea { resize: vertical; min-height: 100px; }
     
-    /* ✨ TAMBAHAN: Style untuk input readonly */
-    .form-group input[readonly] {
+    /* Style untuk input/select readonly */
+    .form-group input[readonly],
+    .form-group select[disabled] {
       background: #f1f5f9;
       color: #64748b;
       cursor: not-allowed;
@@ -158,14 +171,15 @@
       border-color: #e2e8f0;
     }
     
-    .form-group input[readonly]:focus {
+    .form-group input[readonly]:focus,
+    .form-group select[disabled]:focus {
       border-color: #e2e8f0;
       box-shadow: none;
       background: #f1f5f9;
     }
     
-    /* ✨ TAMBAHAN: Info box khusus faculty lock */
-    .faculty-lock-info {
+    /* Info box untuk field yang di-lock */
+    .field-lock-info {
       margin-top: 8px;
       padding: 10px 14px;
       background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
@@ -179,7 +193,16 @@
       line-height: 1.5;
     }
     
-    .faculty-lock-info strong { color: #78350f; }
+    .field-lock-info strong { color: #78350f; }
+    
+    /* Info text kecil di bawah field */
+    .field-hint {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+      line-height: 1.5;
+    }
     
     .form-actions {
       margin-top: 35px;
@@ -268,10 +291,10 @@
   
   <%
     // ========================================================================
-    // 🔒 LOGIKA: Siapa yang boleh edit email_fakultas?
+    // 🔒 LOGIKA: Siapa yang boleh edit fakultas & email_fakultas?
     // - action === 'tambah' → hanya humas yang bisa akses (sudah di-lock di server.js)
     // - action === 'edit' + humas → boleh edit
-    // - action === 'edit' + admin_fakultas → TIDAK BOLEH (readonly)
+    // - action === 'edit' + admin_fakultas → TIDAK BOLEH (readonly/disabled)
     // ========================================================================
     const canEditFakultasField = (action === 'tambah') || (user?.role === 'humas');
   %>
@@ -293,6 +316,92 @@
             <input type="text" id="nama_instansi" name="nama_instansi" required value="<%= mitra?.nama_instansi || '' %>" placeholder="Contoh: PT. Maju Bersama">
           </div>
 
+          <!-- ✨ FAKULTAS — DROPDOWN DINAMIS DARI DATABASE ✨ -->
+          <div class="form-group">
+            <label for="fakultas_id">
+              🏛️ Fakultas Penanggung Jawab <span class="required">*</span>
+            </label>
+            
+            <% if (canEditFakultasField) { %>
+              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
+              <select id="fakultas_id" name="fakultas_id" required>
+                <option value="">-- Pilih Fakultas --</option>
+                <% if (typeof fakultas !== 'undefined' && fakultas && fakultas.length > 0) { %>
+                  <% fakultas.forEach(f => { %>
+                    <option value="<%= f.id %>" <%= (mitra?.fakultas_id === f.id) ? 'selected' : '' %>>
+                      <%= f.nama %> (<%= f.singkatan %>)
+                    </option>
+                  <% }); %>
+                <% } else { %>
+                  <option value="" disabled>⚠️ Data fakultas belum tersedia</option>
+                <% } %>
+              </select>
+              <!-- <small class="field-hint"> -->
+                <!-- 💡 Pilih fakultas yang bertanggung jawab atas kerja sama ini -->
+              <!-- </small> -->
+            <% } else { %>
+              <!-- 🔒 ADMIN FAKULTAS: disabled + hidden field -->
+              <% 
+                const currentFakultas = (typeof fakultas !== 'undefined' && fakultas) 
+                  ? fakultas.find(f => f.id === mitra?.fakultas_id) 
+                  : null;
+              %>
+              <select disabled aria-label="Fakultas (tidak dapat diubah)">
+                <option>
+                  <%= currentFakultas 
+                      ? `${currentFakultas.nama} (${currentFakultas.singkatan})` 
+                      : 'Tidak ada fakultas' %>
+                </option>
+              </select>
+              <input type="hidden" name="fakultas_id" value="<%= mitra?.fakultas_id || '' %>">
+              
+              <div class="field-lock-info">
+                <span style="font-size:1rem">🔒</span>
+                <div>
+                  <strong>Hanya Humas yang dapat mengubah fakultas penanggung jawab.</strong><br>
+                  Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
+                </div>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- ✨ EMAIL FAKULTAS — SEKARANG JADI INFO KONTAK SAJA ✨ -->
+          <div class="form-group">
+            <label for="email_fakultas">
+              📧 Email Kontak Fakultas
+            </label>
+            
+            <% if (canEditFakultasField) { %>
+              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
+              <input type="email" 
+                     id="email_fakultas" 
+                     name="email_fakultas" 
+                     value="<%= mitra?.email_fakultas || '' %>" 
+                     placeholder="akun@uniba.ac.id"
+                     style="text-transform: lowercase;">
+              <!-- <small class="field-hint"> -->
+                <!-- 💡 Opsional — hanya sebagai informasi kontak, tidak mempengaruhi pembagian fakultas -->
+              <!-- </small> -->
+            <% } else { %>
+              <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
+              <input type="email" 
+                     id="email_fakultas_display" 
+                     value="<%= mitra?.email_fakultas || '' %>" 
+                     readonly 
+                     placeholder="—"
+                     aria-label="Email kontak fakultas (tidak dapat diubah)">
+              <input type="hidden" name="email_fakultas" value="<%= mitra?.email_fakultas || '' %>">
+              
+              <div class="field-lock-info">
+                <span style="font-size:1rem">🔒</span>
+                <div>
+                  <strong>Hanya Humas yang dapat mengubah email kontak.</strong><br>
+                  Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
+                </div>
+              </div>
+            <% } %>
+          </div>
+
           <!-- Nama Kontak -->
           <div class="form-group">
             <label for="nama_kontak">👤 Nama Kontak Person</label>
@@ -305,53 +414,17 @@
             <input type="text" id="jabatan" name="jabatan" value="<%= mitra?.jabatan || '' %>" placeholder="Contoh: HRD Manager">
           </div>
 
-          <!-- No HP -->
-          <div class="form-group">
-            <label for="no_hp_kontak">📱 Nomor HP Kontak <span class="required">*</span></label>
-            <input type="tel" id="no_hp_kontak" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxxxxxx">
-          </div>
-
-          <!-- ✨ EMAIL FAKULTAS — FIELD YANG DIPERBAIKI ✨ -->
-          <div class="form-group">
-            <label for="email_fakultas">
-              📧 Email Fakultas Bertanggung Jawab <span class="required">*</span>
-            </label>
-            
-            <% if (canEditFakultasField) { %>
-              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
-              <input type="email" 
-                     id="email_fakultas" 
-                     name="email_fakultas" 
-                     required 
-                     value="<%= mitra?.email_fakultas || '' %>" 
-                     placeholder="fti@uniba.ac.id"
-                     style="text-transform: lowercase;">
-              <!-- <small style="color:var(--text-muted);font-size:0.75rem;margin-top:6px;display:block"> -->
-                <!-- 💡 Format: <code>[kode_fakultas]@uniba.ac.id</code> (contoh: ft, fh, fkedokteran, fti) -->
-              <!-- </small> -->
-            <% } else { %>
-              <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
-              <input type="email" 
-                     id="email_fakultas_display" 
-                     value="<%= mitra?.email_fakultas || '' %>" 
-                     readonly 
-                     aria-label="Email fakultas (tidak dapat diubah)">
-              <input type="hidden" name="email_fakultas" value="<%= mitra?.email_fakultas || '' %>">
-              
-              <div class="faculty-lock-info">
-                <span style="font-size:1rem">🔒</span>
-                <div>
-                  <strong>Hanya Humas yang dapat mengubah fakultas penanggung jawab.</strong><br>
-                  Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
-                </div>
-              </div>
-            <% } %>
-          </div>
 
           <!-- Tanggal Mulai -->
           <div class="form-group">
             <label for="tanggal_mulai">📅 Tanggal Mulai Kerja Sama <span class="required">*</span></label>
             <input type="date" id="tanggal_mulai" name="tanggal_mulai" required value="<%= mitra?.tanggal_mulai || '' %>">
+          </div>
+		  
+          <!-- No HP -->
+          <div class="form-group">
+            <label for="no_hp_kontak">📱 Nomor HP Kontak <span class="required">*</span></label>
+            <input type="tel" id="no_hp_kontak" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxxxxxx">
           </div>
 
           <!-- Tanggal Berakhir -->
@@ -380,7 +453,11 @@
         <span style="font-size: 1.2rem;">💡</span>
         <div>
           <strong>Catatan Penting:</strong> 
-          Upload dokumen legalitas (MoU, MoA, IA, PKS) dilakukan <strong>setelah</strong> data mitra berhasil disimpan, melalui halaman Detail Mitra.
+          <ul style="margin-top: 6px; padding-left: 20px; line-height: 1.8;">
+            <li><strong>Fakultas Penanggung Jawab</strong> menentukan siapa yang bisa mengelola data mitra ini</li>
+            <li><strong>Email Kontak</strong> bersifat opsional, hanya sebagai informasi kontak</li>
+            <li>Upload dokumen legalitas (MoU, MoA, IA, PKS) dilakukan <strong>setelah</strong> data mitra berhasil disimpan, melalui halaman Detail Mitra</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -415,7 +492,7 @@
     }
     
     document.addEventListener('DOMContentLoaded', () => {
-      const firstInput = document.querySelector('input[required]:not([readonly])');
+      const firstInput = document.querySelector('input[required]:not([readonly]), select[required]:not([disabled])');
       if (firstInput) firstInput.focus();
     });
   </script>

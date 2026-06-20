@@ -39,6 +39,7 @@
         .info-box { margin-top: 20px; padding: 12px; background: rgba(212, 160, 23, 0.1); border-left: 4px solid var(--uniba-gold); border-radius: 6px; font-size: 13px; color: #92400e; }
         .hidden { display: none; }
         .required { color: var(--danger); }
+        .small-text { color: var(--text-muted); font-size: 12px; margin-top: 6px; display: block; }
 
         /* ========== PASSWORD FIELD ENHANCEMENTS ========== */
         .password-wrapper {
@@ -247,17 +248,24 @@
                     </select>
                 </div>
 
+                <!-- ========== DROPDOWN FAKULTAS (DINAMIS DARI DATABASE) ========== -->
                 <div class="form-group hidden" id="fakultasGroup">
                     <label>🏛️ Fakultas <span class="required">*</span></label>
-                    <select name="fakultas_id">
+                    <select name="fakultas_id" id="fakultasSelect">
                         <option value="">-- Pilih Fakultas --</option>
-                        <option value="fti">Fakultas Teknologi Informasi (FTI)</option>
-                        <option value="fkip">Fakultas Keguruan dan Ilmu Pendidikan (FKIP)</option>
-                        <option value="fh">Fakultas Hukum (FH)</option>
-                        <option value="feb">Fakultas Ekonomi dan Bisnis (FEB)</option>
-                        <option value="fek">Fakultas Ekonomi Kreatif (FEK)</option>
-                        <option value="fikom">Fakultas Ilmu Komunikasi (FIKOM)</option>
+                        <% if (typeof fakultas !== 'undefined' && fakultas && fakultas.length > 0) { %>
+                            <% fakultas.forEach(f => { %>
+                                <option value="<%= f.id %>">
+                                    <%= f.nama %> (<%= f.singkatan %>)
+                                </option>
+                            <% }); %>
+                        <% } else { %>
+                            <option value="" disabled>⚠️ Data fakultas belum tersedia di database</option>
+                        <% } %>
                     </select>
+                    <small class="small-text">
+                        💡 Data fakultas diambil otomatis dari database. Hubungi developer jika ada fakultas baru.
+                    </small>
                 </div>
 
                 <div class="info-box">
@@ -290,19 +298,16 @@
             const symbols = '!@#$%^&*';
             const allChars = upper + lower + numbers + symbols;
             
-            // Pastikan ada minimal 1 dari setiap kategori
             let password = '';
             password += upper[Math.floor(Math.random() * upper.length)];
             password += lower[Math.floor(Math.random() * lower.length)];
             password += numbers[Math.floor(Math.random() * numbers.length)];
             password += symbols[Math.floor(Math.random() * symbols.length)];
             
-            // Isi sisanya dengan karakter acak
             for (let i = password.length; i < length; i++) {
                 password += allChars[Math.floor(Math.random() * allChars.length)];
             }
             
-            // Shuffle agar tidak predictable
             return password.split('').sort(() => Math.random() - 0.5).join('');
         }
 
@@ -310,7 +315,7 @@
         function generateAndSetPassword() {
             const input = document.getElementById('passwordInput');
             input.value = generatePassword(14);
-            input.type = 'text'; // Selalu tampilkan saat generate
+            input.type = 'text';
             document.getElementById('eyeIcon').textContent = '🙈';
             updateStrengthMeter();
             showToast('✅ Password baru telah di-generate!', 'success');
@@ -337,7 +342,6 @@
                 return;
             }
             
-            // Jika hidden, tampilkan sebentar untuk copy
             const originalType = input.type;
             input.type = 'text';
             input.select();
@@ -353,7 +357,6 @@
                 showToast('❌ Gagal menyalin password', '');
             }
             
-            // Kembalikan ke tipe semula
             input.type = originalType;
         }
 
@@ -413,7 +416,7 @@
         function toggleFakultas() {
             const role = document.getElementById('roleSelect').value;
             const fakultasGroup = document.getElementById('fakultasGroup');
-            const fakultasInput = fakultasGroup.querySelector('select');
+            const fakultasInput = document.getElementById('fakultasSelect');
             
             if (role === 'admin_fakultas') {
                 fakultasGroup.classList.remove('hidden');
@@ -438,11 +441,9 @@
         // ========== INIT: Generate password saat halaman load ==========
         document.addEventListener('DOMContentLoaded', function() {
             generateAndSetPassword();
-            // Auto-focus ke field nama
             document.querySelector('input[name="name"]').focus();
         });
 
-        // Update strength meter saat user mengetik manual (jika readonly dihapus)
         document.getElementById('passwordInput').addEventListener('input', updateStrengthMeter);
     </script>
 </body>
