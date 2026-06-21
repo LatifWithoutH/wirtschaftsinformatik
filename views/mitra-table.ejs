@@ -123,9 +123,10 @@
       flex-shrink: 0;
     }
     
-    .stat-icon.total { background: rgba(26, 58, 92, 0.1); }
+    <!-- .stat-icon.total { background: rgba(26, 58, 92, 0.1); } -->
     .stat-icon.active { background: rgba(16, 185, 129, 0.1); }
     .stat-icon.warning { background: rgba(245, 158, 11, 0.1); }
+	.stat-icon.critical { background: rgba(239, 68, 68, 0.1); }
     .stat-icon.expired { background: rgba(100, 116, 139, 0.1); }
     
     .stat-info h3 {
@@ -784,36 +785,53 @@
     
     <!-- Stats Bar -->
     <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-icon total">🏢</div>
-        <div class="stat-info">
-          <h3>Total Mitra</h3>
-          <p id="statTotal"><%= mitra?.length || 0 %></p>
-        </div>
-      </div>
+      <% 
+        // Hitung stats langsung dari data mitra
+        const stats = { aktif: 0, akanBerakhir: 0, segeraBerakhir: 0, expired: 0 };
+        if (mitra && mitra.length > 0) {
+          mitra.forEach(m => {
+            if (m.badgeClass === 'active') stats.aktif++;
+            else if (m.badgeClass === 'warning') stats.akanBerakhir++;
+            else if (m.badgeClass === 'danger') stats.segeraBerakhir++;
+            else if (m.badgeClass === 'expired') stats.expired++;
+          });
+        }
+      %>
+      
       <div class="stat-item">
         <div class="stat-icon active">✅</div>
         <div class="stat-info">
-          <h3>Aktif</h3>
-          <p id="statActive">0</p>
+          <h3>Mitra Aktif</h3>
+          <p><%= stats.aktif %></p>
         </div>
       </div>
+      
       <div class="stat-item">
         <div class="stat-icon warning">⚠️</div>
         <div class="stat-info">
-          <h3>Segera Berakhir</h3>
-          <p id="statWarning">0</p>
+          <h3>Akan Berakhir</h3>
+          <p><%= stats.akanBerakhir %></p>
         </div>
       </div>
+      
+      <div class="stat-item">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1);">🚨</div>
+        <div class="stat-info">
+          <h3>Segera Berakhir</h3>
+          <p><%= stats.segeraBerakhir %></p>
+        </div>
+      </div>
+      
       <div class="stat-item">
         <div class="stat-icon expired">⏰</div>
         <div class="stat-info">
           <h3>Expired</h3>
-          <p id="statExpired">0</p>
+          <p><%= stats.expired %></p>
         </div>
       </div>
     </div>
-    
+
+
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="search-box">
