@@ -6,6 +6,8 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 
+// ✅ AUDIT LOGGER
+const { logAudit } = require('./utils/auditLogger');
 const { uploadFileToDrive } = require('./utils/gasUploader');
 
 const app = express();
@@ -116,6 +118,7 @@ app.use('/mitra', checkUserActive);
 app.use('/users', checkUserActive);
 app.use('/test-alert', checkUserActive);
 app.use('/change-password', checkUserActive);
+app.use('/audit-log', checkUserActive); // ✅ Tambahan untuk audit log
 
 // ========================================================================
 // 🔒 RATE LIMITERS
@@ -131,15 +134,12 @@ const upload = multer({
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 5, // Maksimal 5 percobaan
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: { error: '⚠️ Terlalu banyak percobaan login.' },
   standardHeaders: true,
   legacyHeaders: false,
-  
-  // ✅ PERBAIKAN: Hapus baris ini, atau ubah jadi false
   skipSuccessfulRequests: false, 
-  
   handler: (req, res, next, options) => {
     const retryAfter = res.getHeader('Retry-After') || 900;
     console.warn(`🚨 [RATE LIMIT] Login diblokir dari IP: ${req.ip}. Retry after ${retryAfter}s`);
@@ -170,16 +170,57 @@ app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
+// ✅ LOGIN DENGAN AUDIT LOG
 app.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const { data: user, error } = await supabase.from('users').select('*').eq('email', email).single();
 
-    if (error || !user) return res.render('login', { error: '❌ Email tidak ditemukan' });
-    if (user.is_active === false) return res.render('login', { error: '🚫 Akun Anda telah dinonaktifkan.' });
+    if (error || !user) {
+      await logAudit({
+        action: 'LOGIN_FAILED',
+        tableName: 'users',
+        recordName: email,
+        newData: { reason: 'Email not found' },
+        req
+      });
+      return res.render('login', { error: '❌ Email tidak ditemukan' });
+    }
+
+    if (user.is_active === false) {
+      await logAudit({
+        action: 'LOGIN_FAILED',
+        tableName: 'users',
+        recordId: user.id,
+        recordName: email,
+        newData: { reason: 'Account inactive' },
+        req
+      });
+      return res.render('login', { error: '🚫 Akun Anda telah dinonaktifkan.' });
+    }
 
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) return res.render('login', { error: '❌ Password salah' });
+    if (!match) {
+      await logAudit({
+        action: 'LOGIN_FAILED',
+        tableName: 'users',
+        recordId: user.id,
+        recordName: email,
+        newData: { reason: 'Wrong password' },
+        req
+      });
+      return res.render('login', { error: '❌ Password salah' });
+    }
+
+    // ✅ LOGIN BERHASIL
+    await logAudit({
+      action: 'LOGIN',
+      tableName: 'users',
+      recordId: user.id,
+      recordName: email,
+      user: { id: user.id, email: user.email, role: user.role },
+      req
+    });
 
     req.session.user = { id: user.id, email: user.email, role: user.role, fakultas_id: user.fakultas_id };
     res.redirect('/dashboard');
@@ -189,7 +230,18 @@ app.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-app.get('/logout', (req, res) => {
+// ✅ LOGOUT DENGAN AUDIT LOG
+app.get('/logout', async (req, res) => {
+  if (req.session.user) {
+    await logAudit({
+      action: 'LOGOUT',
+      tableName: 'users',
+      recordId: req.session.user.id,
+      recordName: req.session.user.email,
+      user: req.session.user,
+      req
+    });
+  }
   req.session.destroy(() => res.redirect('/login'));
 });
 
@@ -239,7 +291,7 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
 });
 
 // ========================================================================
-// 📋 DAFTAR MITRA (BUG TYPO SUDAH DIPERBAIKI!)
+// 📋 DAFTAR MITRA
 // ========================================================================
 app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
@@ -261,7 +313,6 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
       let status, color, badgeClass;
       if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; badgeClass = 'expired'; }
       else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; badgeClass = 'danger'; }
-      // ✅ DIPERBAIKI: pakai '=' bukan ':'
       else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; badgeClass = 'warning'; }
       else { status = 'Aktif'; color = '#28a745'; badgeClass = 'active'; }
       return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
@@ -340,11 +391,21 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `mitra-dudika-${dateStr}_${timeStr}.csv`;
     
+    // ✅ AUDIT LOG: Export CSV
+    await logAudit({
+      action: 'EXPORT',
+      tableName: 'mitra',
+      recordName: `Export CSV (${mitraList.length} records)`,
+      newData: { total_exported: mitraList.length, search: searchTerm || null },
+      user: req.session.user,
+      req
+    });
+    
     console.log(`📊 [EXPORT CSV] User: ${req.session.user.email} | Total: ${mitraList.length}`);
     
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send('\ufeff' + csvRows.join('\n'));
+    res.send('﻿' + csvRows.join('\n'));
   } catch (err) {
     console.error('❌ Error export CSV:', err.message);
     res.status(500).send('❌ Gagal export CSV: ' + err.message);
@@ -377,6 +438,7 @@ app.get('/mitra/tambah', requireAuth('humas'), async (req, res) => {
   }
 });
 
+// ✅ CREATE MITRA + AUDIT LOG
 app.post('/mitra', requireAuth('humas'), async (req, res) => {
   try {
     const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
@@ -395,8 +457,19 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
       tanggal_mulai, tanggal_berakhir 
     };
     
-    const { error } = await supabase.from('mitra').insert(insertData);
+    const { data: newMitra, error } = await supabase.from('mitra').insert(insertData).select().single();
     if (error) throw error;
+    
+    // ✅ AUDIT LOG: CREATE mitra
+    await logAudit({
+      action: 'CREATE',
+      tableName: 'mitra',
+      recordId: newMitra.id,
+      recordName: nama_instansi,
+      newData: insertData,
+      user: req.session.user,
+      req
+    });
     
     console.log(`✅ Mitra baru: ${nama_instansi} - Fakultas: ${fakultas_id || '-'}`);
     res.redirect('/mitra');
@@ -407,7 +480,7 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
 });
 
 // ========================================================================
-// 📤 UPLOAD PDF
+// 📤 UPLOAD PDF + AUDIT LOG
 // ========================================================================
 app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.single('file_pdf'), async (req, res) => {
   try {
@@ -429,13 +502,28 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
     
     if (mitraError || !mitraData) throw new Error('Data mitra tidak ditemukan');
     
+    // ✅ Ambil data lama sebelum upload (untuk audit)
+    const fieldName = `file_${jenis_file}`;
+    const { data: oldMitraData } = await supabase.from('mitra').select(fieldName).eq('id', id).single();
+    
     const driveLink = await uploadFileToDrive(
       req.file.buffer, req.file.originalname, req.file.mimetype, mitraData.nama_instansi
     );
     
-    const fieldName = `file_${jenis_file}`;
     const { error: dbError } = await supabase.from('mitra').update({ [fieldName]: driveLink }).eq('id', id);
     if (dbError) throw dbError;
+    
+    // ✅ AUDIT LOG: UPLOAD dokumen
+    await logAudit({
+      action: 'UPLOAD',
+      tableName: 'dokumen',
+      recordId: id,
+      recordName: `${mitraData.nama_instansi} - ${jenis_file.toUpperCase()}`,
+      oldData: { [fieldName]: oldMitraData?.[fieldName] || null },
+      newData: { [fieldName]: driveLink, file_name: req.file.originalname },
+      user: req.session.user,
+      req
+    });
     
     return res.json({
       success: true,
@@ -450,7 +538,7 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
 });
 
 // ========================================================================
-// 📄 DETAIL MITRA (HANYA 1x, TIDAK DUPLIKAT!)
+// 📄 DETAIL MITRA
 // ========================================================================
 app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
@@ -502,7 +590,13 @@ app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, r
   try {
     const { id } = req.params;
     if (req.session.user.role === 'admin_fakultas') {
-      const { data: mitra } = await supabase.from('mitra').select('fakultas_id').eq('id', id).single();
+      const { data: mitra } = await supabase
+        .from('mitra')
+        .select('fakultas_id')
+        .eq('id', id)
+        .single();
+      
+      // ✅ Gunakan isSameFaculty
       if (!isSameFaculty(req.session.user.fakultas_id, mitra?.fakultas_id)) {
         return res.status(403).send('❌ Anda hanya dapat mengedit mitra fakultas Anda');
       }
@@ -526,11 +620,14 @@ app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, r
   }
 });
 
+// ✅ UPDATE MITRA + AUDIT LOG (dengan old_data & new_data)
 app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { data: currentMitra } = await supabase.from('mitra').select('fakultas_id').eq('id', id).single();
-    if (!currentMitra) return res.status(404).send('❌ Mitra tidak ditemukan');
+    
+    // ✅ Ambil data LAMA (full) untuk audit
+    const { data: currentMitra, error: checkError } = await supabase.from('mitra').select('*').eq('id', id).single();
+    if (checkError || !currentMitra) return res.status(404).send('❌ Mitra tidak ditemukan');
     
     if (req.session.user.role === 'admin_fakultas') {
       if (!isSameFaculty(req.session.user.fakultas_id, currentMitra.fakultas_id)) {
@@ -549,6 +646,18 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
       updateData.fakultas_id = currentMitra.fakultas_id;
     }
     
+    // ✅ AUDIT LOG: UPDATE mitra
+    await logAudit({
+      action: 'UPDATE',
+      tableName: 'mitra',
+      recordId: id,
+      recordName: currentMitra.nama_instansi,
+      oldData: currentMitra,
+      newData: updateData,
+      user: req.session.user,
+      req
+    });
+    
     const { error } = await supabase.from('mitra').update(updateData).eq('id', id);
     if (error) throw error;
     res.redirect(`/mitra/${id}`);
@@ -559,7 +668,7 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
 });
 
 // ========================================================================
-// 🧪 TEST ALERT (RENDER HALAMAN AJA, KIRIM EMAIL VIA GAS)
+// 🧪 TEST ALERT
 // ========================================================================
 app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   try {
@@ -601,7 +710,6 @@ app.get('/test-alert', requireAuth('humas'), async (req, res) => {
     res.status(500).send('❌ Gagal memuat halaman test alert.');
   }
 });
-// ❌ TIDAK ADA /test-alert/send — karena email dikirim via GAS langsung dari browser
 
 // ========================================================================
 // 👥 USERS MANAGEMENT
@@ -635,6 +743,7 @@ app.get('/users/tambah', requireAuth('humas'), async (req, res) => {
   }
 });
 
+// ✅ CREATE USER + AUDIT LOG
 app.post('/users', requireAuth('humas'), async (req, res) => {
   try {
     const { name, email, password, role, fakultas_id } = req.body;
@@ -654,11 +763,22 @@ app.post('/users', requireAuth('humas'), async (req, res) => {
       is_active: true 
     };
     
-    const { error } = await supabase.from('users').insert(insertData);
+    const { data: newUser, error } = await supabase.from('users').insert(insertData).select().single();
     if (error) {
       if (error.code === '23505') return res.status(400).send('❌ Email sudah terdaftar.');
       throw error;
     }
+    
+    // ✅ AUDIT LOG: CREATE user
+    await logAudit({
+      action: 'CREATE',
+      tableName: 'users',
+      recordId: newUser.id,
+      recordName: email,
+      newData: { name, email, role, fakultas_id: fakultas_id || null },
+      user: req.session.user,
+      req
+    });
     
     console.log(`✅ User baru: ${email} (${role})`);
     res.redirect('/users');
@@ -668,6 +788,7 @@ app.post('/users', requireAuth('humas'), async (req, res) => {
   }
 });
 
+// ✅ RESET PASSWORD + AUDIT LOG
 app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -677,6 +798,18 @@ app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (r
     const newPassword = generateRandomPassword(12);
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(newPassword, salt);
+    
+    // ✅ AUDIT LOG: RESET PASSWORD
+    await logAudit({
+      action: 'RESET_PASSWORD',
+      tableName: 'users',
+      recordId: id,
+      recordName: targetUser.email,
+      newData: { action: 'Password reset by admin' },
+      user: req.session.user,
+      req
+    });
+    
     await supabase.from('users').update({ password_hash }).eq('id', id);
     
     res.send(`
@@ -702,11 +835,28 @@ app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (r
   }
 });
 
+// ✅ TOGGLE STATUS + AUDIT LOG
 app.post('/users/:id/toggle-status', apiLimiter, requireAuth('humas'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { data: currentUser } = await supabase.from('users').select('is_active').eq('id', id).single();
-    await supabase.from('users').update({ is_active: !currentUser.is_active }).eq('id', id);
+    const { data: currentUser } = await supabase.from('users').select('is_active, email').eq('id', id).single();
+    
+    const newStatus = !currentUser.is_active;
+    const actionName = newStatus ? 'ACTIVATE' : 'DEACTIVATE';
+    
+    // ✅ AUDIT LOG: TOGGLE STATUS
+    await logAudit({
+      action: actionName,
+      tableName: 'users',
+      recordId: id,
+      recordName: currentUser.email,
+      oldData: { is_active: currentUser.is_active },
+      newData: { is_active: newStatus },
+      user: req.session.user,
+      req
+    });
+    
+    await supabase.from('users').update({ is_active: newStatus }).eq('id', id);
     res.redirect('/users');
   } catch (err) {
     console.error('❌ Error toggle status:', err);
@@ -721,11 +871,12 @@ app.get('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), (re
   res.render('change-password', { user: req.session.user, error: null, success: null, activePage: 'change-password', alertCount: 0 });
 });
 
+// ✅ CHANGE PASSWORD + AUDIT LOG
 app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const { old_password, new_password, confirm_password } = req.body;
     const userId = req.session.user.id;
-    const { data: user, error } = await supabase.from('users').select('password_hash').eq('id', userId).single();
+    const { data: user, error } = await supabase.from('users').select('password_hash, email').eq('id', userId).single();
     if (error) throw error;
 
     const isMatch = await bcrypt.compare(old_password, user.password_hash);
@@ -737,6 +888,17 @@ app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), as
     const new_password_hash = await bcrypt.hash(new_password, salt);
     await supabase.from('users').update({ password_hash: new_password_hash }).eq('id', userId);
 
+    // ✅ AUDIT LOG: CHANGE PASSWORD (user ganti password sendiri)
+    await logAudit({
+      action: 'CHANGE_PASSWORD',
+      tableName: 'users',
+      recordId: userId,
+      recordName: user.email,
+      newData: { action: 'User changed own password' },
+      user: req.session.user,
+      req
+    });
+
     res.render('change-password', { user: req.session.user, error: null, success: '✅ Password berhasil diubah!', activePage: 'change-password', alertCount: 0 });
   } catch (err) {
     console.error('❌ Error change password:', err);
@@ -744,5 +906,51 @@ app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), as
   }
 });
 
+// ========================================================================
+// 📜 AUDIT LOG (KHUSUS HUMAS)
+// ========================================================================
+app.get('/audit-log', requireAuth('humas'), async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const offset = (page - 1) * limit;
+
+    const { action, table, user: userFilter } = req.query;
+    
+    let query = supabase
+      .from('audit_logs')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (action) query = query.eq('action', action);
+    if (table) query = query.eq('table_name', table);
+    if (userFilter) query = query.ilike('user_email', `%${userFilter}%`);
+
+    const { data: logs, error, count } = await query;
+    if (error) throw error;
+
+    res.render('audit-log', {
+      logs: logs || [],
+      currentPage: page,
+      totalPages: Math.ceil((count || 0) / limit),
+      filters: { 
+        action: action || '', 
+        table: table || '', 
+        user: userFilter || '' 
+      },
+      user: req.session.user,
+      activePage: 'audit-log',
+      alertCount: 0
+    });
+  } catch (err) {
+    console.error('❌ Error audit log:', err);
+    res.status(500).send('Gagal memuat audit log: ' + err.message);
+  }
+});
+
+// ========================================================================
+// 🚀 START SERVER
+// ========================================================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server aktif di http://localhost:${PORT}`));

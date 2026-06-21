@@ -797,10 +797,26 @@
           <tbody>
             <% if (mitra && mitra.length > 0) { %>
               <% mitra.forEach(m => { %>
+                <%
+                  // 🔒 LOGIKA AKSES: Cek apakah user boleh edit mitra ini
+                  const isHumas = user?.role === 'humas';
+                  const isAdminFakultas = user?.role === 'admin_fakultas';
+                  const isGuest = user?.role === 'guest';
+                  
+                  // Admin fakultas boleh edit HANYA jika fakultas_id cocok
+                  const isOwnFaculty = isAdminFakultas && 
+                    user.fakultas_id && 
+                    m.fakultas_id &&
+                    user.fakultas_id.toLowerCase().trim() === m.fakultas_id.toLowerCase().trim();
+                  
+                  // Humas bisa semua, Admin Fakultas hanya milik fakultasnya
+                  const canEdit = isHumas || isOwnFaculty;
+                %>
+                
                 <tr>
                   <td data-label="Kode">
                     <span class="kode-mitra"><%= m.kode_mitra %></span>
-                    <br><strong style="display:none" class="mobile-instansi"><%= m.nama_instansi %></strong>
+                    <br><strong style="display:none" class="mobile_instansi"><%= m.nama_instansi %></strong>
                   </td>
                   <td data-label="Instansi"><strong><%= m.nama_instansi %></strong></td>
                   <td data-label="Kontak" class="contact-cell">
@@ -855,9 +871,13 @@
                   <td data-label="Aksi">
                     <div class="action-btns">
                       <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
-                      <% if (user && user.role === 'humas') { %>
+                      
+                      <% if (canEdit) { %>
                         <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️ Edit</a>
+                      <% } else if (isAdminFakultas && !isOwnFaculty) { %>
+                        <span style="font-size:11px;color:var(--text-muted);padding:4px 8px">🔒 Fakultas Lain</span>
                       <% } %>
+                      
                     </div>
                   </td>
                 </tr>

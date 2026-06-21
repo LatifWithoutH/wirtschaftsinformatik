@@ -26,6 +26,7 @@
             --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
             --border: #e2e8f0;
         }
+        
         /* ========== MODAL KONFIRMASI ========== */
         .modal-overlay {
             position: fixed;
@@ -160,6 +161,7 @@
                 transform: translateY(0) scale(1); 
             }
         }
+        
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -174,7 +176,6 @@
             overflow-x: hidden;
         }
 
-        /* ========== MAIN WRAPPER ========== */
         .main-wrapper {
             margin-left: var(--sidebar-width);
             transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -185,7 +186,6 @@
             margin-left: 0;
         }
 
-        /* ========== PAGE HEADER ========== */
         .page-header {
             padding: 30px 40px 10px;
             display: flex;
@@ -216,7 +216,6 @@
             border-radius: 3px;
         }
 
-        /* ========== STATS BAR ========== */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -274,7 +273,6 @@
             line-height: 1;
         }
 
-        /* ========== TOOLBAR ========== */
         .toolbar {
             padding: 0 40px 20px;
             display: flex;
@@ -286,7 +284,7 @@
 
         .search-box {
             display: flex;
-            gap: 12px;
+            align-items: center;
             flex: 1;
             max-width: 500px;
             position: relative;
@@ -294,7 +292,7 @@
 
         .search-box input {
             flex: 1;
-            padding: 12px 18px;
+            padding: 12px 18px 12px 48px;
             border: 2px solid var(--border);
             border-radius: 12px;
             font-size: 14px;
@@ -309,13 +307,23 @@
             box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
         }
 
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 1;
+        }
+
         .toolbar-actions {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
         }
 
-        /* ========== BUTTONS ========== */
         .btn {
             padding: 12px 24px;
             background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
@@ -371,7 +379,6 @@
 
         .btn-danger:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); }
 
-        /* ========== TABLE SECTION ========== */
         .table-section {
             padding: 0 40px 40px;
             animation: fadeIn 0.5s ease;
@@ -390,7 +397,6 @@
             border: 1px solid var(--border);
         }
 
-        /* ========== TABLE DESKTOP ========== */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -446,7 +452,6 @@
             background: rgba(26, 58, 92, 0.05);
         }
 
-        /* ========== ROLE BADGES ========== */
         .role-badge {
             padding: 6px 14px;
             border-radius: 20px;
@@ -473,7 +478,6 @@
             background: linear-gradient(135deg, var(--expired), #94a3b8);
         }
 
-        /* ========== STATUS ========== */
         .status-active {
             color: var(--success);
             font-weight: 700;
@@ -490,14 +494,12 @@
             gap: 5px;
         }
 
-        /* ========== ACTION BUTTONS ========== */
         .action-btns {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
 
-        /* ========== EMAIL CELL ========== */
         .email-cell {
             color: var(--uniba-primary);
             text-decoration: none;
@@ -510,7 +512,6 @@
             text-decoration: underline;
         }
 
-        /* ========== FAKULTAS BADGE ========== */
         .fakultas-badge {
             font-family: 'Courier New', monospace;
             background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08));
@@ -524,7 +525,6 @@
             text-transform: uppercase;
         }
 
-        /* ========== EMPTY STATE ========== */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -549,7 +549,6 @@
             font-size: 0.95rem;
         }
 
-        /* ========== TABLE FOOTER ========== */
         .table-footer {
             padding: 18px 24px;
             background: rgba(248, 250, 252, 0.8);
@@ -568,7 +567,11 @@
             color: var(--uniba-primary);
         }
 
-        /* ========== MOBILE RESPONSIVE ========== */
+        /* ✅ CLASS UNTUK HIDE ROW */
+        .hidden-row {
+            display: none !important;
+        }
+
         @media (max-width: 768px) {
             .main-wrapper {
                 margin-left: 0;
@@ -618,7 +621,6 @@
                 padding: 0 15px 20px;
             }
 
-            /* Card Layout untuk Mobile */
             .table-container {
                 background: transparent;
                 box-shadow: none;
@@ -684,7 +686,6 @@
                 min-width: 100px;
             }
 
-            /* Header Card (Nama + Email) */
             tbody tr td:first-child {
                 flex-direction: column;
                 align-items: flex-start;
@@ -708,7 +709,6 @@
                 font-size: 13px;
             }
 
-            /* Action Buttons */
             tbody tr td:last-child {
                 flex-direction: row;
                 align-items: stretch;
@@ -749,7 +749,6 @@
             }
         }
 
-        /* ========== SCROLLBAR ========== */
         ::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -771,18 +770,14 @@
     </style>
 </head>
 <body>
-    <!-- Include Sidebar -->
     <%- include('partials/_sidebar') %>
 
-    <!-- Main Wrapper -->
     <div class="main-wrapper">
-        <!-- Page Header -->
         <div class="page-header">
             <h1>👥 Manajemen User</h1>
             <a href="/users/tambah" class="btn btn-success">➕ Tambah User Baru</a>
         </div>
 
-        <!-- Stats Bar -->
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-icon total">👥</div>
@@ -814,7 +809,6 @@
             </div>
         </div>
 
-        <!-- Modal Konfirmasi Toggle Status -->
         <div class="modal-overlay" id="confirmModal">
             <div class="modal-box">
                 <div class="modal-icon" id="modalIcon">🚫</div>
@@ -835,14 +829,13 @@
             </div>
         </div>
 
-        <!-- Toolbar -->
         <div class="toolbar">
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Cari nama, email, atau fakultas...">
+                <span class="search-icon">🔍</span>
             </div>
         </div>
 
-        <!-- Table Section -->
         <div class="table-section">
             <div class="table-container">
                 <table id="userTable">
@@ -856,7 +849,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                                  
                         <% if (users && users.length > 0) { %>
                             <% users.forEach(u => { %>
                                 <tr>
@@ -877,23 +869,16 @@
                                             <span style="color: var(--text-muted);">-</span>
                                         <% } %>
                                     </td>
-                                    
-                                    <!-- STATUS: Hanya Badge (Read-Only) -->
                                     <td data-label="Status">
                                         <span class="<%= u.is_active ? 'status-active' : 'status-inactive' %>">
                                             <%= u.is_active ? '✅ Aktif' : '❌ Nonaktif' %>
                                         </span>
                                     </td>
-                                    
-                                    <!-- AKSI: Reset PW + Toggle Button (Paling Kanan) -->
                                     <td data-label="Aksi">
                                         <div class="action-btns">
                                             <form method="POST" action="/users/<%= u.id %>/reset-password" style="display:inline;" onsubmit="return confirm('Reset password user ini? Password baru akan di-generate otomatis dan ditampilkan setelah berhasil.')">
                                                 <button type="submit" class="btn btn-sm btn-warning">🔑 Reset PW</button>
                                             </form>
-									
-                                            
-                                            <!-- Tombol Toggle dengan Modal -->
                                             <button type="button" 
                                                     class="btn btn-sm <%= u.is_active ? 'btn-danger' : 'btn-success' %>"
                                                     onclick="openModal(
@@ -909,8 +894,6 @@
                                 </tr>
                             <% }) %>
                         <% } else { %>
-                        
-                        
                             <tr>
                                 <td colspan="5">
                                     <div class="empty-state">
@@ -926,7 +909,6 @@
                 </table>
             </div>
 
-            <!-- Table Footer -->
             <div class="table-footer">
                 <span id="resultCount"><%= users?.length || 0 %> user terdaftar</span>
                 <span>💡 Gunakan search untuk mencari user tertentu</span>
@@ -934,135 +916,159 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script>
-        // ========== SIDEBAR TOGGLE ==========
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.querySelector('.sidebar');
-        const mainWrapper = document.querySelector('.main-wrapper');
+window.addEventListener('load', function() {
+  console.log('🚀 Page loaded completely');
+  
+  const searchInput = document.getElementById('searchInput');
+  const table = document.getElementById('userTable');
+  const resultCount = document.getElementById('resultCount');
+  
+  if (!searchInput) {
+    console.error('❌ searchInput tidak ditemukan!');
+    return;
+  }
+  
+  if (!table) {
+    console.error('❌ table tidak ditemukan!');
+    return;
+  }
+  
+  const dataRows = [];
+  const allTr = table.querySelectorAll('tbody tr');
+  allTr.forEach(tr => {
+    if (!tr.querySelector('.empty-state')) {
+      dataRows.push(tr);
+    }
+  });
+  
+  console.log(`✅ Found ${dataRows.length} data rows`);
+  
+  function updateStats() {
+    let humas = 0, admin = 0, guest = 0;
     
-        if (sidebarToggle && sidebar) {
-            sidebarToggle.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.toggle('active');
-                    sidebarToggle.classList.toggle('shifted');
-                } else {
-                    sidebar.classList.toggle('hidden');
-                    mainWrapper.classList.toggle('expanded');
-                    sidebarToggle.classList.toggle('shifted');
-                }
-            });
-        }
+    dataRows.forEach(row => {
+      if (row.classList.contains('hidden-row')) return;
+      
+      const badge = row.querySelector('.role-badge');
+      if (!badge) return;
+      
+      if (badge.classList.contains('role-humas')) humas++;
+      else if (badge.classList.contains('role-admin')) admin++;
+      else if (badge.classList.contains('role-guest')) guest++;
+    });
     
-        // ========== MODAL KONFIRMASI ==========
-        function openModal(userId, userName, userEmail, isCurrentlyActive) {
-            const modal = document.getElementById('confirmModal');
-            const icon = document.getElementById('modalIcon');
-            const title = document.getElementById('modalTitle');
-            const message = document.getElementById('modalMessage');
-            const nameEl = document.getElementById('modalUserName');
-            const emailEl = document.getElementById('modalUserEmail');
-            const form = document.getElementById('confirmForm');
-            const submitBtn = document.getElementById('modalSubmitBtn');
+    const elHumas = document.getElementById('statHumas');
+    const elAdmin = document.getElementById('statAdmin');
+    const elGuest = document.getElementById('statGuest');
     
-            // Set data user
-            nameEl.textContent = userName;
-            emailEl.textContent = userEmail;
+    if (elHumas) elHumas.textContent = humas;
+    if (elAdmin) elAdmin.textContent = admin;
+    if (elGuest) elGuest.textContent = guest;
     
-            // Set action berdasarkan status saat ini
-            if (isCurrentlyActive) {
-                // Sedang aktif → akan dinonaktifkan
-                icon.className = 'modal-icon danger';
-                icon.textContent = '🚫';
-                title.textContent = 'Nonaktifkan User?';
-                message.textContent = 'User yang dinonaktifkan tidak bisa login ke sistem sampai diaktifkan kembali.';
-                submitBtn.className = 'btn btn-danger';
-                submitBtn.textContent = '🚫 Nonaktifkan';
-            } else {
-                // Sedang nonaktif → akan diaktifkan
-                icon.className = 'modal-icon success';
-                icon.textContent = '✅';
-                title.textContent = 'Aktifkan User?';
-                message.textContent = 'User akan bisa login kembali ke sistem setelah diaktifkan.';
-                submitBtn.className = 'btn btn-success';
-                submitBtn.textContent = '✅ Aktifkan';
-            }
+    console.log(`📊 Stats: ${humas} humas, ${admin} admin, ${guest} guest`);
+  }
+  
+  searchInput.addEventListener('input', function() {
+    const keyword = this.value.toLowerCase().trim();
+    let visibleCount = 0;
     
-            // Set form action
-            form.action = `/users/${userId}/toggle-status`;
-            form.style.display = 'block';
+    console.log(`🔍 Search: "${keyword}"`);
     
-            // Tampilkan modal
-            modal.classList.add('show');
-        }
+    dataRows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      
+      if (keyword === '' || text.includes(keyword)) {
+        row.classList.remove('hidden-row');
+        visibleCount++;
+      } else {
+        row.classList.add('hidden-row');
+      }
+    });
     
-        function closeModal() {
-            const modal = document.getElementById('confirmModal');
-            modal.classList.remove('show');
-        }
+    if (resultCount) {
+      resultCount.textContent = `${visibleCount} user ditemukan`;
+    }
     
-        // Tutup modal saat klik di luar
-        document.getElementById('confirmModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
+    updateStats();
+  });
+  
+  console.log('✅ Search ready - try typing something!');
+  
+  // Sidebar Toggle
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.querySelector('.sidebar');
+  const mainWrapper = document.querySelector('.main-wrapper');
+  
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('active');
+      } else {
+        sidebar.classList.toggle('hidden');
+        mainWrapper.classList.toggle('expanded');
+      }
+    });
+  }
+  
+  // Modal Functions
+  window.openModal = function(userId, userName, userEmail, isCurrentlyActive) {
+    const modal = document.getElementById('confirmModal');
+    const icon = document.getElementById('modalIcon');
+    const title = document.getElementById('modalTitle');
+    const message = document.getElementById('modalMessage');
+    const nameEl = document.getElementById('modalUserName');
+    const emailEl = document.getElementById('modalUserEmail');
+    const form = document.getElementById('confirmForm');
+    const submitBtn = document.getElementById('modalSubmitBtn');
     
-        // Tutup modal dengan tombol ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeModal();
-        });
+    nameEl.textContent = userName;
+    emailEl.textContent = userEmail;
     
-        // ========== STATS & SEARCH ==========
-        function updateStats() {
-            const rows = document.querySelectorAll('#userTable tbody tr');
-            let humas = 0, admin = 0, guest = 0;
+    if (isCurrentlyActive) {
+      icon.className = 'modal-icon danger';
+      icon.textContent = '🚫';
+      title.textContent = 'Nonaktifkan User?';
+      message.textContent = 'User yang dinonaktifkan tidak bisa login ke sistem sampai diaktifkan kembali.';
+      submitBtn.className = 'btn btn-danger';
+      submitBtn.textContent = '🚫 Nonaktifkan';
+    } else {
+      icon.className = 'modal-icon success';
+      icon.textContent = '✅';
+      title.textContent = 'Aktifkan User?';
+      message.textContent = 'User akan bisa login kembali ke sistem setelah diaktifkan.';
+      submitBtn.className = 'btn btn-success';
+      submitBtn.textContent = '✅ Aktifkan';
+    }
     
-            rows.forEach(row => {
-                if (row.style.display === 'none') return;
-                const badge = row.querySelector('.role-badge');
-                if (!badge) return;
-    
-                if (badge.classList.contains('role-humas')) humas++;
-                else if (badge.classList.contains('role-admin')) admin++;
-                else if (badge.classList.contains('role-guest')) guest++;
-            });
-    
-            document.getElementById('statHumas').textContent = humas;
-            document.getElementById('statAdmin').textContent = admin;
-            document.getElementById('statGuest').textContent = guest;
-        }
-    
-        const searchInput = document.getElementById('searchInput');
-        const table = document.getElementById('userTable');
-        const rows = table.querySelectorAll('tbody tr');
-        const resultCount = document.getElementById('resultCount');
-    
-        searchInput.addEventListener('input', function() {
-            const term = this.value.toLowerCase();
-            let visible = 0;
-    
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(term)) {
-                    row.style.display = '';
-                    visible++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-    
-            resultCount.textContent = `${visible} user ditemukan`;
-            updateStats();
-        });
-    
-        updateStats();
-    
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                searchInput.focus();
-                searchInput.select();
-            }
-        });
+    form.action = `/users/${userId}/toggle-status`;
+    form.style.display = 'block';
+    modal.classList.add('show');
+  };
+  
+  window.closeModal = function() {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('show');
+  };
+  
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+  
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+  
+  updateStats();
+});
     </script>
 </body>
 </html>

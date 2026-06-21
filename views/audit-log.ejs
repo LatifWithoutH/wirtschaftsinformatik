@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Log - SI Mitra DUDIKA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --uniba-primary: #1a3a5c;
+      --uniba-blue-light: #2c5282;
+      --uniba-gold: #d4a017;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      --border: #e2e8f0;
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+    }
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 100vh;
+      padding: 30px 40px;
+    }
+    .main-wrapper.expanded { margin-left: 0; }
+    .page-header {
+      margin-bottom: 25px;
+      padding-left: 18px;
+      position: relative;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 8px; bottom: 8px;
+      width: 5px;
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
+      border-radius: 3px;
+    }
+    .page-header h1 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .page-header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 5px; }
+    
+    /* Filter Card */
+    .filter-card {
+      background: var(--bg-card);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 25px;
+    }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+    .filter-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .filter-group select, .filter-group input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      background: white;
+      transition: all 0.3s;
+    }
+    .filter-group select:focus, .filter-group input:focus {
+      outline: none;
+      border-color: var(--uniba-primary);
+      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+    }
+    .btn-filter {
+      padding: 11px 22px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-filter:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35); }
+    .btn-reset {
+      padding: 11px 22px;
+      background: white;
+      color: var(--text-muted);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s;
+    }
+    .btn-reset:hover { border-color: var(--uniba-primary); color: var(--uniba-primary); }
+    
+    /* Table */
+    .table-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    thead {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+    }
+    th {
+      padding: 16px 18px;
+      text-align: left;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+    tbody tr { transition: all 0.2s; }
+    tbody tr:hover { background: rgba(26, 58, 92, 0.03); }
+    tbody tr:last-child td { border-bottom: none; }
+    
+    /* Badges */
+    .action-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-block;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .action-CREATE { background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .action-UPDATE { background: rgba(245, 158, 11, 0.12); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .action-DELETE { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .action-UPLOAD { background: rgba(44, 82, 130, 0.12); color: var(--uniba-blue-light); border: 1px solid rgba(44, 82, 130, 0.3); }
+    .action-LOGIN { background: rgba(26, 58, 92, 0.12); color: var(--uniba-primary); border: 1px solid rgba(26, 58, 92, 0.3); }
+    .action-LOGIN_FAILED { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .action-RESET_PASSWORD { background: rgba(212, 160, 23, 0.12); color: #92400e; border: 1px solid rgba(212, 160, 23, 0.3); }
+    .action-ACTIVATE { background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .action-DEACTIVATE { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    
+    .table-badge {
+      padding: 4px 10px;
+      background: rgba(26, 58, 92, 0.08);
+      color: var(--uniba-primary);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      text-transform: uppercase;
+    }
+    
+    .user-cell strong { display: block; color: var(--text-dark); font-size: 0.9rem; }
+    .user-cell small { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .time-cell { font-size: 0.85rem; color: var(--text-dark); white-space: nowrap; }
+    .time-cell small { display: block; color: var(--text-muted); font-size: 0.75rem; margin-top: 2px; }
+    
+    .ip-code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      background: #f1f5f9;
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: var(--text-muted);
+    }
+    
+    .record-name {
+      font-weight: 600;
+      color: var(--text-dark);
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    /* Detail Button */
+    .btn-detail {
+      padding: 6px 12px;
+      background: white;
+      border: 1.5px solid var(--uniba-primary);
+      color: var(--uniba-primary);
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-detail:hover {
+      background: var(--uniba-primary);
+      color: white;
+    }
+    
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+    .pagination a, .pagination span {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-dark);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .pagination a:hover { border-color: var(--uniba-primary); color: var(--uniba-primary); }
+    .pagination a.active {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      border-color: var(--uniba-primary);
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 3.5rem; margin-bottom: 15px; opacity: 0.4; }
+    .empty-state h3 { font-family: 'Poppins', sans-serif; color: var(--text-dark); margin-bottom: 8px; }
+    
+    /* Modal Detail */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15, 36, 57, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal-box h3 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--uniba-primary);
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+    }
+    .data-section {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--uniba-primary);
+    }
+    .data-section h4 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .data-section.old { border-left-color: var(--danger); }
+    .data-section.new { border-left-color: var(--success); }
+    .data-section pre {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: var(--text-dark);
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+    }
+    .modal-close {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 15px;
+    }
+    
+    @media (max-width: 768px) {
+      .main-wrapper { margin-left: 0; padding: 20px 15px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .filter-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/_sidebar') %>
+  <div class="main-wrapper">
+    <div class="page-header">
+      <h1>📜 Audit Log</h1>
+      <p>Tracking semua aktivitas pengguna dalam sistem SI Mitra DUDIKA</p>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-card">
+      <form method="GET" action="/audit-log">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label>Action</label>
+            <select name="action">
+              <option value="">Semua Action</option>
+              <option value="CREATE" <%= filters.action === 'CREATE' ? 'selected' : '' %>>CREATE</option>
+              <option value="UPDATE" <%= filters.action === 'UPDATE' ? 'selected' : '' %>>UPDATE</option>
+              <option value="UPLOAD" <%= filters.action === 'UPLOAD' ? 'selected' : '' %>>UPLOAD</option>
+              <option value="LOGIN" <%= filters.action === 'LOGIN' ? 'selected' : '' %>>LOGIN</option>
+              <option value="LOGIN_FAILED" <%= filters.action === 'LOGIN_FAILED' ? 'selected' : '' %>>LOGIN FAILED</option>
+              <option value="RESET_PASSWORD" <%= filters.action === 'RESET_PASSWORD' ? 'selected' : '' %>>RESET PASSWORD</option>
+              <option value="ACTIVATE" <%= filters.action === 'ACTIVATE' ? 'selected' : '' %>>ACTIVATE</option>
+              <option value="DEACTIVATE" <%= filters.action === 'DEACTIVATE' ? 'selected' : '' %>>DEACTIVATE</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Table</label>
+            <select name="table">
+              <option value="">Semua Table</option>
+              <option value="mitra" <%= filters.table === 'mitra' ? 'selected' : '' %>>Mitra</option>
+              <option value="users" <%= filters.table === 'users' ? 'selected' : '' %>>Users</option>
+              <option value="dokumen" <%= filters.table === 'dokumen' ? 'selected' : '' %>>Dokumen</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>User Email</label>
+            <input type="text" name="user" value="<%= filters.user %>" placeholder="Cari email...">
+          </div>
+          <div class="filter-group" style="display: flex; gap: 10px; align-items: end;">
+            <button type="submit" class="btn-filter">🔍 Filter</button>
+            <a href="/audit-log" class="btn-reset">↺ Reset</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Table</th>
+              <th>Record</th>
+              <th>IP Address</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (logs && logs.length > 0) { %>
+              <% logs.forEach(log => { %>
+                <tr>
+                  <td class="time-cell">
+                    <%= new Date(log.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                    <small><%= new Date(log.created_at).toLocaleTimeString('id-ID') %></small>
+                  </td>
+                  <td class="user-cell">
+                    <strong><%= log.user_email %></strong>
+                    <small><%= log.user_role %></small>
+                  </td>
+                  <td><span class="action-badge action-<%= log.action %>"><%= log.action %></span></td>
+                  <td><span class="table-badge"><%= log.table_name %></span></td>
+                  <td class="record-name" title="<%= log.record_name || '-' %>"><%= log.record_name || '-' %></td>
+                  <td><code class="ip-code"><%= log.ip_address || '-' %></code></td>
+                  <td>
+                    <% if (log.old_data || log.new_data) { %>
+                      <button class="btn-detail" onclick='showDetail(<%- JSON.stringify({old_data: log.old_data, new_data: log.new_data, action: log.action, record_name: log.record_name}) %>)'>🔍 Lihat</button>
+                    <% } else { %>
+                      <span style="color: var(--text-muted); font-size: 0.8rem;">—</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>Belum Ada Audit Log</h3>
+                    <p>Aktivitas pengguna akan tercatat otomatis di sini</p>
+                  </div>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <div class="pagination">
+        <% if (currentPage > 1) { %>
+          <a href="?page=<%= currentPage - 1 %>&action=<%= filters.action %>&table=<%= filters.table %>&user=<%= filters.user %>">← Prev</a>
+        <% } %>
+        <% for (let i = 1; i <= totalPages; i++) { %>
+          <% if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
+            <a href="?page=<%= i %>&action=<%= filters.action %>&table=<%= filters.table %>&user=<%= filters.user %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+          <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
+            <span>...</span>
+          <% } %>
+        <% } %>
+        <% if (currentPage < totalPages) { %>
+          <a href="?page=<%= currentPage + 1 %>&action=<%= filters.action %>&table=<%= filters.table %>&user=<%= filters.user %>">Next →</a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Modal Detail -->
+  <div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+      <h3 id="modalTitle">📋 Detail Perubahan</h3>
+      <div id="modalContent"></div>
+      <button class="modal-close" onclick="closeModal()">Tutup</button>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar toggle (sama seperti halaman lain)
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainWrapper = document.querySelector('.main-wrapper');
+    if (sidebarToggle && sidebar) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+          sidebarToggle.classList.toggle('shifted');
+        } else {
+          sidebar.classList.toggle('hidden');
+          mainWrapper.classList.toggle('expanded');
+          sidebarToggle.classList.toggle('shifted');
+        }
+      });
+    }
+
+    function showDetail(data) {
+      const modal = document.getElementById('detailModal');
+      const content = document.getElementById('modalContent');
+      const title = document.getElementById('modalTitle');
+      
+      title.textContent = `📋 ${data.action} - ${data.record_name || 'Record'}`;
+      
+      let html = '';
+      if (data.old_data) {
+        html += `<div class="data-section old">
+          <h4>🔴 Data Lama (Sebelum)</h4>
+          <pre>${JSON.stringify(data.old_data, null, 2)}</pre>
+        </div>`;
+      }
+      if (data.new_data) {
+        html += `<div class="data-section new">
+          <h4>🟢 Data Baru (Sesudah)</h4>
+          <pre>${JSON.stringify(data.new_data, null, 2)}</pre>
+        </div>`;
+      }</html>
+      
+      content.innerHTML = html;
+      modal.classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').classList.remove('show');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</body>
+

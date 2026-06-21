@@ -174,23 +174,21 @@
       return email.split('@')[0].toLowerCase().trim();
     };
     
-    const isSameFaculty = (userFakultasId, mitraEmail) => {
-      const userCode = (userFakultasId || '').toLowerCase().trim();
-      const mitraCode = extractFakultasCode(mitraEmail);
-      if (!userCode || !mitraCode) return false;
-      return userCode === mitraCode;
-    };
-    
-    // 🔒 LOGIKA AKSES YANG BENAR (exact match)
-    const isHumas = user?.role === 'humas';
-    const isAdminFakultas = user?.role === 'admin_fakultas';
-    const isGuest = user?.role === 'guest';
-    const isOwnFaculty = isAdminFakultas && isSameFaculty(user.fakultas_id, mitra.email_fakultas);
-    
-    // Humas: full access
-    // Admin fakultas: hanya boleh edit kalau mitra milik fakultasnya
-    const canEdit = isHumas || isOwnFaculty;
-    const mitraFakultasCode = extractFakultasCode(mitra.email_fakultas);
+  // 🔒 PERBAIKAN: Gunakan mitra.fakultas_id langsung
+  const isSameFaculty = (userFakultasId, mitraFakultasId) => {
+    if (!userFakultasId || !mitraFakultasId) return false;
+    return userFakultasId.toLowerCase().trim() === mitraFakultasId.toLowerCase().trim();
+  };
+  
+  const isHumas = user?.role === 'humas';
+  const isAdminFakultas = user?.role === 'admin_fakultas';
+  const isGuest = user?.role === 'guest';
+  const isOwnFaculty = isAdminFakultas && isSameFaculty(user.fakultas_id, mitra.fakultas_id); // ✅ Gunakan mitra.fakultas_id
+  
+  const canEdit = isHumas || isOwnFaculty;
+  const mitraFakultasCode = mitra.fakultas_id; // Fallback ke email jika fakultas_id kosong
+
+
   %>
   
   <div class="main-wrapper">
