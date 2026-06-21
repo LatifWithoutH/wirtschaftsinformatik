@@ -131,15 +131,24 @@ const upload = multer({
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 5, // Maksimal 5 percobaan
   message: { error: '⚠️ Terlalu banyak percobaan login.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true,
+  
+  // ✅ PERBAIKAN: Hapus baris ini, atau ubah jadi false
+  skipSuccessfulRequests: false, 
+  
   handler: (req, res, next, options) => {
-    console.warn(`🚨 [RATE LIMIT] Login diblokir dari IP: ${req.ip}`);
-    res.status(429).render('login', { error: '🚫 Akun dikunci 15 menit. Coba lagi nanti.' });
+    const retryAfter = res.getHeader('Retry-After') || 900;
+    console.warn(`🚨 [RATE LIMIT] Login diblokir dari IP: ${req.ip}. Retry after ${retryAfter}s`);
+    
+    res.status(429).render('login', { 
+      error: '🚫 Terlalu banyak percobaan login. Akun dikunci sementara.',
+      locked: true,
+      retryAfter: retryAfter
+    });
   }
 });
 

@@ -20,10 +20,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      -webkit-text-size-adjust: 100%;
-    }
+    html { -webkit-text-size-adjust: 100%; }
 
     body {
       font-family: 'Inter', sans-serif;
@@ -93,9 +90,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .logo-area {
-      margin-bottom: 24px;
-    }
+    .logo-area { margin-bottom: 24px; }
     
     .logo-uniba {
       width: 100px;
@@ -108,9 +103,7 @@
       transition: transform 0.3s ease;
     }
 
-    .logo-uniba:hover {
-      transform: scale(1.05);
-    }
+    .logo-uniba:hover { transform: scale(1.05); }
 
     .login-box h2 {
       font-family: 'Poppins', sans-serif;
@@ -149,9 +142,7 @@
       font-size: 0.85rem;
     }
 
-    .input-wrapper {
-      position: relative;
-    }
+    .input-wrapper { position: relative; }
 
     .input-wrapper svg.input-icon {
       position: absolute;
@@ -179,7 +170,6 @@
       appearance: none;
     }
 
-    /* ===== TAMBAHAN: padding kanan khusus input password agar tidak ketutup ikon mata ===== */
     .form-group input[type="password"],
     .form-group input.has-toggle {
       padding-right: 48px;
@@ -196,7 +186,6 @@
       color: var(--uniba-primary);
     }
 
-    /* ===== TAMBAHAN: Style tombol toggle password (ikon mata) ===== */
     .toggle-password {
       position: absolute;
       right: 6px;
@@ -226,9 +215,7 @@
       box-shadow: none;
     }
 
-    .toggle-password:active {
-      transform: translateY(-50%) scale(0.95);
-    }
+    .toggle-password:active { transform: translateY(-50%) scale(0.95); }
 
     .toggle-password:focus {
       outline: none;
@@ -242,7 +229,6 @@
       pointer-events: none;
     }
 
-    /* Sembunyikan salah satu ikon mata secara default */
     .toggle-password .icon-eye-off { display: none; }
     .toggle-password.is-visible .icon-eye { display: none; }
     .toggle-password.is-visible .icon-eye-off { display: block; }
@@ -274,9 +260,7 @@
       box-shadow: 0 8px 20px rgba(26, 58, 92, 0.35);
     }
 
-    button[type="submit"]:active {
-      transform: translateY(0);
-    }
+    button[type="submit"]:active { transform: translateY(0); }
 
     .error {
       color: #991b1b;
@@ -296,10 +280,46 @@
       <% } %>
       animation: slideDown 0.4s ease;
       text-align: left;
+      flex-direction: column;
+      align-items: flex-start;
     }
 
-    .error svg {
-      flex-shrink: 0;
+    .error svg { flex-shrink: 0; }
+
+    /* ✅ COUNTDOWN TIMER STYLING */
+    .countdown-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(220, 38, 38, 0.03));
+      border-left: 3px solid #dc2626;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #991b1b;
+      width: 100%;
+    }
+
+    .countdown-container .timer-icon {
+      font-size: 1.1rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .countdown-container .time-value {
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 1rem;
+      background: rgba(220, 38, 38, 0.15);
+      padding: 3px 8px;
+      border-radius: 5px;
+      color: #dc2626;
+      letter-spacing: 1px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
     }
 
     @keyframes slideDown {
@@ -327,10 +347,7 @@
         padding: 16px;
         align-items: center;
       }
-      
-      .login-box {
-        padding: 36px 28px;
-      }
+      .login-box { padding: 36px 28px; }
     }
 
     /* ========== MOBILE KECIL (480px) ========== */
@@ -340,163 +357,49 @@
         padding-top: calc(12px + var(--safe-top));
         padding-bottom: calc(12px + var(--safe-bottom));
       }
-
-      .login-box {
-        padding: 28px 20px;
-        border-radius: 16px;
-      }
-
-      .logo-uniba {
-        width: 80px;
-        margin-bottom: 14px;
-      }
-
-      .login-box h2 {
-        font-size: 1.25rem;
-      }
-
-      .login-box p {
-        font-size: 0.82rem;
-        margin-bottom: 22px;
-      }
-
-      .login-box p strong {
-        font-size: 0.88rem;
-      }
-
-      .form-group {
-        margin-bottom: 14px;
-      }
-
-      .form-group input {
-        padding: 13px 12px 13px 40px;
-        font-size: 16px;
-      }
-
+      .login-box { padding: 28px 20px; border-radius: 16px; }
+      .logo-uniba { width: 80px; margin-bottom: 14px; }
+      .login-box h2 { font-size: 1.25rem; }
+      .login-box p { font-size: 0.82rem; margin-bottom: 22px; }
+      .login-box p strong { font-size: 0.88rem; }
+      .form-group { margin-bottom: 14px; }
+      .form-group input { padding: 13px 12px 13px 40px; font-size: 16px; }
       .form-group input[type="password"],
-      .form-group input.has-toggle {
-        padding-right: 44px;
-      }
-
-      .input-wrapper svg.input-icon {
-        left: 12px;
-        width: 16px;
-        height: 16px;
-      }
-
-      .toggle-password {
-        right: 4px;
-        padding: 7px;
-      }
-
-      .toggle-password svg {
-        width: 18px;
-        height: 18px;
-      }
-
-      button[type="submit"] {
-        padding: 13px;
-        font-size: 0.95rem;
-      }
-
-      .footer {
-        margin-top: 22px;
-        padding-top: 14px;
-        font-size: 0.7rem;
-      }
-
-      body::before, body::after {
-        filter: blur(50px);
-        opacity: 0.18;
-      }
+      .form-group input.has-toggle { padding-right: 44px; }
+      .input-wrapper svg.input-icon { left: 12px; width: 16px; height: 16px; }
+      .toggle-password { right: 4px; padding: 7px; }
+      .toggle-password svg { width: 18px; height: 18px; }
+      button[type="submit"] { padding: 13px; font-size: 0.95rem; }
+      .footer { margin-top: 22px; padding-top: 14px; font-size: 0.7rem; }
+      body::before, body::after { filter: blur(50px); opacity: 0.18; }
+      .countdown-container { font-size: 0.8rem; padding: 8px 12px; }
+      .countdown-container .time-value { font-size: 0.9rem; }
     }
 
     /* ========== MOBILE SANGAT KECIL (360px) ========== */
     @media (max-width: 360px) {
-      .login-box {
-        padding: 24px 16px;
-      }
-
-      .logo-uniba {
-        width: 70px;
-      }
-
-      .login-box h2 {
-        font-size: 1.15rem;
-      }
-
-      .login-box p {
-        font-size: 0.78rem;
-      }
-
-      .form-group input {
-        padding: 12px 10px 12px 38px;
-        font-size: 16px;
-      }
-
+      .login-box { padding: 24px 16px; }
+      .logo-uniba { width: 70px; }
+      .login-box h2 { font-size: 1.15rem; }
+      .login-box p { font-size: 0.78rem; }
+      .form-group input { padding: 12px 10px 12px 38px; font-size: 16px; }
       .form-group input[type="password"],
-      .form-group input.has-toggle {
-        padding-right: 42px;
-      }
-
-      .input-wrapper svg.input-icon {
-        left: 10px;
-      }
-
-      .toggle-password {
-        right: 2px;
-        padding: 6px;
-      }
-
-      .toggle-password svg {
-        width: 17px;
-        height: 17px;
-      }
+      .form-group input.has-toggle { padding-right: 42px; }
+      .input-wrapper svg.input-icon { left: 10px; }
+      .toggle-password { right: 2px; padding: 6px; }
+      .toggle-password svg { width: 17px; height: 17px; }
     }
 
     /* ========== LANDSCAPE MOBILE ========== */
     @media (max-height: 500px) and (orientation: landscape) {
-      body {
-        align-items: flex-start;
-        padding: 10px;
-      }
-
-      .login-box {
-        padding: 20px 24px;
-        margin: 10px auto;
-      }
-
-      .logo-area {
-        margin-bottom: 12px;
-      }
-
-      .logo-uniba {
-        width: 60px;
-        margin-bottom: 10px;
-      }
-
-      .login-box h2 {
-        font-size: 1.1rem;
-        margin-bottom: 4px;
-      }
-
-      .login-box p {
-        margin-bottom: 14px;
-        font-size: 0.8rem;
-      }
-
-      .form-group {
-        margin-bottom: 10px;
-      }
-
-      .footer {
-        margin-top: 14px;
-        padding-top: 10px;
-      }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      /* Bisa ditambahkan nanti jika perlu */
+      body { align-items: flex-start; padding: 10px; }
+      .login-box { padding: 20px 24px; margin: 10px auto; }
+      .logo-area { margin-bottom: 12px; }
+      .logo-uniba { width: 60px; margin-bottom: 10px; }
+      .login-box h2 { font-size: 1.1rem; margin-bottom: 4px; }
+      .login-box p { margin-bottom: 14px; font-size: 0.8rem; }
+      .form-group { margin-bottom: 10px; }
+      .footer { margin-top: 14px; padding-top: 10px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -520,12 +423,22 @@
     
     <% if (typeof error !== 'undefined' && error) { %>
       <div class="error" id="errorMsg">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span><%= error %></span>
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span><%= error %></span>
+        </div>
+        
+        <!-- ✅ COUNTDOWN TIMER (Hanya muncul jika locked = true) -->
+        <% if (typeof locked !== 'undefined' && locked) { %>
+          <div class="countdown-container" id="countdownContainer">
+            <span class="timer-icon">⏳</span>
+            <span>Silakan tunggu <span class="time-value" id="timeLeft">15:00</span> sebelum mencoba lagi.</span>
+          </div>
+        <% } %>
       </div>
     <% } %>
     
@@ -548,14 +461,11 @@
           </svg>
           <input type="password" id="password" name="password" class="has-toggle" required placeholder="Masukkan password Anda" autocomplete="current-password" aria-describedby="togglePasswordBtn">
           
-          <!-- ===== TAMBAHAN: Tombol toggle show/hide password ===== -->
           <button type="button" class="toggle-password" id="togglePasswordBtn" aria-label="Tampilkan password" aria-pressed="false" tabindex="0">
-            <!-- Ikon mata terbuka (muncul saat password disembunyikan) -->
             <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
-            <!-- Ikon mata dicoret (muncul saat password ditampilkan) -->
             <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
               <line x1="1" y1="1" x2="23" y2="23"></line>
@@ -580,9 +490,11 @@
   </div>
 
   <script>
-    // Auto-hide error message after 5 seconds
+    // Auto-hide error message after 5 seconds (KECUALI jika locked)
     const err = document.getElementById('errorMsg');
-    if (err && err.style.display !== 'none') {
+    const isLocked = <%= typeof locked !== 'undefined' && locked ? 'true' : 'false' %>;
+    
+    if (err && err.style.display !== 'none' && !isLocked) {
       setTimeout(() => {
         err.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
         err.style.opacity = '0';
@@ -601,19 +513,12 @@
       toggleBtn.addEventListener('click', function () {
         const isPassword = passwordInput.type === 'password';
         passwordInput.type = isPassword ? 'text' : 'password';
-        
-        // Toggle class untuk ganti ikon
         this.classList.toggle('is-visible', isPassword);
-        
-        // Update aria-label untuk aksesibilitas
         this.setAttribute('aria-label', isPassword ? 'Sembunyikan password' : 'Tampilkan password');
         this.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
-        
-        // Fokus kembali ke input agar user bisa lanjut mengetik
         passwordInput.focus();
       });
 
-      // Dukungan keyboard (Enter / Space)
       toggleBtn.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -639,17 +544,92 @@
       btn.disabled = true;
     });
 
-    // Add spin animation
     const style = document.createElement('style');
     style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
     document.head.appendChild(style);
 
-    // Scroll ke form jika ada error (penting untuk mobile)
-    if (err && err.style.display !== 'none') {
+    if (err && err.style.display !== 'none' && !isLocked) {
       setTimeout(() => {
         err.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
     }
+
+    // ✅ COUNTDOWN TIMER & LOCK FORM
+    <% if (typeof locked !== 'undefined' && locked) { %>
+    (function() {
+      let seconds = <%= typeof retryAfter !== 'undefined' ? retryAfter : 900 %>;
+      const timeLeftEl = document.getElementById('timeLeft');
+      const errorMsg = document.getElementById('errorMsg');
+      const submitBtn = document.getElementById('submitBtn');
+      const emailInput = document.getElementById('email');
+      const passInput = document.getElementById('password');
+      const toggleBtn = document.getElementById('togglePasswordBtn');
+      
+      // 1. Disable form & tombol login
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Akun Dikunci</span>
+        `;
+      }
+      
+      if (emailInput) emailInput.disabled = true;
+      if (passInput) passInput.disabled = true;
+      if (toggleBtn) toggleBtn.style.display = 'none';
+
+      // 2. Fungsi update timer setiap detik
+      function updateTimer() {
+        if (seconds <= 0) {
+          clearInterval(timerInterval);
+          // Sembunyikan error & buka kembali form
+          if (errorMsg) {
+            errorMsg.style.transition = 'opacity 0.5s ease';
+            errorMsg.style.opacity = '0';
+            setTimeout(() => { errorMsg.style.display = 'none'; }, 500);
+          }
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.innerHTML = `
+              <span>Masuk ke Sistem</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            `;
+          }
+          if (emailInput) {
+            emailInput.disabled = false;
+            emailInput.focus();
+          }
+          if (passInput) passInput.disabled = false;
+          if (toggleBtn) toggleBtn.style.display = 'flex';
+          
+          // Optional: reload halaman setelah unlock
+          setTimeout(() => { window.location.reload(); }, 1000);
+          return;
+        }
+        
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        if (timeLeftEl) {
+          timeLeftEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        seconds--;
+      }
+
+      // 3. Jalankan timer
+      updateTimer();
+      const timerInterval = setInterval(updateTimer, 1000);
+    })();
+    <% } %>
   </script>
 </body>
 </html>
