@@ -180,9 +180,8 @@
       box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
     }
     
-    /* ✅ FIX: Search Icon */
     .search-box::before {
-      content: '🔍';
+      content: '';
       position: absolute;
       left: 16px;
       top: 50%;
@@ -190,7 +189,6 @@
       font-size: 16px;
       opacity: 0.5;
       z-index: 1;
-      pointer-events: none;
     }
     
     .toolbar-actions {
@@ -290,11 +288,6 @@
       transition: all 0.2s;
     }
     
-    /* ✨ CLASS UNTUK SEARCH (FIX BUG) ✨ */
-    tr.search-hidden {
-      display: none !important;
-    }
-    
     th, td {
       display: table-cell !important;
       padding: 16px 18px;
@@ -379,17 +372,6 @@
       background: linear-gradient(135deg, var(--expired), #94a3b8);
       box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
     }
-    
-    /* ========== SISA HARI CELL (BERWARNA) ========== */
-    .sisa-hari-cell {
-      font-weight: 700;
-      font-size: 15px;
-    }
-    
-    .sisa-hari-cell.critical { color: #dc3545; } /* Merah - ≤7 hari */
-    .sisa-hari-cell.warning { color: #ffc107; }  /* Kuning - 8-30 hari */
-    .sisa-hari-cell.active { color: #28a745; }   /* Hijau - >30 hari */
-    .sisa-hari-cell.expired { color: #6c757d; }  /* Abu-abu - Expired */
     
     /* ========== KODE MITRA ========== */
     .kode-mitra {
@@ -496,6 +478,7 @@
       border: 1px solid;
     }
     
+    /* Tambahan: Styling khusus untuk link preview agar tidak bergaris bawah */
     a.doc-status {
       text-decoration: none;
       cursor: pointer;
@@ -645,11 +628,6 @@
         box-shadow: var(--shadow-lg);
       }
       
-      /* ✨ FIX SEARCH DI MOBILE JUGA ✨ */
-      tbody tr.search-hidden {
-        display: none !important;
-      }
-      
       tbody tr td {
         display: flex !important;
         justify-content: space-between;
@@ -752,7 +730,7 @@
         font-size: 14px;
       }
       
-      /* Sisa Hari - Highlight di Mobile */
+      /* Sisa Hari - Highlight */
       tbody tr td:nth-child(6) {
         font-weight: 700;
       }
@@ -891,15 +869,14 @@
                   <td data-label="Berakhir">
                     <%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %>
                   </td>
-                  <!-- ✅ FIX: Menggunakan class untuk warna -->
-                  <td data-label="Sisa Hari" class="sisa-hari-cell <%= m.badgeClass %>">
+                  <td data-label="Sisa Hari" style="font-weight:700;color:<%= m.color %>;font-size:15px">
                     <%= m.sisa_hari %>
                   </td>
                   <td data-label="Status">
                     <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
                   </td>
                   
-                  <!-- KOLOM DOKUMEN -->
+                  <!-- ✨ KOLOM DOKUMEN YANG SUDAH DIPERBARUI ✨ -->
                   <td data-label="Dokumen">
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                       <% if (m.file_mou) { %>
@@ -931,12 +908,7 @@
                   <td data-label="Aksi">
                     <div class="action-btns">
                       <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
-                      <% 
-                        // ✅ FIX: Menggunakan fakultas_id (bukan email_fakultas.includes)
-                        const canEdit = user?.role === 'humas' || 
-                          (user?.role === 'admin_fakultas' && m.fakultas_id === user.fakultas_id);
-                      %>
-                      <% if (canEdit) { %>
+                      <% if (user && user.role === 'humas') { %>
                         <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️ Edit</a>
                       <% } %>
                     </div>
@@ -959,7 +931,7 @@
             <% } %>
           </tbody>
         </table>
-      </div>
+	  </div>
       
       <!-- Table Footer -->
       <div class="table-footer">
@@ -999,19 +971,18 @@
       });
     }
     
-    // ✅ FIX: Update Stats - sekarang menghitung semua status dengan benar
+    // Update Stats
     function updateStats() {
       const rows = document.querySelectorAll('#mitraTable tbody tr');
       let active = 0, warning = 0, expired = 0;
       
       rows.forEach(row => {
-        if (row.classList.contains('search-hidden')) return;
+        if (row.style.display === 'none') return;
         const badge = row.querySelector('.status-badge');
         if (!badge) return;
         
         if (badge.classList.contains('status-active')) active++;
         else if (badge.classList.contains('status-warning')) warning++;
-        else if (badge.classList.contains('status-danger')) warning++; // Segera Berakhir juga dihitung warning
         else if (badge.classList.contains('status-expired')) expired++;
       });
       
@@ -1030,15 +1001,13 @@
       const term = this.value.toLowerCase();
       let visible = 0;
       rows.forEach(row => {
-        if (row.querySelector('.empty-state')) return;
-        
         const text = row.textContent.toLowerCase();
         if (text.includes(term)) { 
-          row.classList.remove('search-hidden');
+          row.style.display = ''; 
           visible++;
           row.style.animation = 'fadeIn 0.3s ease';
         } else { 
-          row.classList.add('search-hidden');
+          row.style.display = 'none'; 
         }
       });
       resultCount.textContent = `${visible} mitra ditemukan`;
@@ -1061,79 +1030,44 @@
         const aText = a.querySelectorAll('td')[colIndex].textContent.trim();
         const bText = b.querySelectorAll('td')[colIndex].textContent.trim();
         
-        // Sort Sisa Hari (numeric)
         if (colIndex === 5) {
           const aNum = parseInt(aText) || 0;
           const bNum = parseInt(bText) || 0;
           return sortDir[colIndex] === 'asc' ? aNum - bNum : bNum - aNum;
         }
-        
-        // ✅ FIX: Sort Tanggal (parse format Indonesia)
         if (colIndex === 4) {
-          const parseDate = (dateStr) => {
-            const months = {
-              'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5,
-              'Jul': 6, 'Agu': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11
-            };
-            const parts = dateStr.split(' ');
-            if (parts.length === 3) {
-              const day = parseInt(parts[0]);
-              const month = months[parts[1]] || 0;
-              const year = parseInt(parts[2]);
-              return new Date(year, month, day);
-            }
-            return new Date(dateStr);
-          };
-          const aDate = parseDate(aText);
-          const bDate = parseDate(bText);
+          const aDate = new Date(aText);
+          const bDate = new Date(bText);
           return sortDir[colIndex] === 'asc' ? aDate - bDate : bDate - aDate;
         }
-        
         return sortDir[colIndex] === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
       });
       rowsArray.forEach(row => tbody.appendChild(row));
     }
     
-    // ✅ FIX: Export CSV - urutan kolom sudah benar
     function exportTable() {
       let csv = 'Kode,Instansi,Kontak,No HP,Email,Berakhir,Sisa Hari,Status,MoU,MoA,IA,PKS\n';
       rows.forEach(row => {
-        if (row.classList.contains('search-hidden')) return;
-        if (row.querySelector('.empty-state')) return;
-        
+        if (row.style.display === 'none') return;
         const cells = row.querySelectorAll('td');
         if (cells.length < 7) return;
         
-        // Ambil data dari setiap kolom
-        const kode = cells[0].querySelector('.kode-mitra')?.textContent.trim() || '';
-        const instansi = cells[1].querySelector('strong')?.textContent.trim() || '';
-        const kontak = cells[2].querySelector('strong')?.textContent.trim() || '-';
-        const noHp = cells[2].querySelector('small a')?.textContent.trim() || '-';
-        const email = cells[3].querySelector('a')?.textContent.trim() || '-';
-        const berakhir = cells[4].textContent.trim();
-        const sisaHari = cells[5].textContent.trim();
-        const status = cells[6].querySelector('.status-badge')?.textContent.trim() || '';
-        
-        // Ambil status dokumen
-        const getFileStatus = (type) => {
-          const docCell = cells[7];
-          const docBadge = docCell?.querySelector(`[title="${type}"]`);
-          return docBadge?.textContent.includes('✅') ? 'Sudah' : 'Belum';
-        };
+        const getVal = (sel) => cells[sel]?.textContent.trim() || '-';
+        const getFileStatus = (colIdx, type) => cells[colIdx]?.querySelector(`[title="${type}"]`)?.textContent.includes('✅') ? 'Sudah' : 'Belum';
         
         csv += [
-          kode,
-          instansi,
-          kontak,
-          noHp,
-          email,
-          berakhir,
-          sisaHari,
-          status,
-          getFileStatus('MoU'),
-          getFileStatus('MoA'),
-          getFileStatus('IA'),
-          getFileStatus('PKS')
+          cells[0].querySelector('.kode-mitra')?.textContent || '',
+          cells[0].querySelector('strong')?.textContent || '',
+          cells[1].querySelector('strong')?.textContent || '-',
+          cells[1].querySelector('a')?.textContent || '-',
+          cells[2].textContent.trim(),
+          cells[3].textContent.trim(),
+          cells[4].textContent.trim(),
+          cells[5].querySelector('.status-badge')?.textContent || '',
+          getFileStatus(7, 'MoU'),
+          getFileStatus(7, 'MoA'),
+          getFileStatus(7, 'IA'),
+          getFileStatus(7, 'PKS')
         ].map(v => `"${v}"`).join(',') + '\n';
       });
       
