@@ -555,8 +555,12 @@
 
   <script>
     // ========== URL GAS WEB APP ==========
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwon958oHrc0l2gHOMEQN2G4oU0GFsmMPB6VlooCaY8cxVO4X0Nw-lFp3Fu4Vk46xv6/exec';
-
+    let GAS_WEB_APP_ALERT;
+    fetch('/api/gas-url')
+      .then(r => r.json())
+      .then(data => { GAS_WEB_APP_ALERT=data.url; })
+      .catch(err => console.error('Gagal load GAS URL:', err));
+      
     // ========== SIDEBAR TOGGLE ==========
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
@@ -601,7 +605,7 @@
       try {
         // ⚠️ PENTING: Tidak menggunakan headers 'Content-Type: application/json'
         // karena akan memicu CORS preflight yang ditolak oleh Google Apps Script
-        const response = await fetch(GAS_WEB_APP_URL, {
+        const response = await fetch(GAS_WEB_APP_ALERT, {
           method: 'POST',
           body: JSON.stringify({
             mitra_id: mitraId,
