@@ -4,6 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 
 const { uploadFileToDrive } = require('./utils/gasUploader');
 
@@ -20,17 +21,30 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
+// 🔒 VALIDASI: Pastikan SESSION_SECRET sudah diset
+if (!process.env.SESSION_SECRET) {
+  console.error('❌ FATAL: SESSION_SECRET belum diset di environment variables!');
+  console.error('   Jalankan: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  console.error('   Lalu tambahkan ke Render Dashboard → Environment Variables');
+  process.exit(1); // Stop server, jangan jalankan dengan secret lemah
+}
+
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'uniba-dudika-secret-2026',
+  secret: process.env.SESSION_SECRET, // ✅ Hanya ambil dari env, tidak ada fallback
   resave: false,
   saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
+
+app.get('/api/gas-url', requireAuth('humas'), (req, res) => {
+  res.json({ url: process.env.GAS_WEB_APP_ALERT });
+});
 
 // ========================================================================
 // 🔒 HELPER: Cek kesamaan fakultas berdasarkan fakultas_id (RELASI EKSPLISIT)
@@ -42,7 +56,11 @@ function isSameFaculty(userFakultasId, mitraFakultasId) {
 
 function filterMitraByFaculty(mitraList, user) {
   if (!mitraList) return [];
-  if (user.role === 'humas') return mitraList;
+  
+  // ✅ PERBAIKAN: Guest diperlakukan sama seperti Humas (lihat semua data)
+  if (user.role === 'humas' || user.role === 'guest') {
+    return mitraList;
+  }
   
   if (user.role === 'admin_fakultas' && user.fakultas_id) {
     return mitraList.filter(m => m.fakultas_id === user.fakultas_id);
@@ -50,7 +68,6 @@ function filterMitraByFaculty(mitraList, user) {
   
   return [];
 }
-
 // ========================================================================
 // 🔒 HELPER: Escape CSV field (handle quotes, comma, newline)
 // ========================================================================
@@ -134,7 +151,49 @@ app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
-app.post('/login', async (req, res) => {
+// Login Limiter (KETAT) - Max 5 percobaan per 15 menit
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,     // 15 menit
+  max: 5,                        // Max 5 percobaan login gagal
+  message: {
+    error: '⚠️ Terlalu banyak percobaan login.',
+    message: 'Akun Anda dikunci sementara selama 15 menit. Silakan coba lagi nanti atau hubungi Humas jika Anda lupa password.'
+  },
+  standardHeaders: true,         // Kirim header `RateLimit-*`
+  legacyHeaders: false,          // Nonaktifkan header `X-RateLimit-*`
+  skipSuccessfulRequests: true,  // Jangan hitung request yang berhasil login
+  handler: (req, res, next, options) => {
+    console.warn(`🚨 [RATE LIMIT] Login diblokir dari IP: ${req.ip} | Email: ${req.body?.email || '-'}`);
+    res.status(429).render('login', { 
+      error: '🚫 ' + options.message.message 
+    });
+  }
+});
+
+// 2. General API Limiter (SEDANG) - Untuk endpoint sensitif lainnya
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,                       // Max 30 request per 15 menit
+  message: { 
+    error: 'Terlalu banyak request. Coba lagi dalam 15 menit.' 
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// 3. Strict Limiter (SANGAT KETAT) - Untuk Test Alert (karena kirim email)
+const strictLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,     // 10 menit
+  max: 10,                       // Max 10 email test per 10 menit
+  message: { 
+    success: false, 
+    message: 'Terlalu banyak test email. Tunggu 10 menit sebelum mencoba lagi.' 
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.post('/login',loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const { data: user, error } = await supabase.from('users').select('*').eq('email', email).single();
@@ -194,36 +253,43 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
   }
 });
 
-app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
+app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
+    const { id } = req.params;
+    const { data: mitra, error } = await supabase.from('mitra').select('*').eq('id', id).single();
+    if (error) return res.status(500).send('❌ Database Error');
+    if (!mitra) return res.status(404).send('❌ Mitra tidak ditemukan');
+    
+    // ✅ PERBAIKAN: Cek ownership HANYA untuk admin_fakultas
+    // Guest BEBAS melihat detail mitra mana pun (read-only)
+    if (req.session.user.role === 'admin_fakultas') {
+      if (!isSameFaculty(req.session.user.fakultas_id, mitra.fakultas_id)) {
+        return res.status(403).send('❌ Akses ditolak: Mitra ini bukan milik fakultas Anda');
+      }
+    }
+    // ❌ HAPUS baris ini (jangan cek guest):
+    // if (req.session.user.role === 'admin_fakultas' || req.session.user.role === 'guest') {
+    
+    // Sisa kode tetap sama...
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const { data: allMitra, error } = await supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
-    if (error) throw error;
+    const endDate = new Date(mitra.tanggal_berakhir);
+    endDate.setHours(0, 0, 0, 0);
     
-    const filteredMitra = filterMitraByFaculty(allMitra, req.session.user);
-
-    const mitraDenganStatus = filteredMitra.map(mitra => {
-      const endDate = new Date(mitra.tanggal_berakhir);
-      endDate.setHours(0, 0, 0, 0);
-      
-      if (isNaN(endDate.getTime())) return { ...mitra, sisa_hari: 0, status: 'Invalid', color: '#999', badgeClass: 'expired' };
-      
-      const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
-      let status, color, badgeClass;
-      if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; badgeClass = 'expired'; }
-      else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; badgeClass = 'danger'; }
-      else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; badgeClass = 'warning'; }
-      else { status = 'Aktif'; color = '#28a745'; badgeClass = 'active'; }
-      return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
-    });
-
-    const alertCount = mitraDenganStatus.filter(m => m.sisa_hari > 0 && m.sisa_hari <= 30).length;
-    res.render('mitra-table', { mitra: mitraDenganStatus, user: req.session.user, activePage: 'mitra', alertCount });
+    if (isNaN(endDate.getTime())) return res.status(500).send('❌ Format tanggal tidak valid');
+    
+    const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+    let status, color;
+    if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; }
+    else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; }
+    else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; }
+    else { status = 'Aktif'; color = '#28a745'; }
+    
+    res.render('detail-mitra', { mitra: { ...mitra, sisa_hari: diffDays, status, color }, user: req.session.user, activePage: 'mitra', alertCount: 0 });
   } catch (err) {
-    console.error('❌ Error table view:', err.message);
-    res.status(500).send('Gagal memuat daftar mitra.');
+    console.error('💥 Error:', err);
+    res.status(500).send('Gagal memuat detail mitra.');
   }
 });
 
@@ -479,13 +545,15 @@ app.get('/mitra/:id', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
     if (error) return res.status(500).send('❌ Database Error');
     if (!mitra) return res.status(404).send('❌ Mitra tidak ditemukan');
     
-    // 🔒 Cek ownership untuk admin_fakultas & guest
-    if (req.session.user.role === 'admin_fakultas' || req.session.user.role === 'guest') {
+    // 🔒 PERBAIKAN: Cek ownership HANYA untuk admin_fakultas
+    // Guest BEBAS melihat detail mitra mana pun (read-only)
+    if (req.session.user.role === 'admin_fakultas') {
       if (!isSameFaculty(req.session.user.fakultas_id, mitra.fakultas_id)) {
         return res.status(403).send('❌ Akses ditolak: Mitra ini bukan milik fakultas Anda');
       }
     }
     
+    // ... (sisa kode tetap sama)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -736,7 +804,7 @@ app.post('/users', requireAuth('humas'), async (req, res) => {
     }
 });
 
-app.post('/users/:id/reset-password', requireAuth('humas'), async (req, res) => {
+app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (req, res) => {
     try {
         const { id } = req.params;
         const { data: targetUser, error: fetchError } = await supabase.from('users').select('email').eq('id', id).single();
@@ -775,7 +843,7 @@ app.post('/users/:id/reset-password', requireAuth('humas'), async (req, res) => 
     }
 });
 
-app.post('/users/:id/toggle-status', requireAuth('humas'), async (req, res) => {
+app.post('/users/:id/toggle-status', apiLimiter, requireAuth('humas'), async (req, res) => {
     try {
         const { id } = req.params;
         const { data: currentUser } = await supabase.from('users').select('is_active').eq('id', id).single();
