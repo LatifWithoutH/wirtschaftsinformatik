@@ -997,9 +997,22 @@ window.addEventListener('load', function() {
     sidebarToggle.addEventListener('click', () => {
       if (window.innerWidth <= 768) {
         sidebar.classList.toggle('active');
+        sidebarToggle.classList.toggle('shifted');  // ✅ TAMBAHKAN
       } else {
         sidebar.classList.toggle('hidden');
         mainWrapper.classList.toggle('expanded');
+        sidebarToggle.classList.toggle('shifted');  // ✅ TAMBAHKAN
+      }
+    });
+    
+    // ✅ TAMBAHKAN JUGA: Handler resize biar konsisten
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        sidebar.classList.remove('active');
+      } else {
+        sidebar.classList.remove('hidden');
+        mainWrapper.classList.remove('expanded');
+        sidebarToggle.classList.remove('shifted');
       }
     });
   }
