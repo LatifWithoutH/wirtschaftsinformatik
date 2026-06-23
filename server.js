@@ -118,7 +118,7 @@ app.use('/mitra', checkUserActive);
 app.use('/users', checkUserActive);
 app.use('/test-alert', checkUserActive);
 app.use('/change-password', checkUserActive);
-app.use('/audit-log', checkUserActive); // ✅ Tambahan untuk audit log
+app.use('/audit-log', checkUserActive);
 
 // ========================================================================
 // 🔒 RATE LIMITERS
@@ -349,11 +349,13 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
         (m.nama_instansi || '').toLowerCase().includes(searchTerm) ||
         (m.nama_kontak || '').toLowerCase().includes(searchTerm) ||
         (m.email_fakultas || '').toLowerCase().includes(searchTerm) ||
+        (m.email_mitra_asli || '').toLowerCase().includes(searchTerm) ||  // ✅ TAMBAH: search email_mitra_asli
         (m.kode_mitra || '').toLowerCase().includes(searchTerm)
       );
     }
     
-    const headers = ['Kode Mitra','Nama Instansi','Nama Kontak','Jabatan','No HP','Email Fakultas','Alamat','Tanggal Mulai','Tanggal Berakhir','Sisa Hari','Status','File MoU','File MoA','File IA','File PKS'];
+    // ✅ TAMBAH: 'Email Mitra Resmi' di headers
+    const headers = ['Kode Mitra','Nama Instansi','Nama Kontak','Jabatan','No HP','Email Penanggung Jawab','Email Mitra Resmi','Alamat','Tanggal Mulai','Tanggal Berakhir','Sisa Hari','Status','File MoU','File MoA','File IA','File PKS'];
     const csvRows = [headers.map(escapeCsv).join(',')];
     
     mitraList.forEach(m => {
@@ -374,9 +376,10 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
         catch { return dateStr; }
       };
       
+      // ✅ TAMBAH: m.email_mitra_asli di row (setelah email_fakultas)
       const row = [
         m.kode_mitra || '', m.nama_instansi || '', m.nama_kontak || '', m.jabatan || '',
-        m.no_hp_kontak || '', m.email_fakultas || '',
+        m.no_hp_kontak || '', m.email_fakultas || '', m.email_mitra_asli || '',
         (m.alamat || '').replace(/\n/g, ' ').replace(/\r/g, ''),
         formatDate(m.tanggal_mulai), formatDate(m.tanggal_berakhir),
         isNaN(diffDays) ? '0' : String(diffDays), status,
@@ -405,7 +408,7 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
     
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send('﻿' + csvRows.join('\n'));
+    res.send('' + csvRows.join('\n'));
   } catch (err) {
     console.error('❌ Error export CSV:', err.message);
     res.status(500).send('❌ Gagal export CSV: ' + err.message);
@@ -441,7 +444,8 @@ app.get('/mitra/tambah', requireAuth('humas'), async (req, res) => {
 // ✅ CREATE MITRA + AUDIT LOG
 app.post('/mitra', requireAuth('humas'), async (req, res) => {
   try {
-    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
+    // ✅ TAMBAH: email_mitra_asli di destructuring
+    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, email_mitra_asli, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
     
     if (fakultas_id) {
       const { data: cekFakultas } = await supabase.from('fakultas').select('id').eq('id', fakultas_id).single();
@@ -451,9 +455,12 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
     const { count } = await supabase.from('mitra').select('*', { count: 'exact', head: true });
     const kode_mitra = `MITRA-${String((count || 0) + 1).padStart(4, '0')}`;
     
+    // ✅ TAMBAH: email_mitra_asli di insertData (opsional, bisa null)
     const insertData = { 
       kode_mitra, nama_instansi, nama_kontak, jabatan, alamat, 
-      no_hp_kontak, email_fakultas, fakultas_id: fakultas_id || null,
+      no_hp_kontak, email_fakultas, 
+      email_mitra_asli: email_mitra_asli || null,
+      fakultas_id: fakultas_id || null,
       tanggal_mulai, tanggal_berakhir 
     };
     
@@ -596,7 +603,6 @@ app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, r
         .eq('id', id)
         .single();
       
-      // ✅ Gunakan isSameFaculty
       if (!isSameFaculty(req.session.user.fakultas_id, mitra?.fakultas_id)) {
         return res.status(403).send('❌ Anda hanya dapat mengedit mitra fakultas Anda');
       }
@@ -635,12 +641,14 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
       }
     }
     
-    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
+    // ✅ TAMBAH: email_mitra_asli di destructuring
+    const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, email_mitra_asli, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
     
     const updateData = { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, tanggal_mulai, tanggal_berakhir };
     
     if (req.session.user.role === 'humas') {
       updateData.email_fakultas = email_fakultas;
+      updateData.email_mitra_asli = email_mitra_asli || null;  // ✅ TAMBAH: email_mitra_asli
       updateData.fakultas_id = fakultas_id || null;
     } else {
       updateData.fakultas_id = currentMitra.fakultas_id;

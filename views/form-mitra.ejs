@@ -291,7 +291,7 @@
   
   <%
     // ========================================================================
-    // 🔒 LOGIKA: Siapa yang boleh edit fakultas & email_fakultas?
+    // 🔒 LOGIKA: Siapa yang boleh edit fakultas & email?
     // - action === 'tambah' → hanya humas yang bisa akses (sudah di-lock di server.js)
     // - action === 'edit' + humas → boleh edit
     // - action === 'edit' + admin_fakultas → TIDAK BOLEH (readonly/disabled)
@@ -336,9 +336,6 @@
                   <option value="" disabled>⚠️ Data fakultas belum tersedia</option>
                 <% } %>
               </select>
-              <!-- <small class="field-hint"> -->
-                <!-- 💡 Pilih fakultas yang bertanggung jawab atas kerja sama ini -->
-              <!-- </small> -->
             <% } else { %>
               <!-- 🔒 ADMIN FAKULTAS: disabled + hidden field -->
               <% 
@@ -365,10 +362,10 @@
             <% } %>
           </div>
 
-          <!-- ✨ EMAIL FAKULTAS — SEKARANG JADI INFO KONTAK SAJA ✨ -->
+          <!-- ✨ EMAIL PENANGGUNG JAWAB (FAKULTAS) — WAJIB ✨ -->
           <div class="form-group">
             <label for="email_fakultas">
-              📧 Email Kontak Fakultas
+              📧 Email Penanggung Jawab (Fakultas) <span class="required">*</span>
             </label>
             
             <% if (canEditFakultasField) { %>
@@ -376,12 +373,13 @@
               <input type="email" 
                      id="email_fakultas" 
                      name="email_fakultas" 
+                     required
                      value="<%= mitra?.email_fakultas || '' %>" 
-                     placeholder="akun@uniba.ac.id"
+                     placeholder="dekan.fti@uniba.ac.id"
                      style="text-transform: lowercase;">
-              <!-- <small class="field-hint"> -->
-                <!-- 💡 Opsional — hanya sebagai informasi kontak, tidak mempengaruhi pembagian fakultas -->
-              <!-- </small> -->
+              <small class="field-hint">
+                💡 Email ini akan menerima notifikasi otomatis saat kerja sama akan berakhir
+              </small>
             <% } else { %>
               <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
               <input type="email" 
@@ -389,13 +387,50 @@
                      value="<%= mitra?.email_fakultas || '' %>" 
                      readonly 
                      placeholder="—"
-                     aria-label="Email kontak fakultas (tidak dapat diubah)">
+                     aria-label="Email penanggung jawab (tidak dapat diubah)">
               <input type="hidden" name="email_fakultas" value="<%= mitra?.email_fakultas || '' %>">
               
               <div class="field-lock-info">
                 <span style="font-size:1rem">🔒</span>
                 <div>
-                  <strong>Hanya Humas yang dapat mengubah email kontak.</strong><br>
+                  <strong>Hanya Humas yang dapat mengubah email penanggung jawab.</strong><br>
+                  Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
+                </div>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- ✨ EMAIL RESMI MITRA — OPSIONAL ✨ -->
+          <div class="form-group">
+            <label for="email_mitra_asli">
+              🏢 Email Resmi Mitra
+            </label>
+            
+            <% if (canEditFakultasField) { %>
+              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
+              <input type="email" 
+                     id="email_mitra_asli" 
+                     name="email_mitra_asli" 
+                     value="<%= mitra?.email_mitra_asli || '' %>" 
+                     placeholder="info@pt-maju.com"
+                     style="text-transform: lowercase;">
+              <small class="field-hint">
+                💡 Opsional — ditampilkan sebagai info kontak di notifikasi (tidak dikirimi email)
+              </small>
+            <% } else { %>
+              <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
+              <input type="email" 
+                     id="email_mitra_asli_display" 
+                     value="<%= mitra?.email_mitra_asli || '' %>" 
+                     readonly 
+                     placeholder="—"
+                     aria-label="Email resmi mitra (tidak dapat diubah)">
+              <input type="hidden" name="email_mitra_asli" value="<%= mitra?.email_mitra_asli || '' %>">
+              
+              <div class="field-lock-info">
+                <span style="font-size:1rem">🔒</span>
+                <div>
+                  <strong>Hanya Humas yang dapat mengubah email resmi mitra.</strong><br>
                   Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
                 </div>
               </div>
@@ -413,7 +448,6 @@
             <label for="jabatan">💼 Jabatan</label>
             <input type="text" id="jabatan" name="jabatan" value="<%= mitra?.jabatan || '' %>" placeholder="Contoh: HRD Manager">
           </div>
-
 
           <!-- Tanggal Mulai -->
           <div class="form-group">
@@ -455,7 +489,8 @@
           <strong>Catatan Penting:</strong> 
           <ul style="margin-top: 6px; padding-left: 20px; line-height: 1.8;">
             <li><strong>Fakultas Penanggung Jawab</strong> menentukan siapa yang bisa mengelola data mitra ini</li>
-            <li><strong>Email Kontak</strong> bersifat opsional, hanya sebagai informasi kontak</li>
+            <li><strong>Email Penanggung Jawab</strong> akan menerima notifikasi otomatis saat kerja sama akan berakhir</li>
+            <li><strong>Email Resmi Mitra</strong> bersifat opsional, ditampilkan sebagai referensi kontak di notifikasi</li>
             <li>Upload dokumen legalitas (MoU, MoA, IA, PKS) dilakukan <strong>setelah</strong> data mitra berhasil disimpan, melalui halaman Detail Mitra</li>
           </ul>
         </div>

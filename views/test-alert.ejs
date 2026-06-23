@@ -130,7 +130,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95rem;
-      min-width: 800px;
+      min-width: 1000px;
     }
     thead {
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
@@ -163,6 +163,42 @@
       font-size: 0.85rem;
       background: rgba(239, 68, 68, 0.1);
       color: var(--danger);
+    }
+
+    /* ========== EMAIL CELLS ========== */
+    .email-pj {
+      color: var(--uniba-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .email-pj:hover {
+      color: var(--uniba-blue-light);
+      text-decoration: underline;
+    }
+    .email-pj-label {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .email-mitra {
+      color: var(--success);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .email-mitra:hover {
+      color: #059669;
+      text-decoration: underline;
+    }
+    .email-mitra-empty {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
     }
 
     /* ========== TOMBOL KIRIM (ENHANCED) ========== */
@@ -239,7 +275,7 @@
       background: white;
       border-radius: 20px;
       padding: 40px;
-      max-width: 480px;
+      max-width: 520px;
       width: 90%;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -319,8 +355,9 @@
     .modal-detail-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
+      padding: 8px 0;
       font-size: 0.9rem;
+      align-items: center;
     }
     .modal-detail-row:not(:last-child) {
       border-bottom: 1px dashed rgba(226, 232, 240, 0.8);
@@ -328,10 +365,14 @@
     .modal-detail-label {
       color: var(--text-muted);
       font-weight: 500;
+      flex-shrink: 0;
     }
     .modal-detail-value {
       color: var(--text-dark);
       font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+      margin-left: 10px;
     }
 
     .modal-actions {
@@ -424,12 +465,35 @@
       50% { opacity: 0.5; transform: scale(1.2); }
     }
 
+    /* ========== INFO BOX FLOW EMAIL ========== */
+    .flow-info {
+      margin: 0 40px 20px;
+      padding: 14px 20px;
+      background: linear-gradient(90deg, rgba(44, 82, 130, 0.06), rgba(26, 58, 92, 0.03));
+      border-left: 4px solid var(--uniba-blue-light);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: var(--text-dark);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .flow-info strong { color: var(--uniba-primary); }
+    .flow-info code {
+      background: rgba(26, 58, 92, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--uniba-primary);
+    }
+
     @media (max-width: 768px) {
       .main-wrapper { margin-left: 0; }
       .main-wrapper.expanded { margin-left: 0; }
       .page-header { padding: 20px 20px 10px; flex-direction: column; align-items: flex-start; }
       .page-header h1 { font-size: 1.4rem; }
       .info-grid { padding: 0 20px 20px; grid-template-columns: repeat(2, 1fr); }
+      .flow-info { margin: 0 20px 20px; flex-direction: column; gap: 6px; }
       .table-section { padding: 0 20px 20px; }
       .table-container { overflow-x: auto; }
       .btn-back { margin: 0 20px 30px; }
@@ -450,6 +514,15 @@
       <div>
         <h1>🧪 Test Alert Manual</h1>
         <div class="gas-badge" style="margin-top: 12px;">Dikirim via Google Apps Script</div>
+      </div>
+    </div>
+
+    <!-- Info Flow Email -->
+    <div class="flow-info">
+      <span style="font-size: 1.2rem;">💡</span>
+      <div>
+        <strong>Alur Email:</strong> Notifikasi dikirim ke <strong>Email Penanggung Jawab (Fakultas)</strong>, 
+        dengan CC ke Humas. Jika <strong>Email Resmi Mitra</strong> tersedia, akan ditampilkan sebagai referensi kontak di body email.
       </div>
     </div>
 
@@ -480,7 +553,8 @@
               <tr>
                 <th>Kode</th>
                 <th>Instansi</th>
-                <th>Email Fakultas</th>
+                <th>Email Penanggung Jawab</th>
+                <th>Email Resmi Mitra</th>
                 <th>Berakhir</th>
                 <th>Sisa Hari</th>
                 <th>Aksi</th>
@@ -491,7 +565,18 @@
                 <tr id="row-<%= m.id %>">
                   <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:0.85rem; font-weight:600;"><%= m.kode_mitra %></code></td>
                   <td style="font-weight:600;"><%= m.nama_instansi %></td>
-                  <td><a href="mailto:<%= m.email_fakultas %>" style="color:var(--uniba-primary); text-decoration:none; font-weight:500;"><%= m.email_fakultas %></a></td>
+                  <td>
+                    <span class="email-pj-label">📬 Penerima</span>
+                    <a href="mailto:<%= m.email_fakultas %>" class="email-pj"><%= m.email_fakultas || '-' %></a>
+                  </td>
+                  <td>
+                    <% if (m.email_mitra_asli) { %>
+                      <span class="email-pj-label">🏢 Referensi</span>
+                      <a href="mailto:<%= m.email_mitra_asli %>" class="email-mitra"><%= m.email_mitra_asli %></a>
+                    <% } else { %>
+                      <span class="email-mitra-empty">Belum diisi</span>
+                    <% } %>
+                  </td>
                   <td><%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID') %></td>
                   <td><span class="badge-days"><%= m.sisa_hari %> hari</span></td>
                   <td>
@@ -499,7 +584,8 @@
                             class="btn-send" 
                             data-mitra-id="<%= m.id %>"
                             data-mitra-name="<%= m.nama_instansi %>"
-                            data-mitra-email="<%= m.email_fakultas %>"
+                            data-mitra-email="<%= m.email_fakultas || '' %>"
+                            data-mitra-email-asli="<%= m.email_mitra_asli || '' %>"
                             data-sisa-hari="<%= m.sisa_hari %>"
                             onclick="sendTestEmail(this)">
                       <span class="spinner"></span>
@@ -533,8 +619,12 @@
       
       <div class="modal-detail" id="modalDetail" style="display:none;">
         <div class="modal-detail-row">
-          <span class="modal-detail-label">📧 Email Tujuan</span>
-          <span class="modal-detail-value" id="detailEmail">-</span>
+          <span class="modal-detail-label">📬 Email Penerima (PJ)</span>
+          <span class="modal-detail-value" id="detailEmailPJ">-</span>
+        </div>
+        <div class="modal-detail-row" id="detailEmailMitraRow" style="display:none;">
+          <span class="modal-detail-label">🏢 Email Mitra (Info)</span>
+          <span class="modal-detail-value" id="detailEmailMitra" style="color: var(--success);">-</span>
         </div>
         <div class="modal-detail-row">
           <span class="modal-detail-label">🏢 Instansi</span>
@@ -558,7 +648,7 @@
     let GAS_WEB_APP_ALERT;
     fetch('/api/gas-url')
       .then(r => r.json())
-      .then(data => { GAS_WEB_APP_ALERT=data.url; })
+      .then(data => { GAS_WEB_APP_ALERT = data.url; })
       .catch(err => console.error('Gagal load GAS URL:', err));
       
     // ========== SIDEBAR TOGGLE ==========
@@ -595,8 +685,20 @@
     async function sendTestEmail(button) {
       const mitraId = button.dataset.mitraId;
       const mitraName = button.dataset.mitraName;
-      const mitraEmail = button.dataset.mitraEmail;
+      const mitraEmail = button.dataset.mitraEmail;           // email_fakultas (penanggung jawab)
+      const mitraEmailAsli = button.dataset.mitraEmailAsli;   // email_mitra_asli (referensi)
       const sisaHari = button.dataset.sisaHari;
+
+      // Validasi: email penanggung jawab wajib ada
+      if (!mitraEmail) {
+        showModal({
+          success: false,
+          title: 'Data Tidak Lengkap',
+          message: 'Email Penanggung Jawab (Fakultas) belum diisi. Silakan lengkapi data mitra terlebih dahulu.',
+          data: null
+        });
+        return;
+      }
 
       // Disable button & tampilkan loading
       button.disabled = true;
@@ -610,7 +712,8 @@
           body: JSON.stringify({
             mitra_id: mitraId,
             nama_instansi: mitraName,
-            email_fakultas: mitraEmail,
+            email_fakultas: mitraEmail,         // Penerima email (wajib)
+            email_mitra_asli: mitraEmailAsli,   // Info referensi (opsional)
             sisa_hari: sisaHari
           }),
           redirect: 'follow' // Wajib agar browser mengikuti redirect otentikasi GAS
@@ -628,9 +731,10 @@
           showModal({
             success: true,
             title: 'Email Berhasil Dikirim via GAS!',
-            message: `Notifikasi peringatan telah dikirim melalui Google Apps Script. Silakan cek inbox (atau folder spam) dalam beberapa menit.`,
+            message: `Notifikasi peringatan telah dikirim ke Email Penanggung Jawab. Silakan cek inbox (atau folder spam) dalam beberapa menit.`,
             data: {
-              email: result.data.email,
+              email_pj: result.data.email,
+              email_mitra: mitraEmailAsli || null,
               nama_instansi: result.data.nama_instansi,
               sisa_hari: result.data.sisa_hari
             }
@@ -684,9 +788,20 @@
         icon.textContent = '✅';
         
         if (data) {
-          document.getElementById('detailEmail').textContent = data.email;
-          document.getElementById('detailInstansi').textContent = data.nama_instansi;
-          document.getElementById('detailSisaHari').textContent = data.sisa_hari + ' hari';
+          // Email Penanggung Jawab (wajib)
+          document.getElementById('detailEmailPJ').textContent = data.email_pj || '-';
+          
+          // Email Mitra (opsional - tampilkan hanya jika ada)
+          const emailMitraRow = document.getElementById('detailEmailMitraRow');
+          if (data.email_mitra) {
+            document.getElementById('detailEmailMitra').textContent = data.email_mitra;
+            emailMitraRow.style.display = 'flex';
+          } else {
+            emailMitraRow.style.display = 'none';
+          }
+          
+          document.getElementById('detailInstansi').textContent = data.nama_instansi || '-';
+          document.getElementById('detailSisaHari').textContent = (data.sisa_hari || 0) + ' hari';
           detailEl.style.display = 'block';
         } else {
           detailEl.style.display = 'none';

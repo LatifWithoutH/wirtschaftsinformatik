@@ -40,6 +40,12 @@
     .info-grid div { color: var(--text-dark); font-size: 15px; }
     .info-grid a { color: var(--uniba-primary); text-decoration: none; font-weight: 500; transition: all 0.2s; }
     .info-grid a:hover { color: var(--uniba-blue-light); text-decoration: underline; }
+    
+    /* ✅ Style baru untuk info email */
+    .email-info-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .email-hint { font-size: 11px; color: var(--text-muted); font-style: italic; display: flex; align-items: center; gap: 4px; }
+    .email-hint .hint-icon { font-size: 12px; }
+    
     .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; color: white; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); letter-spacing: 0.3px; margin-left: 10px; }
     .doc-item { padding: 20px; background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.9)); border-radius: 12px; border-left: 4px solid var(--uniba-primary); margin-bottom: 15px; position: relative; transition: all 0.3s; border: 1px solid var(--border); }
     .doc-item:hover { transform: translateX(5px); box-shadow: var(--shadow-sm); }
@@ -167,28 +173,20 @@
   
   <%
     // ========================================================================
-    // 🔒 HELPER: Exact match fakultas (bukan includes!)
+    // 🔒 HELPER: Exact match fakultas
     // ========================================================================
-    const extractFakultasCode = (email) => {
-      if (!email || typeof email !== 'string') return null;
-      return email.split('@')[0].toLowerCase().trim();
+    const isSameFaculty = (userFakultasId, mitraFakultasId) => {
+      if (!userFakultasId || !mitraFakultasId) return false;
+      return userFakultasId.toLowerCase().trim() === mitraFakultasId.toLowerCase().trim();
     };
-    
-  // 🔒 PERBAIKAN: Gunakan mitra.fakultas_id langsung
-  const isSameFaculty = (userFakultasId, mitraFakultasId) => {
-    if (!userFakultasId || !mitraFakultasId) return false;
-    return userFakultasId.toLowerCase().trim() === mitraFakultasId.toLowerCase().trim();
-  };
   
-  const isHumas = user?.role === 'humas';
-  const isAdminFakultas = user?.role === 'admin_fakultas';
-  const isGuest = user?.role === 'guest';
-  const isOwnFaculty = isAdminFakultas && isSameFaculty(user.fakultas_id, mitra.fakultas_id); // ✅ Gunakan mitra.fakultas_id
+    const isHumas = user?.role === 'humas';
+    const isAdminFakultas = user?.role === 'admin_fakultas';
+    const isGuest = user?.role === 'guest';
+    const isOwnFaculty = isAdminFakultas && isSameFaculty(user.fakultas_id, mitra.fakultas_id);
   
-  const canEdit = isHumas || isOwnFaculty;
-  const mitraFakultasCode = mitra.fakultas_id; // Fallback ke email jika fakultas_id kosong
-
-
+    const canEdit = isHumas || isOwnFaculty;
+    const mitraFakultasCode = mitra.fakultas_id;
   %>
   
   <div class="main-wrapper">
@@ -213,14 +211,30 @@
           <strong>Jabatan</strong><div><%= mitra.jabatan || '-' %></div>
           <strong>Nomor HP</strong>
           <div><% if (mitra.no_hp_kontak) { %><a href="tel:<%= mitra.no_hp_kontak %>"><%= mitra.no_hp_kontak %></a><% } else { %>-<% } %></div>
-          <strong>Email Fakultas</strong>
-          <div>
+          
+          <!-- ✅ EMAIL PENANGGUNG JAWAB (sebelumnya Email Fakultas) -->
+          <strong>Email Penanggung Jawab</strong>
+          <div class="email-info-wrapper">
             <% if (mitra.email_fakultas) { %>
               <a href="mailto:<%= mitra.email_fakultas %>"><%= mitra.email_fakultas %></a>
+              <span class="email-hint">
             <% } else { %>
-              -
+              <span style="color: var(--text-muted)">-</span>
             <% } %>
           </div>
+          
+          <!-- ✅ EMAIL RESMI MITRA (BARU) -->
+          <strong>Email Resmi Mitra</strong>
+          <div class="email-info-wrapper">
+            <% if (mitra.email_mitra_asli) { %>
+              <a href="mailto:<%= mitra.email_mitra_asli %>"><%= mitra.email_mitra_asli %></a>
+              <span class="email-hint">
+            <% } else { %>
+              <span style="color: var(--text-muted)">-</span>
+              <span class="email-hint">
+            <% } %>
+          </div>
+          
           <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
         </div>
       </div>

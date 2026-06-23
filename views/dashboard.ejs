@@ -188,6 +188,17 @@
       color: var(--text-muted);
     }
     
+    .alert-item .mitra-info .email-mitra-asli {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 8px;
+      background: rgba(44, 82, 130, 0.08);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: var(--uniba-blue-light);
+      font-weight: 500;
+    }
+    
     .alert-item .days-left {
       font-family: 'Poppins', sans-serif;
       font-weight: 700;
@@ -490,6 +501,9 @@
               <div class="mitra-info">
                 <h4><%= m.nama_instansi %></h4>
                 <p>📞 <%= m.no_hp_kontak || '-' %> &nbsp;|&nbsp; ✉️ <%= m.email_fakultas || '-' %></p>
+                <% if (m.email_mitra_asli) { %>
+                  <span class="email-mitra-asli">🏢 Email Mitra: <%= m.email_mitra_asli %></span>
+                <% } %>
               </div>
               <div class="days-left">
                 <%= m.sisa_hari %> hari
