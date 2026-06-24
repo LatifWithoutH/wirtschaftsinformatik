@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Audit Log - SI Mitra DUDIKA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <style>
+<style>
     :root {
       --uniba-primary: #1a3a5c;
       --uniba-blue-light: #2c5282;
@@ -24,15 +24,20 @@
       --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    /* ✅ NORMALISASI BODY - HARUS SAMA DI SEMUA HALAMAN */
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg-light);
       color: var(--text-dark);
+      line-height: 1.6;  /* ✅ TAMBAHKAN */
       min-height: 100vh;
+      overflow-x: hidden;  /* ✅ TAMBAHKAN */
       background-image:
         radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
     }
+    
     .main-wrapper {
       margin-left: var(--sidebar-width);
       transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -40,6 +45,7 @@
       padding: 30px 40px;
     }
     .main-wrapper.expanded { margin-left: 0; }
+    
     .page-header {
       margin-bottom: 25px;
       padding-left: 18px;
@@ -185,6 +191,8 @@
     .action-RESET_PASSWORD { background: rgba(212, 160, 23, 0.12); color: #92400e; border: 1px solid rgba(212, 160, 23, 0.3); }
     .action-ACTIVATE { background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
     .action-DEACTIVATE { background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .action-CHANGE_PASSWORD { background: rgba(212, 160, 23, 0.12); color: #92400e; border: 1px solid rgba(212, 160, 23, 0.3); }
+    .action-EXPORT { background: rgba(44, 82, 130, 0.12); color: var(--uniba-blue-light); border: 1px solid rgba(44, 82, 130, 0.3); }
     
     .table-badge {
       padding: 4px 10px;
@@ -340,7 +348,8 @@
       .page-header h1 { font-size: 1.4rem; }
       .filter-grid { grid-template-columns: 1fr; }
     }
-  </style>
+</style>
+
 </head>
 <body>
   <%- include('partials/_sidebar') %>
@@ -364,6 +373,8 @@
               <option value="LOGIN" <%= filters.action === 'LOGIN' ? 'selected' : '' %>>LOGIN</option>
               <option value="LOGIN_FAILED" <%= filters.action === 'LOGIN_FAILED' ? 'selected' : '' %>>LOGIN FAILED</option>
               <option value="RESET_PASSWORD" <%= filters.action === 'RESET_PASSWORD' ? 'selected' : '' %>>RESET PASSWORD</option>
+              <option value="CHANGE_PASSWORD" <%= filters.action === 'CHANGE_PASSWORD' ? 'selected' : '' %>>CHANGE PASSWORD</option>
+              <option value="EXPORT" <%= filters.action === 'EXPORT' ? 'selected' : '' %>>EXPORT</option>
               <option value="ACTIVATE" <%= filters.action === 'ACTIVATE' ? 'selected' : '' %>>ACTIVATE</option>
               <option value="DEACTIVATE" <%= filters.action === 'DEACTIVATE' ? 'selected' : '' %>>DEACTIVATE</option>
             </select>
@@ -475,23 +486,6 @@
   </div>
 
   <script>
-    // Sidebar toggle (sama seperti halaman lain)
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebar = document.querySelector('.sidebar');
-    const mainWrapper = document.querySelector('.main-wrapper');
-    if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.toggle('active');
-          sidebarToggle.classList.toggle('shifted');
-        } else {
-          sidebar.classList.toggle('hidden');
-          mainWrapper.classList.toggle('expanded');
-          sidebarToggle.classList.toggle('shifted');
-        }
-      });
-    }
-
     function showDetail(data) {
       const modal = document.getElementById('detailModal');
       const content = document.getElementById('modalContent');
@@ -526,4 +520,4 @@
     });
   </script>
 </body>
-
+</html>

@@ -505,16 +505,44 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
     if (!['mou', 'moa', 'ia', 'pks'].includes(jenis_file)) throw new Error('Jenis file tidak valid');
     
     const { data: mitraData, error: mitraError } = await supabase
-      .from('mitra').select('nama_instansi').eq('id', id).single();
-    
+      .from('mitra')
+      .select('nama_instansi')
+      .eq('id', id)
+      .single();
+      
     if (mitraError || !mitraData) throw new Error('Data mitra tidak ditemukan');
     
     // ✅ Ambil data lama sebelum upload (untuk audit)
     const fieldName = `file_${jenis_file}`;
     const { data: oldMitraData } = await supabase.from('mitra').select(fieldName).eq('id', id).single();
     
+    // ✅ PERBAIKAN: Hitung nomor urut per jenis dokumen
+    const jenisFile = jenis_file.toUpperCase(); // MOU, MOA, IA, atau PKS
+    
+    // Hitung berapa file jenis ini yang sudah ada di database
+    const { count } = await supabase
+      .from('mitra')
+      .select('*', { count: 'exact', head: true })
+      .not(fieldName, 'is', null);
+    
+    // // Nomor urut berikutnya (misal: sudah ada 5 MOU, maka berikutnya = 6)
+    const nextNumber = (count || 0) + 1;
+    const nomorUrut = String(nextNumber).padStart(4, '0'); // Format: 0001, 0002, dst
+    
+    // Nama file asli (misal: draft_kerjasama.pdf)
+    const namaFileAsli = req.file.originalname;
+    
+    // ✅ Format nama file baru: MOU-0001-draft_kerjasama.pdf
+    const newFileName = `${jenisFile}-${namaFileAsli}`;
+    
+    console.log(`📝 Generated filename: ${newFileName} (urutan ke-${nextNumber})`);
+    
+    // ✅ Kirim nama file baru ke GAS
     const driveLink = await uploadFileToDrive(
-      req.file.buffer, req.file.originalname, req.file.mimetype, mitraData.nama_instansi
+      req.file.buffer, 
+      newFileName,              // <-- Gunakan nama file yang sudah diformat
+      req.file.mimetype, 
+      mitraData.nama_instansi
     );
     
     const { error: dbError } = await supabase.from('mitra').update({ [fieldName]: driveLink }).eq('id', id);
@@ -525,16 +553,16 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
       action: 'UPLOAD',
       tableName: 'dokumen',
       recordId: id,
-      recordName: `${mitraData.nama_instansi} - ${jenis_file.toUpperCase()}`,
+      recordName: `${mitraData.nama_instansi} - ${jenisFile}`,
       oldData: { [fieldName]: oldMitraData?.[fieldName] || null },
-      newData: { [fieldName]: driveLink, file_name: req.file.originalname },
+      newData: { [fieldName]: driveLink, file_name: newFileName },
       user: req.session.user,
       req
     });
     
     return res.json({
       success: true,
-      message: `File ${jenis_file.toUpperCase()} berhasil disimpan!`,
+      message: `File ${jenisFile} berhasil disimpan dengan nama: ${newFileName}`,
       previewLink: driveLink,
       jenis_file: jenis_file
     });
@@ -961,4 +989,7 @@ app.get('/audit-log', requireAuth('humas'), async (req, res) => {
 // 🚀 START SERVER
 // ========================================================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server aktif di http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server aktif di http://localhost:${PORT}`);
+  console.log(`📱 Akses dari HP di: http://192.168.1.9:${PORT}`);
+});

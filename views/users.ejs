@@ -749,24 +749,24 @@
             }
         }
 
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
+        <!-- ::-webkit-scrollbar { -->
+            <!-- width: 10px; -->
+            <!-- height: 10px; -->
+        <!-- } -->
 
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 5px;
-        }
+        <!-- ::-webkit-scrollbar-track { -->
+            <!-- background: #f1f5f9; -->
+            <!-- border-radius: 5px; -->
+        <!-- } -->
 
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
-            border-radius: 5px;
-        }
+        <!-- ::-webkit-scrollbar-thumb { -->
+            <!-- background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); -->
+            <!-- border-radius: 5px; -->
+        <!-- } -->
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--uniba-dark);
-        }
+        <!-- ::-webkit-scrollbar-thumb:hover { -->
+            <!-- background: var(--uniba-dark); -->
+        <!-- } -->
     </style>
 </head>
 <body>
@@ -995,21 +995,6 @@ window.addEventListener('load', function() {
   
   console.log('✅ Search ready - try typing something!');
   
-  // Sidebar Toggle
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  const sidebar = document.querySelector('.sidebar');
-  const mainWrapper = document.querySelector('.main-wrapper');
-  
-  if (sidebarToggle && sidebar) {
-    sidebarToggle.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        sidebar.classList.toggle('active');
-      } else {
-        sidebar.classList.toggle('hidden');
-        mainWrapper.classList.toggle('expanded');
-      }
-    });
-  }
   
   // Modal Functions
   window.openModal = function(userId, userName, userEmail, isCurrentlyActive) {

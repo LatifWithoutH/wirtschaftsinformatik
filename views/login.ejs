@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1a3a5c">
   <title>Login - SI Mitra DUDIKA | Universitas Islam Batik Surakarta</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-  <style>
+<style>
     :root {
       --uniba-primary: #1a3a5c;
       --uniba-secondary: #8b6f47;
@@ -27,12 +27,12 @@
       background: var(--bg-gradient);
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       min-height: 100vh;
       min-height: 100dvh;
-      padding: 20px;
-      padding-top: calc(20px + var(--safe-top));
-      padding-bottom: calc(20px + var(--safe-bottom));
+      padding: 14px;
+      padding-top: calc(14px + var(--safe-top));
+      padding-bottom: calc(14px + var(--safe-bottom));
       position: relative;
       overflow-x: hidden;
       overflow-y: auto;
@@ -44,22 +44,22 @@
       border-radius: 50%;
       filter: blur(80px);
       z-index: 0;
-      opacity: 0.25;
+      opacity: 0.18;
       pointer-events: none;
       will-change: transform;
     }
     
     body::before {
-      width: 300px; height: 300px;
+      width: 220px; height: 220px;
       background: var(--uniba-gold);
-      top: -80px; left: -80px;
+      top: -50px; left: -50px;
       animation: float 12s ease-in-out infinite;
     }
     
     body::after {
-      width: 250px; height: 250px;
+      width: 180px; height: 180px;
       background: var(--uniba-secondary);
-      bottom: -50px; right: -50px;
+      bottom: -35px; right: -35px;
       animation: float 15s ease-in-out infinite reverse;
     }
 
@@ -72,11 +72,11 @@
       background: rgba(255, 255, 255, 0.97);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      padding: 40px 36px;
-      border-radius: 20px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      padding: 26px 24px;
+      border-radius: 16px;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22);
       width: 100%;
-      max-width: 440px;
+      max-width: 340px;
       text-align: center;
       position: relative;
       z-index: 1;
@@ -90,12 +90,12 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .logo-area { margin-bottom: 24px; }
+    .logo-area { margin-bottom: 16px; }
     
     .logo-uniba {
-      width: 100px;
+      width: 65px;
       height: auto;
-      margin-bottom: 18px;
+      margin-bottom: 10px;
       display: block;
       margin-left: auto;
       margin-right: auto;
@@ -108,15 +108,15 @@
     .login-box h2 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
-      font-size: 1.4rem;
-      margin-bottom: 8px;
+      font-size: 1.15rem;
+      margin-bottom: 5px;
       letter-spacing: -0.5px;
     }
 
     .login-box p {
       color: var(--text-muted);
-      margin-bottom: 28px;
-      font-size: 0.88rem;
+      margin-bottom: 18px;
+      font-size: 0.78rem;
       line-height: 1.5;
     }
 
@@ -124,33 +124,33 @@
       color: var(--uniba-primary);
       font-weight: 600;
       display: block;
-      margin-top: 6px;
-      font-size: 0.92rem;
+      margin-top: 3px;
+      font-size: 0.82rem;
     }
 
     .form-group {
-      margin-bottom: 18px;
+      margin-bottom: 12px;
       text-align: left;
       position: relative;
     }
 
     .form-group label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       font-weight: 600;
       color: var(--text-dark);
-      font-size: 0.85rem;
+      font-size: 0.75rem;
     }
 
     .input-wrapper { position: relative; }
 
     .input-wrapper svg.input-icon {
       position: absolute;
-      left: 14px;
+      left: 11px;
       top: 50%;
       transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
+      width: 15px;
+      height: 15px;
       color: var(--text-muted);
       transition: color 0.3s;
       pointer-events: none;
@@ -158,10 +158,10 @@
 
     .form-group input {
       width: 100%;
-      padding: 14px 14px 14px 44px;
+      padding: 10px 11px 10px 36px;
       border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 16px;
+      border-radius: 8px;
+      font-size: 13px;
       font-family: 'Inter', sans-serif;
       transition: all 0.3s ease;
       background: #f8fafc;
@@ -172,14 +172,14 @@
 
     .form-group input[type="password"],
     .form-group input.has-toggle {
-      padding-right: 48px;
+      padding-right: 40px;
     }
 
     .form-group input:focus {
       outline: none;
       border-color: var(--uniba-primary);
       background: #fff;
-      box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+      box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.1);
     }
 
     .input-wrapper:focus-within svg.input-icon {
@@ -188,14 +188,14 @@
 
     .toggle-password {
       position: absolute;
-      right: 6px;
+      right: 3px;
       top: 50%;
       transform: translateY(-50%);
       background: transparent;
       border: none;
       cursor: pointer;
-      padding: 8px;
-      border-radius: 8px;
+      padding: 5px;
+      border-radius: 6px;
       color: var(--text-muted);
       display: flex;
       align-items: center;
@@ -223,8 +223,8 @@
     }
 
     .toggle-password svg {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
       display: block;
       pointer-events: none;
     }
@@ -235,29 +235,29 @@
 
     button[type="submit"] {
       width: 100%;
-      padding: 14px;
+      padding: 10px;
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.85rem;
       cursor: pointer;
       transition: all 0.3s ease;
-      margin-top: 10px;
+      margin-top: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 7px;
       font-family: 'Poppins', sans-serif;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
-      min-height: 48px;
+      min-height: 38px;
     }
 
     button[type="submit"]:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(26, 58, 92, 0.35);
+      box-shadow: 0 6px 14px rgba(26, 58, 92, 0.28);
     }
 
     button[type="submit"]:active { transform: translateY(0); }
@@ -266,13 +266,13 @@
       color: #991b1b;
       background: #fef2f2;
       border: 1px solid #fecaca;
-      padding: 12px 16px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      font-size: 0.85rem;
+      padding: 9px 12px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 7px;
       <% if (typeof error !== 'undefined' && error) { %>
         display: flex;
       <% } else { %>
@@ -284,35 +284,35 @@
       align-items: flex-start;
     }
 
-    .error svg { flex-shrink: 0; }
+    .error svg { flex-shrink: 0; width: 14px; height: 14px; }
 
     /* ✅ COUNTDOWN TIMER STYLING */
     .countdown-container {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      padding: 10px 14px;
+      gap: 5px;
+      margin-top: 7px;
+      padding: 7px 10px;
       background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(220, 38, 38, 0.03));
       border-left: 3px solid #dc2626;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
       color: #991b1b;
       width: 100%;
     }
 
     .countdown-container .timer-icon {
-      font-size: 1.1rem;
+      font-size: 0.9rem;
       animation: pulse 1.5s ease-in-out infinite;
     }
 
     .countdown-container .time-value {
       font-family: 'Courier New', monospace;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.85rem;
       background: rgba(220, 38, 38, 0.15);
-      padding: 3px 8px;
-      border-radius: 5px;
+      padding: 2px 5px;
+      border-radius: 4px;
       color: #dc2626;
       letter-spacing: 1px;
     }
@@ -328,12 +328,12 @@
     }
 
     .footer {
-      margin-top: 28px;
-      font-size: 0.75rem;
+      margin-top: 18px;
+      font-size: 0.65rem;
       color: var(--text-muted);
       border-top: 1px solid #e2e8f0;
-      padding-top: 18px;
-      line-height: 1.6;
+      padding-top: 12px;
+      line-height: 1.5;
     }
 
     .footer strong {
@@ -344,62 +344,61 @@
     /* ========== TABLET (768px) ========== */
     @media (max-width: 768px) {
       body {
-        padding: 16px;
-        align-items: center;
+        padding: 12px;
       }
-      .login-box { padding: 36px 28px; }
+      .login-box { padding: 24px 22px; max-width: 330px; }
     }
 
     /* ========== MOBILE KECIL (480px) ========== */
     @media (max-width: 480px) {
       body {
-        padding: 12px;
-        padding-top: calc(12px + var(--safe-top));
-        padding-bottom: calc(12px + var(--safe-bottom));
+        padding: 10px;
+        padding-top: calc(10px + var(--safe-top));
+        padding-bottom: calc(10px + var(--safe-bottom));
       }
-      .login-box { padding: 28px 20px; border-radius: 16px; }
-      .logo-uniba { width: 80px; margin-bottom: 14px; }
-      .login-box h2 { font-size: 1.25rem; }
-      .login-box p { font-size: 0.82rem; margin-bottom: 22px; }
-      .login-box p strong { font-size: 0.88rem; }
-      .form-group { margin-bottom: 14px; }
-      .form-group input { padding: 13px 12px 13px 40px; font-size: 16px; }
+      .login-box { padding: 22px 18px; border-radius: 14px; max-width: 320px; }
+      .logo-uniba { width: 58px; margin-bottom: 9px; }
+      .login-box h2 { font-size: 1.05rem; }
+      .login-box p { font-size: 0.75rem; margin-bottom: 16px; }
+      .login-box p strong { font-size: 0.78rem; }
+      .form-group { margin-bottom: 11px; }
+      .form-group input { padding: 9px 10px 9px 34px; font-size: 13px; }
       .form-group input[type="password"],
-      .form-group input.has-toggle { padding-right: 44px; }
-      .input-wrapper svg.input-icon { left: 12px; width: 16px; height: 16px; }
-      .toggle-password { right: 4px; padding: 7px; }
-      .toggle-password svg { width: 18px; height: 18px; }
-      button[type="submit"] { padding: 13px; font-size: 0.95rem; }
-      .footer { margin-top: 22px; padding-top: 14px; font-size: 0.7rem; }
-      body::before, body::after { filter: blur(50px); opacity: 0.18; }
-      .countdown-container { font-size: 0.8rem; padding: 8px 12px; }
-      .countdown-container .time-value { font-size: 0.9rem; }
+      .form-group input.has-toggle { padding-right: 38px; }
+      .input-wrapper svg.input-icon { left: 10px; width: 14px; height: 14px; }
+      .toggle-password { right: 2px; padding: 4px; }
+      .toggle-password svg { width: 15px; height: 15px; }
+      button[type="submit"] { padding: 9px; font-size: 0.8rem; min-height: 36px; }
+      .footer { margin-top: 16px; padding-top: 10px; font-size: 0.6rem; }
+      body::before, body::after { filter: blur(50px); opacity: 0.15; }
+      .countdown-container { font-size: 0.7rem; padding: 6px 9px; }
+      .countdown-container .time-value { font-size: 0.8rem; }
     }
 
     /* ========== MOBILE SANGAT KECIL (360px) ========== */
     @media (max-width: 360px) {
-      .login-box { padding: 24px 16px; }
-      .logo-uniba { width: 70px; }
-      .login-box h2 { font-size: 1.15rem; }
-      .login-box p { font-size: 0.78rem; }
-      .form-group input { padding: 12px 10px 12px 38px; font-size: 16px; }
+      .login-box { padding: 18px 14px; max-width: 300px; }
+      .logo-uniba { width: 52px; }
+      .login-box h2 { font-size: 0.98rem; }
+      .login-box p { font-size: 0.72rem; }
+      .form-group input { padding: 8px 9px 8px 32px; font-size: 12px; }
       .form-group input[type="password"],
-      .form-group input.has-toggle { padding-right: 42px; }
-      .input-wrapper svg.input-icon { left: 10px; }
-      .toggle-password { right: 2px; padding: 6px; }
-      .toggle-password svg { width: 17px; height: 17px; }
+      .form-group input.has-toggle { padding-right: 36px; }
+      .input-wrapper svg.input-icon { left: 9px; width: 13px; height: 13px; }
+      .toggle-password { right: 1px; padding: 3px; }
+      .toggle-password svg { width: 14px; height: 14px; }
     }
 
     /* ========== LANDSCAPE MOBILE ========== */
     @media (max-height: 500px) and (orientation: landscape) {
-      body { align-items: flex-start; padding: 10px; }
-      .login-box { padding: 20px 24px; margin: 10px auto; }
-      .logo-area { margin-bottom: 12px; }
-      .logo-uniba { width: 60px; margin-bottom: 10px; }
-      .login-box h2 { font-size: 1.1rem; margin-bottom: 4px; }
-      .login-box p { margin-bottom: 14px; font-size: 0.8rem; }
-      .form-group { margin-bottom: 10px; }
-      .footer { margin-top: 14px; padding-top: 10px; }
+      body { align-items: flex-start; padding: 8px; }
+      .login-box { padding: 14px 18px; margin: 8px auto; max-width: 320px; }
+      .logo-area { margin-bottom: 8px; }
+      .logo-uniba { width: 45px; margin-bottom: 7px; }
+      .login-box h2 { font-size: 0.95rem; margin-bottom: 3px; }
+      .login-box p { margin-bottom: 10px; font-size: 0.72rem; }
+      .form-group { margin-bottom: 7px; }
+      .footer { margin-top: 10px; padding-top: 8px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -409,6 +408,7 @@
       }
     }
   </style>
+
 </head>
 <body>
   <div class="login-box">

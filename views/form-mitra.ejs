@@ -280,10 +280,10 @@
       .form-header h1 { font-size: 1.3rem; }
     }
     
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; }
-    ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); border-radius: 5px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--uniba-dark); }
+    <!-- ::-webkit-scrollbar { width: 10px; height: 10px; } -->
+    <!-- ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; } -->
+    <!-- ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); border-radius: 5px; } -->
+    <!-- ::-webkit-scrollbar-thumb:hover { background: var(--uniba-dark); } -->
   </style>
 </head>
 <body>
@@ -498,38 +498,186 @@
     </div>
   </div>
 
-  <script>
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebar = document.querySelector('.sidebar');
-    const mainWrapper = document.querySelector('.main-wrapper');
-
-    if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.toggle('active');
-          sidebarToggle.classList.toggle('shifted');
-        } else {
-          sidebar.classList.toggle('hidden');
-          mainWrapper.classList.toggle('expanded');
-          sidebarToggle.classList.toggle('shifted');
-        }
-      });
-
-      window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) {
-          sidebar.classList.remove('active');
-        } else {
-          sidebar.classList.remove('hidden');
-          mainWrapper.classList.remove('expanded');
-          sidebarToggle.classList.remove('shifted');
-        }
-      });
-    }
+    <script>
+    // ========== WRAP SEMUA DALAM DOMContentLoaded ==========
+    document.addEventListener('DOMContentLoaded', function() {
+      
+   
+        window.addEventListener('resize', () => {
+          if (window.innerWidth > 768) {
+            sidebar.classList.remove('active');
+          } else {
+            sidebar.classList.remove('hidden');
+            if (mainWrapper) mainWrapper.classList.remove('expanded');
+            sidebarToggle.classList.remove('shifted');
+          }
+        });
+      }
     
-    document.addEventListener('DOMContentLoaded', () => {
-      const firstInput = document.querySelector('input[required]:not([readonly]), select[required]:not([disabled])');
-      if (firstInput) firstInput.focus();
-    });
-  </script>
+      // ========== 2. GENERATE PASSWORD RANDOM ==========
+      function generatePassword(length = 14) {
+        const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lower = 'abcdefghijklmnopqrstuvwxyz';
+        const numbers = '0123456789';
+        const symbols = '!@#$%^&*';
+        const allChars = upper + lower + numbers + symbols;
+        let password = '';
+        password += upper[Math.floor(Math.random() * upper.length)];
+        password += lower[Math.floor(Math.random() * lower.length)];
+        password += numbers[Math.floor(Math.random() * numbers.length)];
+        password += symbols[Math.floor(Math.random() * symbols.length)];
+        for (let i = password.length; i < length; i++) {
+          password += allChars[Math.floor(Math.random() * allChars.length)];
+        }
+        return password.split('').sort(() => Math.random() - 0.5).join('');
+      }
+    
+      // ========== 3. SET PASSWORD KE INPUT ==========
+      function generateAndSetPassword() {
+        const input = document.getElementById('passwordInput');
+        if (!input) return;
+        input.value = generatePassword(14);
+        input.type = 'text';
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (eyeIcon) eyeIcon.textContent = '🙈';
+        updateStrengthMeter();
+        showToast('✅ Password baru telah di-generate!', 'success');
+      }
+    
+      // ========== 4. TOGGLE SHOW/HIDE PASSWORD ==========
+      window.togglePasswordVisibility = function() {
+        const input = document.getElementById('passwordInput');
+        const icon = document.getElementById('eyeIcon');
+        if (!input) return;
+        if (input.type === 'password') {
+          input.type = 'text';
+          if (icon) icon.textContent = '🙈';
+        } else {
+          input.type = 'password';
+          if (icon) icon.textContent = '👁️';
+        }
+      };
+    
+      // ========== 5. COPY PASSWORD ==========
+      window.copyPassword = function() {
+        const input = document.getElementById('passwordInput');
+        if (!input || !input.value) {
+          showToast('⚠️ Generate password terlebih dahulu!', '');
+          return;
+        }
+        const originalType = input.type;
+        input.type = 'text';
+        input.select();
+        try {
+          navigator.clipboard.writeText(input.value).then(() => {
+            showToast('📋 Password berhasil disalin ke clipboard!', 'success');
+          }).catch(() => {
+            document.execCommand('copy');
+            showToast('📋 Password berhasil disalin!', 'success');
+          });
+        } catch (err) {
+          showToast('❌ Gagal menyalin password', '');
+        }
+        input.type = originalType;
+      };
+    
+      // ========== 6. PASSWORD STRENGTH METER ==========
+      function updateStrengthMeter() {
+        const passwordInput = document.getElementById('passwordInput');
+        const fill = document.getElementById('strengthFill');
+        const text = document.getElementById('strengthText');
+        if (!passwordInput || !fill || !text) return;
+        
+        const password = passwordInput.value;
+        if (!password) {
+          fill.className = 'strength-fill';
+          text.textContent = 'Kekuatan password akan muncul di sini';
+          text.className = 'strength-text';
+          return;
+        }
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (password.length >= 12) score++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+        if (/\d/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+        
+        fill.className = 'strength-fill';
+        text.className = 'strength-text';
+        if (score <= 2) {
+          fill.classList.add('weak');
+          text.classList.add('weak');
+          text.textContent = '⚠️ Lemah - Mudah ditebak';
+        } else if (score === 3) {
+          fill.classList.add('fair');
+          text.classList.add('fair');
+          text.textContent = '🟡 Cukup - Bisa lebih kuat';
+        } else if (score === 4) {
+          fill.classList.add('good');
+          text.classList.add('good');
+          text.textContent = '🔵 Bagus - Cukup aman';
+        } else {
+          fill.classList.add('strong');
+          text.classList.add('strong');
+          text.textContent = '🟢 Sangat Kuat - Excellent!';
+        }
+      }
+    
+      // ========== 7. TOAST NOTIFICATION ==========
+      function showToast(message, type = '') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.className = 'toast show ' + type;
+        setTimeout(() => {
+          toast.className = 'toast';
+        }, 2500);
+      }
+    
+      // ========== 8. TOGGLE FAKULTAS ==========
+      window.toggleFakultas = function() {
+        const role = document.getElementById('roleSelect');
+        const fakultasGroup = document.getElementById('fakultasGroup');
+        const fakultasInput = document.getElementById('fakultasSelect');
+        if (!role || !fakultasGroup || !fakultasInput) return;
+        
+        if (role.value === 'admin_fakultas') {
+          fakultasGroup.classList.remove('hidden');
+          fakultasInput.setAttribute('required', 'required');
+        } else {
+          fakultasGroup.classList.add('hidden');
+          fakultasInput.removeAttribute('required');
+          fakultasInput.value = '';
+        }
+      };
+    
+      // ========== 9. VALIDASI FORM ==========
+      const userForm = document.getElementById('userForm');
+      if (userForm) {
+        userForm.addEventListener('submit', function(e) {
+          const password = document.getElementById('passwordInput');
+          if (password && (!password.value || password.value.length < 8)) {
+            e.preventDefault();
+            showToast('⚠️ Password harus minimal 8 karakter!', '');
+            return false;
+          }
+        });
+      }
+    
+      // ========== 10. INIT: Generate password + focus ==========
+      generateAndSetPassword();
+      
+      const nameInput = document.querySelector('input[name="name"]');
+      if (nameInput) nameInput.focus();
+    
+      // ========== 11. Strength meter listener ==========
+      const passwordInput = document.getElementById('passwordInput');
+      if (passwordInput) {
+        passwordInput.addEventListener('input', updateStrengthMeter);
+      }
+      
+    }); // ===== AKHIR DOMContentLoaded =====
+    </script>
+
 </body>
 </html>
