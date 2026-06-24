@@ -8,6 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
+  <!-- ✅ FONT AWESOME 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
   <style>
     :root {
       --uniba-primary: #1a3a5c;
@@ -57,45 +60,88 @@
       margin-left: 0;
     }
     
-    /* ========== PAGE HEADER (MINIMAL) ========== */
+    /* ========== PAGE HEADER (DIKECILKAN) ========== */
     .page-header {
-      padding: 30px 40px 10px;
+      padding: 24px 40px 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 20px;
-      margin-bottom: 20px;
+      gap: 16px;
+      margin-bottom: 16px;
     }
     
     .page-header h1 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
-      font-size: 1.9rem;
+      font-size: 1.55rem;
       font-weight: 700;
       letter-spacing: -0.5px;
       position: relative;
-      padding-left: 18px;
+      padding-left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     
     .page-header h1::before {
       content: '';
       position: absolute;
       left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 4px;
       background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
       border-radius: 3px;
     }
     
-    /* ========== ALERT SECTION ========== */
+    .page-header h1 i {
+      color: var(--uniba-gold);
+      font-size: 1.3rem;
+    }
+
+
+@media (max-width: 768px) {
+  .page-header {
+    padding: 23px !important;
+    padding-left: 60px !important; /* KURANGI dari 75px jadi 60px */
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* KURANGI gap dari 12px jadi 8px */
+    flex-wrap: nowrap;
+  }
+  
+  .page-header h1 {
+    font-size: 1.15rem !important;
+    padding-left: 0 !important;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px; /* KURANGI gap icon-judul dari 8px jadi 6px */
+    white-space: nowrap;
+  }
+  
+  .page-header h1::before {
+    content: '';
+    position: static !important;
+    width: 3px !important;
+    height: 24px !important;
+    background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary)) !important;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-right: 2px; /* KURANGI margin dari 4px jadi 2px */
+  }
+}
+     
+
+    /* ========== ALERT SECTION (DIKECILKAN) ========== */
     .alert-section {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), rgba(245, 158, 11, 0.03));
-      border-radius: 16px;
-      padding: 25px;
+      border-radius: 14px;
+      padding: 20px;
       box-shadow: var(--shadow-md);
-      margin: 0 40px 30px;
+      margin: 0 40px 24px;
       border: 2px solid rgba(239, 68, 68, 0.15);
       position: relative;
       overflow: hidden;
@@ -121,22 +167,26 @@
     .alert-section h3 {
       font-family: 'Poppins', sans-serif;
       color: var(--danger);
-      margin-bottom: 20px;
-      font-size: 1.2rem;
+      margin-bottom: 16px;
+      font-size: 1rem;
       font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding-bottom: 15px;
+      gap: 8px;
+      padding-bottom: 12px;
       border-bottom: 2px solid rgba(239, 68, 68, 0.1);
     }
     
     .alert-section h3 .pulse-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       background: var(--danger);
       border-radius: 50%;
       animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .alert-section h3 i {
+      font-size: 1.1rem;
     }
     
     @keyframes pulse {
@@ -147,15 +197,15 @@
     .alert-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
     
     .alert-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
-      border-radius: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
       border-left: 4px solid;
       transition: all 0.3s;
       cursor: pointer;
@@ -177,34 +227,48 @@
     }
     
     .alert-item .mitra-info h4 {
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       color: var(--text-dark);
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       font-weight: 600;
     }
     
     .alert-item .mitra-info p {
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .alert-item .mitra-info p i {
+      font-size: 0.75rem;
+      width: 14px;
     }
     
     .alert-item .mitra-info .email-mitra-asli {
-      display: inline-block;
-      margin-top: 4px;
-      padding: 2px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 3px;
+      padding: 2px 7px;
       background: rgba(44, 82, 130, 0.08);
       border-radius: 4px;
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       color: var(--uniba-blue-light);
       font-weight: 500;
+    }
+    
+    .alert-item .mitra-info .email-mitra-asli i {
+      font-size: 0.65rem;
     }
     
     .alert-item .days-left {
       font-family: 'Poppins', sans-serif;
       font-weight: 700;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
+      padding: 6px 13px;
+      border-radius: 18px;
+      font-size: 0.78rem;
       white-space: nowrap;
     }
     
@@ -227,18 +291,18 @@
       box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
     
-    /* ========== STATS CARDS ========== */
+    /* ========== STATS CARDS (DIKECILKAN) ========== */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      padding: 0 40px 35px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 0 40px 28px;
     }
     
     .stat-card {
       background: var(--bg-card);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: 14px;
+      padding: 18px 20px;
       box-shadow: var(--shadow-sm);
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
@@ -260,8 +324,8 @@
       position: absolute;
       top: -30px;
       right: -30px;
-      width: 100px;
-      height: 100px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
       opacity: 0.08;
       transition: all 0.4s;
@@ -288,27 +352,48 @@
     .stat-card.expired::before { background: linear-gradient(180deg, var(--expired), #94a3b8); }
     .stat-card.expired::after { background: var(--expired); }
     
+    /* ✅ ICON STYLING UNTUK STAT CARDS (DIKECILKAN) */
     .stat-icon-wrapper {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
-      font-size: 1.4rem;
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      transition: all 0.3s ease;
     }
     
-    .stat-card.total .stat-icon-wrapper { background: rgba(26, 58, 92, 0.1); }
-    .stat-card.active .stat-icon-wrapper { background: rgba(16, 185, 129, 0.1); }
-    .stat-card.warning .stat-icon-wrapper { background: rgba(245, 158, 11, 0.1); }
-    .stat-card.danger .stat-icon-wrapper { background: rgba(239, 68, 68, 0.1); }
-    .stat-card.expired .stat-icon-wrapper { background: rgba(100, 116, 139, 0.1); }
+    .stat-card:hover .stat-icon-wrapper {
+      transform: scale(1.1) rotate(5deg);
+    }
+    
+    .stat-card.total .stat-icon-wrapper { 
+      background: rgba(26, 58, 92, 0.1);
+      color: var(--uniba-primary);
+    }
+    .stat-card.active .stat-icon-wrapper { 
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+    .stat-card.warning .stat-icon-wrapper { 
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+    }
+    .stat-card.danger .stat-icon-wrapper { 
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    .stat-card.expired .stat-icon-wrapper { 
+      background: rgba(100, 116, 139, 0.1);
+      color: var(--expired);
+    }
     
     .stat-card .stat-label { 
-      font-size: 0.8rem; 
+      font-size: 0.7rem; 
       color: var(--text-muted); 
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       font-weight: 500;
@@ -316,32 +401,32 @@
     
     .stat-card .stat-value { 
       font-family: 'Poppins', sans-serif;
-      font-size: 2.2rem; 
+      font-size: 1.75rem; 
       font-weight: 700; 
       color: var(--text-dark);
       line-height: 1;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     
     .stat-card .stat-change { 
-      font-size: 0.75rem; 
+      font-size: 0.68rem; 
       color: var(--text-muted);
-      padding-top: 10px;
+      padding-top: 8px;
       border-top: 1px dashed #e2e8f0;
     }
     
-    /* ========== CHARTS SECTION ========== */
+    /* ========== CHARTS SECTION (DIKECILKAN) ========== */
     .charts-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-      gap: 20px;
-      padding: 0 40px 35px;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 16px;
+      padding: 0 40px 28px;
     }
     
     .chart-card {
       background: var(--bg-card);
-      border-radius: 16px;
-      padding: 25px;
+      border-radius: 14px;
+      padding: 20px;
       box-shadow: var(--shadow-sm);
       border: 1px solid rgba(226, 232, 240, 0.6);
       transition: all 0.3s;
@@ -355,12 +440,17 @@
     .chart-card h3 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
-      margin-bottom: 20px;
-      font-size: 1.1rem;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+    }
+    
+    .chart-card h3 i {
+      color: var(--uniba-gold);
+      font-size: 1rem;
     }
     
     .chart-card h3::after {
@@ -370,35 +460,44 @@
       background: linear-gradient(90deg, #e2e8f0, transparent);
     }
     
-    /* ========== BUTTONS ========== */
+    /* ========== BUTTONS (DIKECILKAN) ========== */
     .quick-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
-      padding: 0 40px 40px;
+      padding: 0 40px 32px;
     }
     
     .btn {
-      padding: 12px 22px;
+      padding: 10px 18px;
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       color: white;
       text-decoration: none;
-      border-radius: 10px;
+      border-radius: 9px;
       font-weight: 600;
       border: none;
       cursor: pointer;
       transition: all 0.3s;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.9rem;
+      gap: 7px;
+      font-size: 0.82rem;
       font-family: 'Inter', sans-serif;
       box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
+    }
+    
+    .btn i {
+      font-size: 0.9rem;
+      transition: transform 0.3s ease;
     }
     
     .btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
+    }
+    
+    .btn:hover i {
+      transform: scale(1.15);
     }
     
     .btn-success { 
@@ -424,35 +523,45 @@
       }
       
       .page-header { 
-        padding: 20px 20px 10px;
+        padding: 18px 20px 8px;
         flex-direction: column;
         align-items: flex-start;
       }
       
       .alert-section {
-        margin: 0 20px 20px;
-        padding: 20px;
+        margin: 0 20px 18px;
+        padding: 16px;
       }
       
       .stats-grid {
-        padding: 0 20px 25px;
+        padding: 0 20px 22px;
         grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      
+      .stat-card {
+        padding: 14px 16px;
+      }
+      
+      .stat-card .stat-value {
+        font-size: 1.4rem;
       }
       
       .charts-grid { 
-        padding: 0 20px 25px;
+        padding: 0 20px 22px;
         grid-template-columns: 1fr; 
       }
       
       .quick-actions {
-        padding: 0 20px 30px;
+        padding: 0 20px 26px;
       }
       
-      .page-header h1 { font-size: 1.4rem; }
-      .alert-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .page-header h1 { font-size: 1.3rem; }
+      .alert-item { flex-direction: column; align-items: flex-start; gap: 8px; }
       .alert-item .days-left { align-self: flex-end; }
     }
   </style>
+
 </head>
 <body>
   <!-- Include Sidebar dari partials -->
@@ -462,7 +571,10 @@
   <div class="main-wrapper">
     <!-- Page Header -->
     <div class="page-header">
-      <h1>📊 Dashboard Overview</h1>
+      <h1>
+        <i class="fa-solid fa-gauge-high"></i>
+        Dashboard Overview
+      </h1>
     </div>
     
     <!-- Alert Section -->
@@ -470,8 +582,9 @@
       <div class="alert-section">
         <h3>
           <span class="pulse-dot"></span>
-          ⚠️ Peringatan: Mitra Segera Berakhir
-          <span style="margin-left: auto; font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Peringatan: Mitra Segera Berakhir
+          <span style="margin-left: auto; font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">
             <%= segeraBerakhir.length %> mitra perlu perhatian
           </span>
         </h3>
@@ -480,9 +593,16 @@
             <div class="alert-item <%= m.sisa_hari <= 7 ? 'critical' : 'warning' %>" onclick="window.location='/mitra/<%= m.id %>'">
               <div class="mitra-info">
                 <h4><%= m.nama_instansi %></h4>
-                <p>📞 <%= m.no_hp_kontak || '-' %> &nbsp;|&nbsp; ✉️ <%= m.email_fakultas || '-' %></p>
+                <p>
+                  <i class="fa-solid fa-phone"></i> <%= m.no_hp_kontak || '-' %>
+                  &nbsp;|&nbsp;
+                  <i class="fa-solid fa-envelope"></i> <%= m.email_fakultas || '-' %>
+                </p>
                 <% if (m.email_mitra_asli) { %>
-                  <span class="email-mitra-asli">🏢 Email Mitra: <%= m.email_mitra_asli %></span>
+                  <span class="email-mitra-asli">
+                    <i class="fa-solid fa-building"></i>
+                    Email Mitra: <%= m.email_mitra_asli %>
+                  </span>
                 <% } %>
               </div>
               <div class="days-left">
@@ -491,10 +611,16 @@
             </div>
           <% }) %>
         </div>
-        <div class="quick-actions" style="padding: 20px 0 0;">
-          <a href="/mitra" class="btn">📋 Lihat Semua Mitra</a>
+        <div class="quick-actions" style="padding: 16px 0 0;">
+          <a href="/mitra" class="btn">
+            <i class="fa-solid fa-list"></i>
+            Lihat Semua Mitra
+          </a>
           <% if (user && user.role === 'humas') { %>
-            <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Baru</a>
+            <a href="/mitra/tambah" class="btn btn-success">
+              <i class="fa-solid fa-user-plus"></i>
+              Tambah Mitra Baru
+            </a>
           <% } %>
         </div>
       </div>
@@ -503,35 +629,45 @@
     <!-- Stats Cards -->
     <div class="stats-grid">
       <div class="stat-card total">
-        <div class="stat-icon-wrapper">🏢</div>
+        <div class="stat-icon-wrapper">
+          <i class="fa-solid fa-building"></i>
+        </div>
         <div class="stat-label">Total Mitra</div>
         <div class="stat-value"><%= stats.total %></div>
         <div class="stat-change">Semua mitra terdaftar</div>
       </div>
       
       <div class="stat-card active">
-        <div class="stat-icon-wrapper">✅</div>
+        <div class="stat-icon-wrapper">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
         <div class="stat-label">Mitra Aktif</div>
         <div class="stat-value"><%= stats.aktif %></div>
         <div class="stat-change">> 30 hari lagi</div>
       </div>
       
       <div class="stat-card warning">
-        <div class="stat-icon-wrapper">⚠️</div>
+        <div class="stat-icon-wrapper">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
         <div class="stat-label">Akan Berakhir</div>
         <div class="stat-value"><%= stats.akan_berakhir %></div>
         <div class="stat-change">8-30 hari lagi</div>
       </div>
       
       <div class="stat-card danger">
-        <div class="stat-icon-wrapper">🚨</div>
+        <div class="stat-icon-wrapper">
+          <i class="fa-solid fa-bell"></i>
+        </div>
         <div class="stat-label">Segera Berakhir</div>
         <div class="stat-value"><%= stats.segera_berakhir %></div>
         <div class="stat-change">≤ 7 hari lagi</div>
       </div>
       
       <div class="stat-card expired">
-        <div class="stat-icon-wrapper">⏰</div>
+        <div class="stat-icon-wrapper">
+          <i class="fa-solid fa-clock"></i>
+        </div>
         <div class="stat-label">Expired</div>
         <div class="stat-value"><%= stats.expired %></div>
         <div class="stat-change">Perlu perpanjangan</div>
@@ -541,12 +677,18 @@
     <!-- Charts -->
     <div class="charts-grid">
       <div class="chart-card">
-        <h3>📈 Status Mitra</h3>
+        <h3>
+          <i class="fa-solid fa-chart-bar"></i>
+          Status Mitra
+        </h3>
         <canvas id="statusChart"></canvas>
       </div>
       
       <div class="chart-card">
-        <h3>🎯 Distribusi Status</h3>
+        <h3>
+          <i class="fa-solid fa-chart-pie"></i>
+          Distribusi Status
+        </h3>
         <canvas id="pieChart"></canvas>
       </div>
     </div>
@@ -554,10 +696,19 @@
     <!-- Quick Actions -->
     <div class="quick-actions">
       <% if (user && user.role === 'humas') { %>
-        <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
-        <a href="/test-alert" class="btn btn-warning">🧪 Test Email Alert</a>
+        <a href="/mitra/tambah" class="btn btn-success">
+          <i class="fa-solid fa-user-plus"></i>
+          Tambah Mitra
+        </a>
+        <a href="/test-alert" class="btn btn-warning">
+          <i class="fa-solid fa-flask"></i>
+          Test Email Alert
+        </a>
       <% } %>
-      <a href="/mitra" class="btn">📋 Lihat Semua Mitra</a>
+      <a href="/mitra" class="btn">
+        <i class="fa-solid fa-list"></i>
+        Lihat Semua Mitra
+      </a>
     </div>
   </div>
   
@@ -565,6 +716,7 @@
     // Chart.js Global Config
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#64748b';
+    Chart.defaults.font.size = 11;  // ✅ Font chart lebih kecil
     
     // Bar Chart
     new Chart(document.getElementById('statusChart').getContext('2d'), {
@@ -581,9 +733,9 @@
             'rgba(239, 68, 68, 0.85)',
             'rgba(100, 116, 139, 0.85)'
           ],
-          borderRadius: 10,
+          borderRadius: 8,
           borderSkipped: false,
-          barThickness: 40
+          barThickness: 36
         }]
       },
       options: {
@@ -593,19 +745,21 @@
           legend: { display: false },
           tooltip: {
             backgroundColor: 'rgba(15, 36, 57, 0.95)',
-            padding: 12,
+            padding: 10,
             cornerRadius: 8,
-            titleFont: { weight: '600' }
+            titleFont: { size: 12, weight: '600' },
+            bodyFont: { size: 11 }
           }
         },
         scales: { 
           y: { 
             beginAtZero: true, 
-            ticks: { stepSize: 1 },
+            ticks: { stepSize: 1, font: { size: 11 } },
             grid: { color: 'rgba(226, 232, 240, 0.5)' }
           },
           x: {
-            grid: { display: false }
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
           }
         }
       }
@@ -624,7 +778,7 @@
             '#ef4444',
             '#64748b'
           ],
-          borderWidth: 4,
+          borderWidth: 3,
           borderColor: '#ffffff',
           hoverOffset: 15
         }]
@@ -637,15 +791,17 @@
           legend: { 
             position: 'bottom', 
             labels: { 
-              padding: 15, 
+              padding: 12, 
               usePointStyle: true,
-              pointStyle: 'circle'
+              pointStyle: 'circle',
+              font: { size: 11 }
             } 
           },
           tooltip: {
             backgroundColor: 'rgba(15, 36, 57, 0.95)',
-            padding: 12,
-            cornerRadius: 8
+            padding: 10,
+            cornerRadius: 8,
+            bodyFont: { size: 11 }
           }
         }
       }

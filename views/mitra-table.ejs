@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daftar Mitra - SI Mitra DUDIKA | Universitas Islam Batik</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- ✅ FONT AWESOME 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
 <style>
     :root {
       --uniba-primary: #1a3a5c;
@@ -45,65 +49,68 @@
       overflow-x: hidden;
     }
     
-    /* ========== MAIN WRAPPER ========== */
     .main-wrapper {
       margin-left: var(--sidebar-width);
       transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       min-height: 100vh;
     }
     
-    .main-wrapper.expanded {
-      margin-left: 0;
-    }
+    .main-wrapper.expanded { margin-left: 0; }
     
-    /* ========== PAGE HEADER ========== */
     .page-header {
-      padding: 30px 40px 10px;
+      padding: 24px 40px 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 16px;
     }
     
     .page-header h1 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
-      font-size: 1.9rem;
+      font-size: 1.55rem;
       font-weight: 700;
       letter-spacing: -0.5px;
       position: relative;
-      padding-left: 18px;
+      padding-left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     
     .page-header h1::before {
       content: '';
       position: absolute;
       left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 4px;
       background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
       border-radius: 3px;
     }
     
-    /* ========== STATS BAR ========== */
+    .page-header h1 i {
+      color: var(--uniba-gold);
+      font-size: 1.3rem;
+    }
+    
     .stats-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 15px;
-      padding: 20px 40px 25px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      padding: 16px 40px 20px;
     }
     
     .stat-item {
       background: var(--bg-card);
-      padding: 18px 22px;
+      padding: 14px 18px;
       border-radius: 12px;
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
@@ -113,62 +120,66 @@
     }
     
     .stat-icon {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
+      font-size: 1.1rem;
       flex-shrink: 0;
+      transition: all 0.3s ease;
     }
     
-    .stat-icon.active { background: rgba(16, 185, 129, 0.1); }
-    .stat-icon.warning { background: rgba(245, 158, 11, 0.1); }
-    .stat-icon.critical { background: rgba(239, 68, 68, 0.1); }
-    .stat-icon.expired { background: rgba(100, 116, 139, 0.1); }
+    .stat-item:hover .stat-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+    
+    .stat-icon.active { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .stat-icon.critical { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .stat-icon.expired { background: rgba(100, 116, 139, 0.1); color: var(--expired); }
     
     .stat-info h3 {
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     
     .stat-info p {
       font-family: 'Poppins', sans-serif;
-      font-size: 1.6rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: var(--text-dark);
       line-height: 1;
     }
     
-    /* ========== TOOLBAR ========== */
     .toolbar {
-      padding: 0 40px;
+      padding: 0 40px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 16px;
     }
     
     .search-box {
       display: flex;
       align-items: center;
       flex: 1;
-      max-width: 500px;
+      max-width: 450px;
       position: relative;
     }
     
     .search-box input {
       flex: 1;
-      padding: 12px 18px 12px 48px;
+      padding: 10px 16px 10px 42px;
       border: 2px solid var(--border);
-      border-radius: 12px;
-      font-size: 14px;
+      border-radius: 10px;
+      font-size: 13px;
       font-family: 'Inter', sans-serif;
       transition: all 0.3s;
       background: white;
@@ -181,16 +192,14 @@
       box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
     }
     
-    .search-box input::placeholder {
-      color: var(--text-muted);
-    }
+    .search-box input::placeholder { color: var(--text-muted); }
     
     .search-icon {
       position: absolute;
-      left: 16px;
+      left: 14px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 18px;
+      font-size: 14px;
       color: var(--text-muted);
       pointer-events: none;
       z-index: 1;
@@ -198,28 +207,32 @@
     
     .toolbar-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
     
-    /* ========== BUTTONS ========== */
     .btn {
-      padding: 12px 24px;
+      padding: 10px 18px;
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       color: white;
       text-decoration: none;
-      border-radius: 10px;
+      border-radius: 9px;
       font-weight: 600;
       border: none;
       cursor: pointer;
       transition: transform 0.25s ease, box-shadow 0.25s ease;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 14px;
+      gap: 7px;
+      font-size: 13px;
       font-family: 'Inter', sans-serif;
       box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
       white-space: nowrap;
+    }
+    
+    .btn i {
+      font-size: 0.85rem;
+      transition: transform 0.3s ease;
     }
     
     .btn:hover {
@@ -227,9 +240,8 @@
       box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
     }
     
-    .btn:active {
-      transform: translateY(0);
-    }
+    .btn:hover i { transform: scale(1.15); }
+    .btn:active { transform: translateY(0); }
     
     .btn-success { 
       background: linear-gradient(135deg, var(--success), #34d399);
@@ -237,9 +249,8 @@
     }
     .btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
     
-    /* ========== TABLE SECTION ========== */
     .table-section {
-      padding: 25px 40px 40px;
+      padding: 0 40px 32px;
       animation: fadeIn 0.5s ease;
     }
     
@@ -250,28 +261,21 @@
     
     .table-container {
       background: var(--bg-card);
-      border-radius: 16px;
+      border-radius: 14px;
       box-shadow: var(--shadow-lg);
       border: 1px solid var(--border);
       overflow: hidden;
       position: relative;
     }
     
-    /* ✅ WRAPPER UNTUK SCROLL HORIZONTAL (STABIL) */
     .table-scroll-wrapper {
       overflow-x: auto;
       overflow-y: visible;
       width: 100%;
     }
     
-    .table-scroll-wrapper::-webkit-scrollbar {
-      height: 8px;
-    }
-    
-    .table-scroll-wrapper::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    
+    .table-scroll-wrapper::-webkit-scrollbar { height: 8px; }
+    .table-scroll-wrapper::-webkit-scrollbar-track { background: #f1f5f9; }
     .table-scroll-wrapper::-webkit-scrollbar-thumb {
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       border-radius: 4px;
@@ -280,7 +284,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 14px;
+      font-size: 13px;
       min-width: 1100px;
     }
     
@@ -294,7 +298,7 @@
     }
     
     th, td {
-      padding: 14px 18px;
+      padding: 12px 16px;
       text-align: left;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
@@ -303,7 +307,7 @@
     th {
       font-family: 'Poppins', sans-serif;
       font-weight: 600;
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.7px;
       cursor: pointer;
@@ -314,47 +318,22 @@
       color: rgba(255, 255, 255, 0.95);
     }
     
-    th:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
+    th:hover { background: rgba(255, 255, 255, 0.08); }
     
-    th.sort-asc::after { 
-      content: " ▲"; 
-      font-size: 9px;
-      color: var(--uniba-gold);
-      margin-left: 4px;
-    }
-    th.sort-desc::after { 
-      content: " ▼"; 
-      font-size: 9px;
-      color: var(--uniba-gold);
-      margin-left: 4px;
-    }
+    th.sort-asc::after { content: " ▲"; font-size: 9px; color: var(--uniba-gold); margin-left: 4px; }
+    th.sort-desc::after { content: " ▼"; font-size: 9px; color: var(--uniba-gold); margin-left: 4px; }
     
-    /* ✅ HOVER ROW - STABIL (TANPA SCALE) */
-    tbody tr {
-      transition: background 0.2s ease;
-    }
+    tbody tr { transition: background 0.2s ease; }
+    tbody tr:hover { background: rgba(26, 58, 92, 0.04); }
+    tbody tr:nth-child(even) { background: rgba(248, 250, 252, 0.6); }
+    tbody tr:nth-child(even):hover { background: rgba(26, 58, 92, 0.06); }
     
-    tbody tr:hover {
-      background: rgba(26, 58, 92, 0.04);
-    }
-    
-    tbody tr:nth-child(even) {
-      background: rgba(248, 250, 252, 0.6);
-    }
-    
-    tbody tr:nth-child(even):hover {
-      background: rgba(26, 58, 92, 0.06);
-    }
-    
-    /* ========== KODE MITRA ========== */
     .kode-mitra {
       font-family: 'Courier New', monospace;
       background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08));
-      padding: 5px 10px;
+      padding: 4px 9px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       display: inline-block;
       color: var(--uniba-primary);
       font-weight: 700;
@@ -362,151 +341,93 @@
       letter-spacing: 0.5px;
     }
     
-    /* ========== NAMA INSTANSI ========== */
     td strong {
       color: var(--text-dark);
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13px;
     }
     
-    /* ========== STATUS BADGE - LEBIH JELAS ========== */
     .status-badge {
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 20px;
       color: white;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       display: inline-block;
       text-align: center;
-      min-width: 130px;
+      min-width: 120px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       letter-spacing: 0.4px;
       text-transform: uppercase;
     }
     
-    .status-active { 
-      background: linear-gradient(135deg, var(--success), #34d399);
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    }
-    .status-warning { 
-      background: linear-gradient(135deg, var(--warning), #fbbf24);
-      color: #78350f;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-    }
-    .status-danger { 
-      background: linear-gradient(135deg, var(--danger), #f87171);
-      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-    }
-    .status-expired { 
-      background: linear-gradient(135deg, var(--expired), #94a3b8);
-      box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
-    }
+    .status-active { background: linear-gradient(135deg, var(--success), #34d399); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+    .status-warning { background: linear-gradient(135deg, var(--warning), #fbbf24); color: #78350f; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+    .status-danger { background: linear-gradient(135deg, var(--danger), #f87171); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
+    .status-expired { background: linear-gradient(135deg, var(--expired), #94a3b8); box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3); }
     
-    /* ========== ACTION BUTTONS ========== */
-    .action-btns { 
-      display: flex; 
-      gap: 8px; 
-      flex-wrap: wrap;
-    }
+    .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
     
     .action-btn {
-      padding: 7px 14px;
+      padding: 6px 12px;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 11px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: transform 0.25s ease, box-shadow 0.25s ease;
       font-weight: 600;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       white-space: nowrap;
     }
     
-    .action-btn.detail { 
-      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
-      color: white;
-    }
+    .action-btn i { font-size: 0.8rem; }
     
-    .action-btn.edit { 
-      background: linear-gradient(135deg, var(--warning), #fbbf24);
-      color: #78350f;
-    }
+    .action-btn.detail { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); color: white; }
+    .action-btn.edit { background: linear-gradient(135deg, var(--warning), #fbbf24); color: #78350f; }
     
     .action-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
     
-    /* ========== CONTACT CELL ========== */
-    .contact-cell { 
-      font-size: 13px;
-      line-height: 1.5;
+    .contact-cell { font-size: 12px; line-height: 1.5; }
+    .contact-cell strong { color: var(--text-dark); font-weight: 600; font-size: 12px; }
+    .contact-cell small { color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 11px; }
+    .contact-cell small i { font-size: 0.7rem; width: 12px; }
+    .contact-cell a { color: var(--uniba-primary); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+    .contact-cell a:hover { color: var(--uniba-blue-light); text-decoration: underline; }
+    
+    .email-link { color: var(--uniba-primary); text-decoration: none; font-weight: 500; font-size: 12px; transition: color 0.2s; }
+    .email-link:hover { color: var(--uniba-blue-light); text-decoration: underline; }
+    
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, auto);
+      gap: 6px;
+      width: fit-content;
     }
     
-    .contact-cell strong {
-      color: var(--text-dark);
-      font-weight: 600;
-      font-size: 13px;
-    }
-    
-    .contact-cell small { 
-      color: var(--text-muted);
-      display: block; 
-      margin-top: 3px;
-      font-size: 12px;
-    }
-    
-    .contact-cell a {
-      color: var(--uniba-primary);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-    
-    .contact-cell a:hover {
-      color: var(--uniba-blue-light);
-      text-decoration: underline;
-    }
-    
-    /* ========== EMAIL LINK ========== */
-    .email-link { 
-      color: var(--uniba-primary); 
-      text-decoration: none; 
-      font-weight: 500;
-      font-size: 13px;
-      transition: color 0.2s;
-    }
-    
-    .email-link:hover { 
-      color: var(--uniba-blue-light);
-      text-decoration: underline;
-    }
-    
-    /* ========== DOCUMENT STATUS - LEBIH JELAS ========== */
     .doc-status {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 5px 10px;
+      padding: 4px 9px;
       border-radius: 8px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       cursor: default;
-      transition: transform 0.2s ease;
+      transition: all 0.2s ease;
       border: 1px solid;
       white-space: nowrap;
       letter-spacing: 0.3px;
     }
     
-    a.doc-status {
-      text-decoration: none;
-      cursor: pointer;
-    }
+    .doc-status i { font-size: 0.75rem; }
     
-    a.doc-status:hover {
-      transform: translateY(-1px);
-    }
+    a.doc-status { text-decoration: none; cursor: pointer; }
+    a.doc-status:hover { transform: translateY(-1px); }
     
     .doc-uploaded { 
       background: rgba(16, 185, 129, 0.12);
@@ -520,175 +441,132 @@
       border-color: rgba(239, 68, 68, 0.25);
     }
     
-    /* ========== EMPTY STATE ========== */
-    .empty-state { 
-      text-align: center; 
-      padding: 80px 20px; 
-      color: var(--text-muted);
-    }
+    .empty-state { text-align: center; padding: 70px 20px; color: var(--text-muted); }
+    .empty-state-icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3; color: var(--uniba-primary); }
+    .empty-state h3 { margin: 10px 0; color: var(--text-dark); font-family: 'Poppins', sans-serif; font-size: 1.15rem; }
+    .empty-state p { margin: 10px 0 20px; font-size: 0.85rem; }
     
-    .empty-state-icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-      opacity: 0.3;
-    }
-    
-    .empty-state h3 { 
-      margin: 10px 0; 
-      color: var(--text-dark);
-      font-family: 'Poppins', sans-serif;
-      font-size: 1.3rem;
-    }
-    
-    .empty-state p {
-      margin: 10px 0 25px;
-      font-size: 0.95rem;
-    }
-    
-    /* ========== TABLE FOOTER ========== */
     .table-footer {
-      padding: 16px 24px;
+      padding: 14px 20px;
       background: rgba(248, 250, 252, 0.8);
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-muted);
       flex-wrap: wrap;
-      gap: 15px;
+      gap: 12px;
     }
     
-    .table-footer span:first-child {
+    .table-footer span:first-child { font-weight: 600; color: var(--uniba-primary); }
+    .table-footer span:last-child i { color: var(--uniba-gold); margin-right: 4px; }
+    
+    .pagination-wrapper {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .pagination-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-dark);
+      font-size: 13px;
       font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .pagination-btn:hover {
+      border-color: var(--uniba-primary);
       color: var(--uniba-primary);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     
-    /* ========== HIDDEN ROW ========== */
-    .hidden-row {
-      display: none !important;
+    .pagination-btn.active {
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+      color: white;
+      border-color: var(--uniba-primary);
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
     }
     
-    /* ========== SISAA HARI - HIGHLIGHT ========== */
-    .sisa-hari-cell {
-      font-weight: 700;
-      font-size: 15px;
-      font-family: 'Poppins', sans-serif;
+    .pagination-btn.active:hover {
+      color: white;
+      transform: translateY(-1px);
     }
     
-    /* ========== RESPONSIVE - TABLET & MOBILE ========== */
+    .pagination-dots {
+      padding: 8px 6px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    
+    .pagination-info {
+      margin-left: 15px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
     @media (max-width: 768px) {
       .main-wrapper { margin-left: 0; }
       .main-wrapper.expanded { margin-left: 0; }
       
-      .page-header { 
-        padding: 20px 20px 10px;
-        flex-direction: column;
-        align-items: flex-start;
-      }
+      .page-header { padding: 18px 20px 8px; flex-direction: column; align-items: flex-start; }
+      .page-header h1 { font-size: 1.3rem; }
       
-      .page-header h1 {
-        font-size: 1.5rem;
-      }
+      .stats-bar { padding: 12px 20px 16px; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .stat-item { padding: 12px 14px; gap: 10px; }
+      .stat-icon { width: 36px; height: 36px; font-size: 1rem; }
+      .stat-info h3 { font-size: 0.65rem; }
+      .stat-info p { font-size: 1.2rem; }
       
-      .stats-bar {
-        padding: 15px 20px 20px;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-      }
+      .toolbar { padding: 0 20px 12px; flex-direction: column; align-items: stretch; }
+      .search-box { max-width: 100%; width: 100%; }
+      .toolbar-actions { width: 100%; justify-content: stretch; }
+      .toolbar-actions .btn { flex: 1; justify-content: center; }
       
-      .stat-item {
-        padding: 14px 16px;
-        gap: 10px;
-      }
-      
-      .stat-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-      }
-      
-      .stat-info h3 {
-        font-size: 0.7rem;
-      }
-      
-      .stat-info p {
-        font-size: 1.3rem;
-      }
-      
-      .toolbar { 
-        padding: 0 20px;
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .search-box { 
-        max-width: 100%;
-        width: 100%;
-      }
-      
-      .toolbar-actions {
-        width: 100%;
-        justify-content: stretch;
-      }
-      
-      .toolbar-actions .btn {
-        flex: 1;
-        justify-content: center;
-      }
-      
-      .table-section { padding: 20px 15px 20px; }
-      
-      .table-container {
-        background: transparent;
-        box-shadow: none;
-        border: none;
-        overflow: visible;
-      }
-      
-      /* ✅ MOBILE: CARD LAYOUT YANG STABIL */
-      .table-scroll-wrapper {
-        overflow: visible;
-      }
-      
-      table {
-        min-width: 0;
-      }
-      
+      .table-section { padding: 0 15px 20px; }
+      .table-container { background: transparent; box-shadow: none; border: none; overflow: visible; }
+      .table-scroll-wrapper { overflow: visible; }
+      table { min-width: 0; }
       thead { display: none !important; }
       
-      tbody {
-        display: flex !important;
-        flex-direction: column;
-        gap: 15px;
-      }
+      tbody { display: flex !important; flex-direction: column; gap: 12px; }
       
       tbody tr {
         display: block !important;
         background: white;
-        border-radius: 14px;
-        padding: 18px;
+        border-radius: 12px;
+        padding: 16px;
         box-shadow: var(--shadow-md);
         border: 1px solid var(--border);
         position: relative;
         transition: transform 0.25s ease, box-shadow 0.25s ease;
       }
       
-      tbody tr:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-      }
+      tbody tr:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
       
       tbody tr td {
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
+        padding: 8px 0;
         border: none;
         border-bottom: 1px dashed rgba(226, 232, 240, 0.7);
-        font-size: 14px;
+        font-size: 13px;
         text-align: left;
-        gap: 12px;
+        gap: 10px;
       }
       
       tbody tr td:last-child { border-bottom: none; }
@@ -697,146 +575,76 @@
         content: attr(data-label);
         font-weight: 700;
         color: var(--text-muted);
-        font-size: 10px;
+        font-size: 9px;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         flex-shrink: 0;
-        min-width: 90px;
+        min-width: 85px;
       }
       
-      /* Baris pertama: Kode + Nama Instansi (header card) */
       tbody tr td:first-child {
         flex-direction: column;
         align-items: flex-start;
-        padding-bottom: 14px;
+        padding-bottom: 12px;
         border-bottom: 2px solid var(--border);
         margin-bottom: 4px;
-        gap: 6px;
+        gap: 5px;
       }
       
       tbody tr td:first-child::before { display: none; }
+      tbody tr td:first-child .kode-mitra { margin-bottom: 3px; font-size: 10px; }
+      tbody tr td:first-child strong { font-size: 14px; color: var(--uniba-primary); line-height: 1.3; word-break: break-word; }
       
-      tbody tr td:first-child .kode-mitra {
-        margin-bottom: 4px;
-        font-size: 11px;
-      }
+      tbody tr td .contact-cell { text-align: right; flex: 1; min-width: 0; }
+      tbody tr td .status-badge { min-width: auto; padding: 4px 10px; font-size: 10px; }
       
-      tbody tr td:first-child strong {
-        font-size: 15px;
-        color: var(--uniba-primary);
-        line-height: 1.3;
-        word-break: break-word;
-      }
+      tbody tr td:nth-child(8) { flex-wrap: wrap; gap: 5px; }
+      tbody tr td:nth-child(8) .doc-status { font-size: 9px; padding: 3px 7px; }
       
-      tbody tr td .contact-cell {
-        text-align: right;
-        flex: 1;
-        min-width: 0;
-      }
-      
-      tbody tr td .status-badge {
-        min-width: auto;
-        padding: 5px 12px;
-        font-size: 11px;
-      }
-      
-      /* Dokumen status di mobile */
-      tbody tr td:nth-child(8) {
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      
-      tbody tr td:nth-child(8) .doc-status {
-        font-size: 10px;
-        padding: 4px 8px;
-      }
-      
-      /* Action buttons di mobile */
       tbody tr td:last-child {
         flex-direction: row;
         align-items: stretch;
-        padding-top: 14px;
+        padding-top: 12px;
         border-top: 2px solid var(--border);
         border-bottom: none;
         margin-top: 4px;
-        gap: 10px;
+        gap: 8px;
       }
       
       tbody tr td:last-child::before { display: none; }
+      tbody tr td:last-child .action-btns { flex-direction: row; width: 100%; gap: 6px; }
+      tbody tr td:last-child .action-btn { flex: 1; justify-content: center; padding: 8px; font-size: 12px; }
       
-      tbody tr td:last-child .action-btns {
-        flex-direction: row;
-        width: 100%;
-        gap: 8px;
-      }
+      .table-footer { flex-direction: column; text-align: center; padding: 12px 16px; background: white; border-radius: 10px; margin-top: 8px; font-size: 11px; }
       
-      tbody tr td:last-child .action-btn {
-        flex: 1;
-        justify-content: center;
-        padding: 10px;
-        font-size: 13px;
-      }
-      
-      .table-footer {
-        flex-direction: column;
-        text-align: center;
-        padding: 14px 18px;
-        background: white;
-        border-radius: 12px;
-        margin-top: 10px;
-        font-size: 12px;
-      }
+      .pagination-wrapper { padding: 16px 20px; }
+      .pagination-info { margin-left: 0; margin-top: 8px; width: 100%; text-align: center; }
       
       .empty-state { padding: 40px 20px; }
-      .empty-state-icon { font-size: 3rem; }
-      .empty-state h3 { font-size: 1.1rem; }
+      .empty-state-icon { font-size: 2.5rem; }
+      .empty-state h3 { font-size: 1rem; }
     }
     
-    /* ========== MOBILE KECIL (≤ 480px) ========== */
     @media (max-width: 480px) {
-      .stats-bar {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
+      .stats-bar { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .stat-item { padding: 10px 12px; gap: 8px; }
+      .stat-icon { width: 32px; height: 32px; font-size: 0.9rem; }
+      .stat-info p { font-size: 1.1rem; }
       
-      .stat-item {
-        padding: 12px;
-        gap: 8px;
-      }
+      tbody tr { padding: 12px; }
+      tbody tr td { padding: 7px 0; font-size: 12px; }
+      tbody tr td::before { min-width: 75px; font-size: 8px; }
       
-      .stat-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 1.1rem;
-      }
-      
-      .stat-info p {
-        font-size: 1.2rem;
-      }
-      
-      tbody tr {
-        padding: 14px;
-      }
-      
-      tbody tr td {
-        padding: 8px 0;
-        font-size: 13px;
-      }
-      
-      tbody tr td::before {
-        min-width: 80px;
-        font-size: 9px;
-      }
+      .pagination-btn { padding: 6px 10px; font-size: 12px; }
     }
     
-    /* ========== REDUCED MOTION ========== */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
       }
     }
-  </style>
+</style>
 
 </head>
 <body>
@@ -844,321 +652,320 @@
   
   <div class="main-wrapper">
     <div class="page-header">
-      <h1>📋 Daftar Mitra Kerja Sama</h1>
+      <h1>
+        <i class="fa-solid fa-handshake"></i>
+        Daftar Mitra Kerja Sama
+      </h1>
     </div>
     
+    <!-- ✅ STATS BAR - Pakai data dari SERVER -->
     <div class="stats-bar">
-      <% 
-        const stats = { aktif: 0, akanBerakhir: 0, segeraBerakhir: 0, expired: 0 };
-        if (mitra && mitra.length > 0) {
-          mitra.forEach(m => {
-            if (m.badgeClass === 'active') stats.aktif++;
-            else if (m.badgeClass === 'warning') stats.akanBerakhir++;
-            else if (m.badgeClass === 'danger') stats.segeraBerakhir++;
-            else if (m.badgeClass === 'expired') stats.expired++;
-          });
-        }
-      %>
-      
       <div class="stat-item">
-        <div class="stat-icon active">✅</div>
+        <div class="stat-icon active">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
         <div class="stat-info">
           <h3>Mitra Aktif</h3>
-          <p id="statActive"><%= stats.aktif %></p>
+          <p><%= stats.aktif || 0 %></p>
         </div>
       </div>
       
       <div class="stat-item">
-        <div class="stat-icon warning">⚠️</div>
+        <div class="stat-icon warning">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
         <div class="stat-info">
           <h3>Akan Berakhir</h3>
-          <p id="statWarning"><%= stats.akanBerakhir %></p>
+          <p><%= stats.akanBerakhir || 0 %></p>
         </div>
       </div>
       
       <div class="stat-item">
-        <div class="stat-icon critical">🚨</div>
+        <div class="stat-icon critical">
+          <i class="fa-solid fa-bell"></i>
+        </div>
         <div class="stat-info">
           <h3>Segera Berakhir</h3>
-          <p id="statCritical"><%= stats.segeraBerakhir %></p>
+          <p><%= stats.segeraBerakhir || 0 %></p>
         </div>
       </div>
       
       <div class="stat-item">
-        <div class="stat-icon expired">⏰</div>
+        <div class="stat-icon expired">
+          <i class="fa-solid fa-clock"></i>
+        </div>
         <div class="stat-info">
           <h3>Expired</h3>
-          <p id="statExpired"><%= stats.expired %></p>
+          <p><%= stats.expired || 0 %></p>
         </div>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Cari instansi, kontak, atau email...">
-        <span class="search-icon">🔍</span>
-      </div>
-      <div class="toolbar-actions">
-        <% if (user && user.role === 'humas') { %>
-          <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra</a>
-        <% } %>
-        <button class="btn" onclick="exportTable()">📥 Export CSV</button>
       </div>
     </div>
     
+    <!-- ✅ TOOLBAR - Search pakai form GET (server-side) -->
+    <div class="toolbar">
+      <form method="GET" action="/mitra" class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" name="search" value="<%= pagination?.search || '' %>" 
+               placeholder="Cari instansi, kontak, atau email...">
+      </form>
+      <div class="toolbar-actions">
+        <% if (user && user.role === 'humas') { %>
+          <a href="/mitra/tambah" class="btn btn-success">
+            <i class="fa-solid fa-user-plus"></i> Tambah Mitra
+          </a>
+        <% } %>
+        <a href="/mitra/export/csv?search=<%= pagination?.search || '' %>" class="btn">
+          <i class="fa-solid fa-file-csv"></i> Export CSV
+        </a>
+      </div>
+    </div>
+    
+    <!-- ✅ TABLE -->
     <div class="table-section">
       <div class="table-container">
-        <table id="mitraTable">
-          <thead>
-            <tr>
-              <th onclick="sortTable(0)">Kode</th>
-              <th onclick="sortTable(1)">Instansi</th>
-              <th onclick="sortTable(2)">Kontak</th>
-              <th onclick="sortTable(3)">Email Fakultas</th>
-              <th onclick="sortTable(4)">Berakhir</th>
-              <th onclick="sortTable(5)">Sisa Hari</th>
-              <th onclick="sortTable(6)">Status</th>
-              <th>Dokumen</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (mitra && mitra.length > 0) { %>
-              <% mitra.forEach(m => { %>
-                <%
-                  // 🔒 LOGIKA AKSES: Cek apakah user boleh edit mitra ini
-                  const isHumas = user?.role === 'humas';
-                  const isAdminFakultas = user?.role === 'admin_fakultas';
-                  const isGuest = user?.role === 'guest';
+        <div class="table-scroll-wrapper">
+          <table id="mitraTable">
+            <thead>
+              <tr>
+                <th onclick="sortTable(0)">Kode</th>
+                <th onclick="sortTable(1)">Instansi</th>
+                <th onclick="sortTable(2)">Kontak</th>
+                <th onclick="sortTable(3)">Email</th>
+                <th onclick="sortTable(4)">Berakhir</th>
+                <th onclick="sortTable(5)">Sisa Hari</th>
+                <th onclick="sortTable(6)">Status</th>
+                <th>Dokumen</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (mitra && mitra.length > 0) { %>
+                <% mitra.forEach(m => { %>
+                  <%
+                    const isHumas = user?.role === 'humas';
+                    const isAdminFakultas = user?.role === 'admin_fakultas';
+                    const isOwnFaculty = isAdminFakultas && 
+                      user.fakultas_id && 
+                      m.fakultas_id &&
+                      user.fakultas_id.toLowerCase().trim() === m.fakultas_id.toLowerCase().trim();
+                    const canEdit = isHumas || isOwnFaculty;
+                  %>
                   
-                  // Admin fakultas boleh edit HANYA jika fakultas_id cocok
-                  const isOwnFaculty = isAdminFakultas && 
-                    user.fakultas_id && 
-                    m.fakultas_id &&
-                    user.fakultas_id.toLowerCase().trim() === m.fakultas_id.toLowerCase().trim();
-                  
-                  // Humas bisa semua, Admin Fakultas hanya milik fakultasnya
-                  const canEdit = isHumas || isOwnFaculty;
-                %>
-                
+                  <tr>
+                    <td data-label="Kode">
+                      <span class="kode-mitra"><%= m.kode_mitra %></span>
+                    </td>
+                    <td data-label="Instansi"><strong><%= m.nama_instansi %></strong></td>
+                    <td data-label="Kontak" class="contact-cell">
+                      <strong><%= m.nama_kontak || '-' %></strong>
+                      <% if (m.no_hp_kontak) { %>
+                        <small><i class="fa-solid fa-phone"></i> <a href="tel:<%= m.no_hp_kontak %>"><%= m.no_hp_kontak %></a></small>
+                      <% } %>
+                    </td>
+                    <td data-label="Email">
+                      <% if (m.email_mitra_asli) { %>
+                        <a href="mailto:<%= m.email_mitra_asli %>" class="email-link"><%= m.email_mitra_asli %></a>
+                      <% } else { %>
+                        <span style="color: var(--text-muted)">-</span>
+                      <% } %>
+                    </td>
+                    <td data-label="Berakhir">
+                      <%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %>
+                    </td>
+                    <td data-label="Sisa Hari" style="font-weight:700;color:<%= m.color %>;font-size:14px">
+                      <%= m.sisa_hari %>
+                    </td>
+                    <td data-label="Status">
+                      <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
+                    </td>
+                    <td data-label="Dokumen">
+                      <div class="doc-grid">
+                        <% if (m.file_mou) { %>
+                          <a href="<%= m.file_mou %>" target="_blank" class="doc-status doc-uploaded" title="MoU">
+                            <i class="fa-solid fa-circle-check"></i> MoU
+                          </a>
+                        <% } else { %>
+                          <span class="doc-status doc-missing" title="MoU">
+                            <i class="fa-solid fa-circle-xmark"></i> MoU
+                          </span>
+                        <% } %>
+                        
+                        <% if (m.file_moa) { %>
+                          <a href="<%= m.file_moa %>" target="_blank" class="doc-status doc-uploaded" title="MoA">
+                            <i class="fa-solid fa-circle-check"></i> MoA
+                          </a>
+                        <% } else { %>
+                          <span class="doc-status doc-missing" title="MoA">
+                            <i class="fa-solid fa-circle-xmark"></i> MoA
+                          </span>
+                        <% } %>
+                        
+                        <% if (m.file_ia) { %>
+                          <a href="<%= m.file_ia %>" target="_blank" class="doc-status doc-uploaded" title="IA">
+                            <i class="fa-solid fa-circle-check"></i> IA
+                          </a>
+                        <% } else { %>
+                          <span class="doc-status doc-missing" title="IA">
+                            <i class="fa-solid fa-circle-xmark"></i> IA
+                          </span>
+                        <% } %>
+                        
+                        <% if (m.file_pks) { %>
+                          <a href="<%= m.file_pks %>" target="_blank" class="doc-status doc-uploaded" title="PKS">
+                            <i class="fa-solid fa-circle-check"></i> PKS
+                          </a>
+                        <% } else { %>
+                          <span class="doc-status doc-missing" title="PKS">
+                            <i class="fa-solid fa-circle-xmark"></i> PKS
+                          </span>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td data-label="Aksi">
+                      <div class="action-btns">
+                        <a href="/mitra/<%= m.id %>" class="action-btn detail">
+                          <i class="fa-solid fa-file-lines"></i> Detail
+                        </a>
+                        
+                        <% if (canEdit) { %>
+                          <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                          </a>
+                        <% } else if (isAdminFakultas && !isOwnFaculty) { %>
+                          <span style="font-size:10px;color:var(--text-muted);padding:4px 8px;display:inline-flex;align-items:center;gap:4px">
+                            <i class="fa-solid fa-lock"></i> Fakultas Lain
+                          </span>
+                        <% } %>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
                 <tr>
-                  <td data-label="Kode">
-                    <span class="kode-mitra"><%= m.kode_mitra %></span>
-                    <br><strong style="display:none" class="mobile_instansi"><%= m.nama_instansi %></strong>
-                  </td>
-                  <td data-label="Instansi"><strong><%= m.nama_instansi %></strong></td>
-                  <td data-label="Kontak" class="contact-cell">
-                    <strong><%= m.nama_kontak || '-' %></strong>
-                    <% if (m.no_hp_kontak) { %>
-                      <small>📞 <a href="tel:<%= m.no_hp_kontak %>"><%= m.no_hp_kontak %></a></small>
-                    <% } %>
-                  </td>
-                  <td data-label="Email">
-                    <% if (m.email_fakultas) { %>
-                      <a href="mailto:<%= m.email_fakultas %>" class="email-link"><%= m.email_fakultas %></a>
-                    <% } else { %>
-                      <span style="color: var(--text-muted)">-</span>
-                    <% } %>
-                  </td>
-                  <td data-label="Berakhir">
-                    <%= new Date(m.tanggal_berakhir).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) %>
-                  </td>
-                  <td data-label="Sisa Hari" style="font-weight:700;color:<%= m.color %>;font-size:15px">
-                    <%= m.sisa_hari %>
-                  </td>
-                  <td data-label="Status">
-                    <span class="status-badge status-<%= m.badgeClass %>"><%= m.status %></span>
-                  </td>
-                  <td data-label="Dokumen">
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                      <% if (m.file_mou) { %>
-                        <a href="<%= m.file_mou %>" target="_blank" class="doc-status doc-uploaded" title="MoU">✅ MoU</a>
-                      <% } else { %>
-                        <span class="doc-status doc-missing" title="MoU">❌ MoU</span>
+                  <td colspan="9">
+                    <div class="empty-state">
+                      <div class="empty-state-icon">
+                        <i class="fa-solid fa-inbox"></i>
+                      </div>
+                      <h3>Belum Ada Data Mitra</h3>
+                      <p>Mulai kelola kerja sama DUDIKA dengan menambahkan mitra pertama.</p>
+                      <% if (user && user.role === 'humas') { %>
+                        <a href="/mitra/tambah" class="btn btn-success">
+                          <i class="fa-solid fa-user-plus"></i> Tambah Mitra Pertama
+                        </a>
                       <% } %>
-                      
-                      <% if (m.file_moa) { %>
-                        <a href="<%= m.file_moa %>" target="_blank" class="doc-status doc-uploaded" title="MoA">✅ MoA</a>
-                      <% } else { %>
-                        <span class="doc-status doc-missing" title="MoA">❌ MoA</span>
-                      <% } %>
-                      
-                      <% if (m.file_ia) { %>
-                        <a href="<%= m.file_ia %>" target="_blank" class="doc-status doc-uploaded" title="IA">✅ IA</a>
-                      <% } else { %>
-                        <span class="doc-status doc-missing" title="IA">❌ IA</span>
-                      <% } %>
-                      
-                      <% if (m.file_pks) { %>
-                        <a href="<%= m.file_pks %>" target="_blank" class="doc-status doc-uploaded" title="PKS">✅ PKS</a>
-                      <% } else { %>
-                        <span class="doc-status doc-missing" title="PKS">❌ PKS</span>
-                      <% } %>
-                    </div>
-                  </td>
-                  <td data-label="Aksi">
-                    <div class="action-btns">
-                      <a href="/mitra/<%= m.id %>" class="action-btn detail">📄 Detail</a>
-                      
-                      <% if (canEdit) { %>
-                        <a href="/mitra/<%= m.id %>/edit" class="action-btn edit">✏️ Edit</a>
-                      <% } else if (isAdminFakultas && !isOwnFaculty) { %>
-                        <span style="font-size:11px;color:var(--text-muted);padding:4px 8px">🔒 Fakultas Lain</span>
-                      <% } %>
-                      
                     </div>
                   </td>
                 </tr>
-              <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="table-footer">
+          <span>
+            <% if (pagination) { %>
+              Menampilkan <%= mitra?.length || 0 %> dari <%= pagination.totalItems || 0 %> mitra
             <% } else { %>
-              <tr>
-                <td colspan="9">
-                  <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <h3>Belum Ada Data Mitra</h3>
-                    <p>Mulai kelola kerja sama DUDIKA dengan menambahkan mitra pertama.</p>
-                    <% if (user && user.role === 'humas') { %>
-                      <a href="/mitra/tambah" class="btn btn-success">➕ Tambah Mitra Pertama</a>
-                    <% } %>
-                  </div>
-                </td>
-              </tr>
+              <%= mitra?.length || 0 %> mitra ditemukan
             <% } %>
-          </tbody>
-        </table>
+          </span>
+          <span><i class="fa-solid fa-lightbulb"></i> Klik header untuk sort di halaman ini</span>
+        </div>
       </div>
       
-      <div class="table-footer">
-        <span id="resultCount"><%= mitra?.length || 0 %> mitra ditemukan</span>
-        <span>💡 Klik header untuk sort • Ctrl+K untuk search</span>
-      </div>
+      <!-- ✅ PAGINATION -->
+      <% if (pagination && pagination.totalPages > 1) { %>
+        <div class="pagination-wrapper">
+          <% if (pagination.currentPage > 1) { %>
+            <a href="?page=<%= pagination.currentPage - 1 %>&search=<%= encodeURIComponent(pagination.search || '') %>" 
+               class="pagination-btn">
+              <i class="fa-solid fa-chevron-left"></i> Prev
+            </a>
+          <% } %>
+          
+          <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+            <% if (i === 1 || i === pagination.totalPages || 
+                   (i >= pagination.currentPage - 2 && i <= pagination.currentPage + 2)) { %>
+              <a href="?page=<%= i %>&search=<%= encodeURIComponent(pagination.search || '') %>" 
+                 class="pagination-btn <%= i === pagination.currentPage ? 'active' : '' %>">
+                <%= i %>
+              </a>
+            <% } else if (i === pagination.currentPage - 3 || i === pagination.currentPage + 3) { %>
+              <span class="pagination-dots">...</span>
+            <% } %>
+          <% } %>
+          
+          <% if (pagination.currentPage < pagination.totalPages) { %>
+            <a href="?page=<%= pagination.currentPage + 1 %>&search=<%= encodeURIComponent(pagination.search || '') %>" 
+               class="pagination-btn">
+              Next <i class="fa-solid fa-chevron-right"></i>
+            </a>
+          <% } %>
+          
+          <span class="pagination-info">
+            Halaman <%= pagination.currentPage %> dari <%= pagination.totalPages %>
+          </span>
+        </div>
+      <% } %>
     </div>
   </div>
   
+  <!-- ✅ SCRIPT - Hanya sort table (client-side untuk halaman aktif) -->
   <script>
-window.addEventListener('load', function() {
-  console.log('🚀 Page loaded completely');
-  
-  const searchInput = document.getElementById('searchInput');
-  const table = document.getElementById('mitraTable');
-  const resultCount = document.getElementById('resultCount');
-  
-  if (!searchInput) {
-    console.error('❌ searchInput tidak ditemukan!');
-    return;
-  }
-  
-  if (!table) {
-    console.error('❌ table tidak ditemukan!');
-    return;
-  }
-  
-  const dataRows = [];
-  const allTr = table.querySelectorAll('tbody tr');
-  allTr.forEach(tr => {
-    if (!tr.querySelector('.empty-state')) {
-      dataRows.push(tr);
-    }
-  });
-  
-  console.log(`✅ Found ${dataRows.length} data rows`);
-  
-  function updateStats() {
-    let aktif = 0, warning = 0, danger = 0, expired = 0;
-    
-    dataRows.forEach(row => {
-      if (row.classList.contains('hidden-row')) return;
+    // Sort table (hanya untuk halaman aktif)
+    window.sortTable = function(colIndex) {
+      const table = document.getElementById('mitraTable');
+      if (!table) return;
       
-      const badge = row.querySelector('.status-badge');
-      if (!badge) return;
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('td'));
       
-      if (badge.classList.contains('status-active')) aktif++;
-      else if (badge.classList.contains('status-warning')) warning++;
-      else if (badge.classList.contains('status-danger')) danger++;
-      else if (badge.classList.contains('status-expired')) expired++;
-    });
-    
-    const elAktif = document.getElementById('statActive');
-    const elWarning = document.getElementById('statWarning');
-    const elDanger = document.getElementById('statCritical');
-    const elExpired = document.getElementById('statExpired');
-    
-    if (elAktif) elAktif.textContent = aktif;
-    if (elWarning) elWarning.textContent = warning;
-    if (elDanger) elDanger.textContent = danger;
-    if (elExpired) elExpired.textContent = expired;
-    
-    console.log(`📊 Stats: ${aktif} aktif, ${warning} warning, ${danger} danger, ${expired} expired`);
-  }
-  
-  searchInput.addEventListener('input', function() {
-    const keyword = this.value.toLowerCase().trim();
-    let visibleCount = 0;
-    
-    console.log(`🔍 Search: "${keyword}"`);
-    
-    dataRows.forEach(row => {
-      const text = row.textContent.toLowerCase();
+      if (rows.length === 0) return;
       
-      if (keyword === '' || text.includes(keyword)) {
-        row.classList.remove('hidden-row');
-        visibleCount++;
+      const th = table.querySelectorAll('th')[colIndex];
+      const isAsc = th.classList.contains('sort-asc');
+      
+      table.querySelectorAll('th').forEach(h => {
+        h.classList.remove('sort-asc', 'sort-desc');
+      });
+      
+      if (isAsc) {
+        th.classList.add('sort-desc');
       } else {
-        row.classList.add('hidden-row');
+        th.classList.add('sort-asc');
+      }
+      
+      rows.sort((a, b) => {
+        const aText = a.cells[colIndex]?.textContent.trim() || '';
+        const bText = b.cells[colIndex]?.textContent.trim() || '';
+        
+        const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+        const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return isAsc ? bNum - aNum : aNum - bNum;
+        }
+        
+        return isAsc ? bText.localeCompare(aText) : aText.localeCompare(bText);
+      });
+      
+      rows.forEach(row => tbody.appendChild(row));
+    };
+    
+    // Shortcut Ctrl+K untuk fokus ke search
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('.search-box input');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
       }
     });
     
-    if (resultCount) {
-      resultCount.textContent = `${visibleCount} mitra ditemukan`;
-    }
-    
-    updateStats();
-  });
-  
-  console.log('✅ Search ready - try typing something!');
-  
-    
-    // ✅ TAMBAHKAN JUGA: Handler resize biar konsisten
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        sidebar.classList.remove('active');
-      } else {
-        sidebar.classList.remove('hidden');
-        mainWrapper.classList.remove('expanded');
-        sidebarToggle.classList.remove('shifted');
-      }
-    });
-  }
-  
-  window.sortTable = function(colIndex) {
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('td'));
-    
-    rows.sort((a, b) => {
-      const aText = a.cells[colIndex]?.textContent.trim() || '';
-      const bText = b.cells[colIndex]?.textContent.trim() || '';
-      return aText.localeCompare(bText);
-    });
-    
-    rows.forEach(row => tbody.appendChild(row));
-  };
-  
-  window.exportTable = function() {
-    let csv = 'Kode,Instansi,Kontak,Email,Status\n';
-    dataRows.forEach(row => {
-      if (row.classList.contains('hidden-row')) return;
-      const cells = row.querySelectorAll('td');
-      csv += `"${cells[0]?.textContent.trim()}","${cells[1]?.textContent.trim()}","${cells[2]?.textContent.trim()}","${cells[3]?.textContent.trim()}","${cells[6]?.textContent.trim()}"\n`;
-    });
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mitra.csv';
-    a.click();
-  };
-});
+    console.log('✅ Daftar Mitra page loaded with server-side pagination');
   </script>
 </body>
 </html>

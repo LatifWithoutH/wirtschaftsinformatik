@@ -1,3 +1,6 @@
+<!-- ✅ FONT AWESOME 6 CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <style>
   /* ========== CSS VARIABLES ========== */
   :root {
@@ -20,7 +23,7 @@
     background: linear-gradient(180deg, var(--uniba-primary) 0%, var(--uniba-dark) 100%);
     color: white;
     padding: 0;
-    overflow: hidden; /* ← PENTING: Parent tidak scroll */
+    overflow: hidden;
     overflow-x: hidden;
     z-index: 1000;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
@@ -30,9 +33,7 @@
     flex-direction: column;
   }
 
-  .sidebar.hidden {
-    transform: translateX(-100%);
-  }
+  .sidebar.hidden { transform: translateX(-100%); }
 
   .sidebar::before {
     content: '';
@@ -47,13 +48,13 @@
     filter: blur(60px);
   }
 
-  /* ========== SIDEBAR HEADER (FIXED DI ATAS) ========== */
+  /* ========== SIDEBAR HEADER ========== */
   .sidebar-header {
     text-align: center;
     padding: 20px 15px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
-    flex-shrink: 0; /* ← Tidak ikut scroll */
+    flex-shrink: 0;
   }
 
   .sidebar-header .logo-wrapper {
@@ -94,14 +95,14 @@
     text-transform: uppercase;
   }
 
-  /* ========== USER PROFILE (FIXED DI ATAS) ========== */
+  /* ========== USER PROFILE ========== */
   .user-profile {
     padding: 12px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-shrink: 0; /* ← Tidak ikut scroll */
+    flex-shrink: 0;
     background: rgba(0, 0, 0, 0.1);
   }
 
@@ -120,10 +121,7 @@
     box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
   }
 
-  .user-profile .user-info {
-    flex: 1;
-    min-width: 0;
-  }
+  .user-profile .user-info { flex: 1; min-width: 0; }
 
   .user-profile .user-info strong {
     display: block;
@@ -157,10 +155,10 @@
     display: inline-block;
   }
 
-  /* ========== NAV MENU (SCROLL DI SINI) ========== */
+  /* ========== NAV MENU ========== */
   .sidebar-content {
     flex: 1;
-    overflow-y: auto; /* ← PENTING: Hanya elemen ini yang scroll */
+    overflow-y: auto;
     overflow-x: hidden;
     padding: 15px;
   }
@@ -174,24 +172,15 @@
     font-weight: 600;
   }
 
-  .nav-section-title:first-child {
-    margin-top: 0;
-  }
+  .nav-section-title:first-child { margin-top: 0; }
 
-  .nav-menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .nav-menu li {
-    margin-bottom: 4px;
-  }
+  .nav-menu { list-style: none; padding: 0; margin: 0; }
+  .nav-menu li { margin-bottom: 4px; }
 
   .nav-menu a {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 10px 12px;
     color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
@@ -215,9 +204,7 @@
     transition: width 0.3s ease;
   }
 
-  .nav-menu a:hover::before {
-    width: 100%;
-  }
+  .nav-menu a:hover::before { width: 100%; }
 
   .nav-menu a:hover {
     color: white;
@@ -244,22 +231,37 @@
     box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
   }
 
+  /* ✅ ICON FONT AWESOME STYLING */
   .nav-menu a .nav-icon {
-    font-size: 1rem;
     width: 20px;
-    text-align: center;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    opacity: 0.9;
   }
 
-  .nav-menu a .nav-text {
-    flex: 1;
+  .nav-menu a:hover .nav-icon {
+    transform: scale(1.15);
+    opacity: 1;
+    color: var(--uniba-gold);
   }
 
-  /* ========== SIDEBAR FOOTER (FIXED DI BAWAH) ========== */
+  .nav-menu a.active .nav-icon {
+    color: var(--uniba-gold);
+    opacity: 1;
+  }
+
+  .nav-menu a .nav-text { flex: 1; }
+
+  /* ========== SIDEBAR FOOTER ========== */
   .sidebar-footer {
     padding: 15px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0; /* ← Tidak ikut scroll */
+    flex-shrink: 0;
     background: rgba(0, 0, 0, 0.1);
   }
 
@@ -285,6 +287,16 @@
     border-color: rgba(239, 68, 68, 0.4);
   }
 
+  .sidebar-footer .logout-btn .nav-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.05rem;
+  }
+
   .sidebar-footer .version {
     text-align: center;
     font-size: 0.6rem;
@@ -293,7 +305,7 @@
     letter-spacing: 0.5px;
   }
 
-  /* ========== TOGGLE BUTTON (CHEVRON) ========== */
+  /* ========== TOGGLE BUTTON ========== */
   .sidebar-toggle {
     position: fixed;
     left: var(--sidebar-width);
@@ -321,9 +333,7 @@
     width: 32px;
   }
 
-  .sidebar-toggle.shifted {
-    left: 0;
-  }
+  .sidebar-toggle.shifted { left: 0; }
 
   .sidebar-toggle .chevron {
     transition: transform 0.4s ease;
@@ -336,16 +346,9 @@
 
   /* ========== MOBILE ========== */
   @media (max-width: 768px) {
-    .sidebar {
-      transform: translateX(-100%);
-      width: 240px;
-    }
-    .sidebar.active {
-      transform: translateX(0);
-    }
-    .sidebar.hidden {
-      transform: translateX(-100%);
-    }
+    .sidebar { transform: translateX(-100%); width: 240px; }
+    .sidebar.active { transform: translateX(0); }
+    .sidebar.hidden { transform: translateX(-100%); }
     .sidebar-toggle {
       left: 0;
       top: 20px;
@@ -354,16 +357,11 @@
       width: 40px;
       height: 40px;
     }
-    .sidebar-toggle.shifted {
-      left: 240px;
-    }
+    .sidebar-toggle.shifted { left: 240px; }
   }
 
   /* ========== SCROLLBAR SIDEBAR (BIRU GRADASI) ========== */
-  /* ✅ Target: .sidebar-content */
-  .sidebar-content::-webkit-scrollbar {
-    width: 6px;
-  }
+  .sidebar-content::-webkit-scrollbar { width: 6px; }
 
   .sidebar-content::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.03);
@@ -372,31 +370,25 @@
   }
 
   .sidebar-content::-webkit-scrollbar-thumb {
-    /* ✅ BIRU GRADASI */
     background: linear-gradient(180deg, var(--uniba-blue-light), var(--uniba-primary));
     border-radius: 3px;
     transition: all 0.3s ease;
   }
 
   .sidebar-content::-webkit-scrollbar-thumb:hover {
-    /* ✅ Hover: lebih terang */
     background: linear-gradient(180deg, #4a7ab5, var(--uniba-blue-light));
   }
 
-  /* Firefox support */
   .sidebar-content {
     scrollbar-width: thin;
     scrollbar-color: var(--uniba-blue-light) rgba(255, 255, 255, 0.03);
   }
 
-  /* Pastikan .sidebar tidak punya scrollbar sendiri */
   .sidebar {
-    scrollbar-width: none;  /* Firefox */
-    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  .sidebar::-webkit-scrollbar {
-    display: none;  /* Chrome/Safari */
-  }
+  .sidebar::-webkit-scrollbar { display: none; }
 </style>
 
 <!-- Tombol Toggle Sidebar -->
@@ -435,19 +427,19 @@
     <ul class="nav-menu">
       <li>
         <a href="/dashboard" class="<%= (typeof activePage !== 'undefined' && activePage === 'dashboard') ? 'active' : '' %>">
-          <span class="nav-icon">📊</span>
+          <i class="fa-solid fa-chart-line nav-icon"></i>
           <span class="nav-text">Dashboard</span>
         </a>
       </li>
       <li>
         <a href="/mitra" class="<%= (typeof activePage !== 'undefined' && activePage === 'mitra') ? 'active' : '' %>">
-          <span class="nav-icon">📋</span>
+          <i class="fa-solid fa-handshake nav-icon"></i>
           <span class="nav-text">Daftar Mitra</span>
         </a>
       </li>
       <li>
         <a href="/change-password" class="<%= (typeof activePage !== 'undefined' && activePage === 'change-password') ? 'active' : '' %>">
-          <span class="nav-icon">🔐</span>
+          <i class="fa-solid fa-key nav-icon"></i>
           <span class="nav-text">Ganti Password</span>
         </a>
       </li>
@@ -459,25 +451,25 @@
       <ul class="nav-menu">
         <li>
           <a href="/mitra/tambah" class="<%= (typeof activePage !== 'undefined' && activePage === 'tambah') ? 'active' : '' %>">
-            <span class="nav-icon">➕</span>
+            <i class="fa-solid fa-user-plus nav-icon"></i>
             <span class="nav-text">Tambah Mitra</span>
           </a>
         </li>
         <li>
           <a href="/users" class="<%= (typeof activePage !== 'undefined' && activePage === 'users') ? 'active' : '' %>">
-            <span class="nav-icon">👥</span>
+            <i class="fa-solid fa-users-gear nav-icon"></i>
             <span class="nav-text">Manajemen User</span>
           </a>
         </li>
         <li>
           <a href="/test-alert" class="<%= (typeof activePage !== 'undefined' && activePage === 'alert') ? 'active' : '' %>">
-            <span class="nav-icon">🧪</span>
+            <i class="fa-solid fa-bell nav-icon"></i>
             <span class="nav-text">Test Alert</span>
           </a>
         </li>
         <li>
           <a href="/audit-log" class="<%= (typeof activePage !== 'undefined' && activePage === 'audit-log') ? 'active' : '' %>">
-            <span class="nav-icon">📜</span>
+            <i class="fa-solid fa-clipboard-list nav-icon"></i>
             <span class="nav-text">Audit Log</span>
           </a>
         </li>
@@ -488,14 +480,14 @@
   <!-- Footer dengan Logout -->
   <div class="sidebar-footer">
     <a href="/logout" class="logout-btn">
-      <span>🚪</span>
+      <i class="fa-solid fa-right-from-bracket nav-icon"></i>
       <span>Logout</span>
     </a>
     <div class="version">v1.0.0 • © 2026 UNIBA</div>
   </div>
 </aside>
 
-<!-- ✅ SCRIPT SIDEBAR TOGGLE (GLOBAL - JALAN DI SEMUA HALAMAN) -->
+<!-- ✅ SCRIPT SIDEBAR TOGGLE (GLOBAL) -->
 <script>
 (function() {
   'use strict';
@@ -506,8 +498,6 @@
     const mainWrapper = document.querySelector('.main-wrapper');
     
     if (!toggle || !sidebar) return;
-
-    // Cegah duplikasi listener jika script ter-load 2x
     if (toggle.dataset.initialized === 'true') return;
     toggle.dataset.initialized = 'true';
 
@@ -536,7 +526,6 @@
     console.log('✅ Sidebar toggle initialized globally');
   }
 
-  // Jalankan segera jika DOM sudah ready, atau tunggu DOMContentLoaded
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSidebar);
   } else {

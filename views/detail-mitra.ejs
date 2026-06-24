@@ -5,93 +5,472 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Detail Mitra: <%= mitra.nama_instansi %> - SI Mitra DUDIKA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- ✅ FONT AWESOME 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
   <style>
     :root {
-      --uniba-primary: #1a3a5c; --uniba-secondary: #8b6f47; --uniba-gold: #d4a017;
-      --uniba-blue-light: #2c5282; --uniba-dark: #0f2439;
-      --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --expired: #64748b;
-      --text-dark: #1e293b; --text-muted: #64748b; --bg-light: #f8fafc;
-      --bg-card: rgba(255, 255, 255, 0.97); --sidebar-width: 280px;
-      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04); --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
-      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12); --border: #e2e8f0;
+      --uniba-primary: #1a3a5c;
+      --uniba-secondary: #8b6f47;
+      --uniba-gold: #d4a017;
+      --uniba-blue-light: #2c5282;
+      --uniba-dark: #0f2439;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --expired: #64748b;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.97);
+      --sidebar-width: 280px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      --border: #e2e8f0;
     }
     
     html { scroll-behavior: smooth; }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.6; min-height: 100vh; background-image: radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%); overflow-x: hidden; }
-    .main-wrapper { margin-left: var(--sidebar-width); transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1); min-height: 100vh; padding: 30px 40px 40px; }
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: var(--bg-light); 
+      color: var(--text-dark); 
+      line-height: 1.6; 
+      min-height: 100vh; 
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%); 
+      overflow-x: hidden; 
+    }
+    
+    .main-wrapper { 
+      margin-left: var(--sidebar-width); 
+      transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+      min-height: 100vh; 
+      padding: 24px 32px 32px; 
+    }
     .main-wrapper.expanded { margin-left: 0; }
-    .container { max-width: 900px; margin: 0 auto; animation: fadeIn 0.5s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .header { background: var(--bg-card); border-radius: 16px; padding: 30px; margin-bottom: 25px; box-shadow: var(--shadow-md); border: 1px solid var(--border); position: relative; overflow: hidden; }
-    .header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--uniba-gold), var(--uniba-primary), var(--uniba-gold)); }
-    .header-content { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
-    .header-info h1 { font-family: 'Poppins', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--uniba-primary); letter-spacing: -0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
-    .header-info .kode { font-family: 'Courier New', monospace; background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08)); padding: 8px 16px; border-radius: 10px; font-size: 14px; display: inline-block; color: var(--uniba-primary); font-weight: 700; border: 1px solid rgba(26, 58, 92, 0.15); letter-spacing: 0.5px; }
-    .back-link { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: white; color: var(--uniba-primary); text-decoration: none; border-radius: 10px; font-weight: 600; border: 2px solid var(--border); transition: all 0.3s; font-size: 14px; }
-    .back-link:hover { border-color: var(--uniba-primary); background: #f8fafc; transform: translateX(-5px); box-shadow: var(--shadow-sm); }
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; margin-bottom: 25px; box-shadow: var(--shadow-sm); transition: all 0.3s; position: relative; overflow: hidden; }
-    .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary)); }
-    .card h3 { font-family: 'Poppins', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--uniba-primary); margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
-    .info-grid { display: grid; grid-template-columns: 180px 1fr; gap: 15px 25px; align-items: center; }
-    .info-grid strong { color: var(--text-muted); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .info-grid div { color: var(--text-dark); font-size: 15px; }
-    .info-grid a { color: var(--uniba-primary); text-decoration: none; font-weight: 500; transition: all 0.2s; }
-    .info-grid a:hover { color: var(--uniba-blue-light); text-decoration: underline; }
     
-    /* ✅ Style baru untuk info email */
-    .email-info-wrapper { display: flex; flex-direction: column; gap: 4px; }
-    .email-hint { font-size: 11px; color: var(--text-muted); font-style: italic; display: flex; align-items: center; gap: 4px; }
-    .email-hint .hint-icon { font-size: 12px; }
+    .container { 
+      max-width: 900px; 
+      margin: 0 auto; 
+      animation: fadeIn 0.5s ease; 
+    }
     
-    .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; color: white; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); letter-spacing: 0.3px; margin-left: 10px; }
-    .doc-item { padding: 20px; background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.9)); border-radius: 12px; border-left: 4px solid var(--uniba-primary); margin-bottom: 15px; position: relative; transition: all 0.3s; border: 1px solid var(--border); }
-    .doc-item:hover { transform: translateX(5px); box-shadow: var(--shadow-sm); }
-    .doc-item:last-child { margin-bottom: 0; }
-    .doc-item.read-only { opacity: 0.85; border-left-color: var(--expired); }
-    .doc-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-    .doc-header strong { font-family: 'Poppins', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--uniba-primary); display: flex; align-items: center; gap: 8px; }
-    .doc-status { font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; }
-    .doc-status.uploaded { color: var(--success); background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .doc-status.missing { color: var(--text-muted); background: rgba(100, 116, 139, 0.1); border: 1px solid rgba(100, 116, 139, 0.3); }
-    .doc-actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .btn { padding: 10px 18px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-family: 'Inter', sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
-    .btn-primary { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); color: white; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26, 58, 92, 0.3); }
-    .btn-success { background: linear-gradient(135deg, var(--success), #34d399); color: white; }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-    .btn-outline { background: white; border: 2px solid var(--uniba-primary); color: var(--uniba-primary); box-shadow: none; }
-    .btn-outline:hover { background: var(--uniba-primary); color: white; transform: translateY(-2px); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-    .upload-form { margin-top: 15px; padding-top: 15px; border-top: 2px dashed var(--border); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .upload-form input[type="file"] { flex: 1; min-width: 200px; padding: 10px 14px; border: 2px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; background: white; transition: all 0.3s; }
-    .upload-form input[type="file"]:focus { outline: none; border-color: var(--uniba-primary); box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1); }
-    .note { font-size: 14px; color: #92400e; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)); padding: 16px 20px; border-radius: 12px; border-left: 4px solid var(--warning); margin-top: 20px; display: flex; align-items: flex-start; gap: 12px; }
-    .note strong { color: #78350f; }
-    .footer-actions { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; align-items: center; }
-    .footer-actions .btn { padding: 14px 28px; font-size: 15px; }
-    .access-badge { position: absolute; top: 15px; right: 15px; background: linear-gradient(135deg, var(--warning), #fbbf24); color: #78350f; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); display: flex; align-items: center; gap: 5px; }
-    .faculty-info { display: inline-block; background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08)); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--uniba-primary); font-weight: 600; border: 1px solid rgba(26, 58, 92, 0.15); margin-left: 8px; }
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    /* ✅ HEADER (COMPACT) */
+    .header { 
+      background: var(--bg-card); 
+      border-radius: 12px; 
+      padding: 18px 20px; 
+      margin-bottom: 16px; 
+      box-shadow: var(--shadow-md); 
+      border: 1px solid var(--border); 
+      position: relative; 
+      overflow: hidden; 
+    }
+    .header::before { 
+      content: ''; 
+      position: absolute; 
+      top: 0; left: 0; right: 0; 
+      height: 3px; 
+      background: linear-gradient(90deg, var(--uniba-gold), var(--uniba-primary), var(--uniba-gold)); 
+    }
+    .header-content { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: flex-start; 
+      flex-wrap: wrap; 
+      gap: 12px; 
+    }
+    .header-info h1 { 
+      font-family: 'Poppins', sans-serif; 
+      font-size: 1.3rem; 
+      font-weight: 700; 
+      color: var(--uniba-primary); 
+      letter-spacing: -0.5px; 
+      margin-bottom: 6px; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+    }
+    .header-info h1 i { 
+      color: var(--uniba-gold); 
+      font-size: 1.1rem; 
+    }
+    .header-info .kode { 
+      font-family: 'Courier New', monospace; 
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08)); 
+      padding: 4px 10px; 
+      border-radius: 6px; 
+      font-size: 11px; 
+      display: inline-block; 
+      color: var(--uniba-primary); 
+      font-weight: 700; 
+      border: 1px solid rgba(26, 58, 92, 0.15); 
+      letter-spacing: 0.5px; 
+    }
+    .back-link { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 6px; 
+      padding: 8px 16px; 
+      background: white; 
+      color: var(--uniba-primary); 
+      text-decoration: none; 
+      border-radius: 8px; 
+      font-weight: 600; 
+      border: 2px solid var(--border); 
+      transition: all 0.3s; 
+      font-size: 12px; 
+    }
+    .back-link:hover { 
+      border-color: var(--uniba-primary); 
+      background: #f8fafc; 
+      transform: translateX(-5px); 
+      box-shadow: var(--shadow-sm); 
+    }
+    
+    /* ✅ CARD (COMPACT) */
+    .card { 
+      background: var(--bg-card); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 18px 20px; 
+      margin-bottom: 16px; 
+      box-shadow: var(--shadow-sm); 
+      transition: all 0.3s; 
+      position: relative; 
+      overflow: hidden; 
+    }
+    .card:hover { 
+      box-shadow: var(--shadow-md); 
+      transform: translateY(-2px); 
+    }
+    .card::before { 
+      content: ''; 
+      position: absolute; 
+      top: 0; left: 0; 
+      width: 3px; 
+      height: 100%; 
+      background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary)); 
+    }
+    .card h3 { 
+      font-family: 'Poppins', sans-serif; 
+      font-size: 1rem; 
+      font-weight: 700; 
+      color: var(--uniba-primary); 
+      margin-bottom: 14px; 
+      padding-bottom: 10px; 
+      border-bottom: 2px solid var(--border); 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+    }
+    .card h3 i { 
+      color: var(--uniba-gold); 
+      font-size: 1rem; 
+    }
+    
+    /* ✅ INFO GRID (COMPACT) */
+    .info-grid { 
+      display: grid; 
+      grid-template-columns: 150px 1fr; 
+      gap: 10px 16px; 
+      align-items: center; 
+    }
+    .info-grid strong { 
+      color: var(--text-muted); 
+      font-weight: 600; 
+      font-size: 11px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+    }
+    .info-grid div { 
+      color: var(--text-dark); 
+      font-size: 12px; 
+    }
+    .info-grid a { 
+      color: var(--uniba-primary); 
+      text-decoration: none; 
+      font-weight: 500; 
+      transition: all 0.2s; 
+    }
+    .info-grid a:hover { 
+      color: var(--uniba-blue-light); 
+      text-decoration: underline; 
+    }
+    
+    .email-info-wrapper { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 3px; 
+    }
+    
+    .status-badge { 
+      display: inline-block; 
+      padding: 4px 10px; 
+      border-radius: 20px; 
+      color: white; 
+      font-size: 10px; 
+      font-weight: 600; 
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+      letter-spacing: 0.3px; 
+      margin-left: 6px; 
+    }
+    
+    /* ✅ DOC ITEM (SANGAT COMPACT) */
+    .doc-item { 
+      padding: 12px; 
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.9)); 
+      border-radius: 8px; 
+      border-left: 3px solid var(--uniba-primary); 
+      margin-bottom: 10px; 
+      position: relative; 
+      transition: all 0.3s; 
+      border: 1px solid var(--border); 
+    }
+    .doc-item:hover { 
+      transform: translateX(3px); 
+      box-shadow: var(--shadow-sm); 
+    }
+    .doc-item:last-child { 
+      margin-bottom: 0; 
+    }
+    .doc-item.read-only { 
+      opacity: 0.85; 
+      border-left-color: var(--expired); 
+    }
+    .doc-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      flex-wrap: wrap; 
+      gap: 8px; 
+      margin-bottom: 6px; 
+    }
+    .doc-header strong { 
+      font-family: 'Poppins', sans-serif; 
+      font-size: 0.9rem; 
+      font-weight: 700; 
+      color: var(--uniba-primary); 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+    }
+    .doc-header strong i { 
+      color: var(--uniba-gold); 
+      font-size: 0.9rem; 
+    }
+    .doc-status { 
+      font-size: 10px; 
+      font-weight: 600; 
+      padding: 4px 10px; 
+      border-radius: 20px; 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 4px; 
+    }
+    .doc-status i { 
+      font-size: 0.75rem; 
+    }
+    .doc-status.uploaded { 
+      color: var(--success); 
+      background: rgba(16, 185, 129, 0.1); 
+      border: 1px solid rgba(16, 185, 129, 0.3); 
+    }
+    .doc-status.missing { 
+      color: var(--text-muted); 
+      background: rgba(100, 116, 139, 0.1); 
+      border: 1px solid rgba(100, 116, 139, 0.3); 
+    }
+    
+    /* ✅ DOC ACTIONS (COMPACT) */
+    .doc-actions { 
+      margin-top: 8px; 
+      display: flex; 
+      gap: 6px; 
+      flex-wrap: wrap; 
+      align-items: center; 
+    }
+    .btn { 
+      padding: 7px 12px; 
+      border: none; 
+      border-radius: 7px; 
+      cursor: pointer; 
+      font-size: 11px; 
+      font-weight: 600; 
+      text-decoration: none; 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 5px; 
+      transition: all 0.3s; 
+      font-family: 'Inter', sans-serif; 
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+    }
+    .btn i { 
+      font-size: 0.75rem; 
+      transition: transform 0.3s; 
+    }
+    .btn:hover i { 
+      transform: scale(1.15); 
+    }
+    .btn-primary { 
+      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); 
+      color: white; 
+    }
+    .btn-primary:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.3); 
+    }
+    .btn-success { 
+      background: linear-gradient(135deg, var(--success), #34d399); 
+      color: white; 
+    }
+    .btn-success:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); 
+    }
+    .btn-outline { 
+      background: white; 
+      border: 2px solid var(--uniba-primary); 
+      color: var(--uniba-primary); 
+      box-shadow: none; 
+    }
+    .btn-outline:hover { 
+      background: var(--uniba-primary); 
+      color: white; 
+      transform: translateY(-2px); 
+    }
+    .btn:disabled { 
+      opacity: 0.5; 
+      cursor: not-allowed; 
+      transform: none !important; 
+    }
+    
+    /* ✅ UPLOAD FORM (COMPACT) */
+    .upload-form { 
+      margin-top: 10px; 
+      padding-top: 10px; 
+      border-top: 2px dashed var(--border); 
+      display: flex; 
+      gap: 8px; 
+      flex-wrap: wrap; 
+      align-items: center; 
+    }
+    .upload-form input[type="file"] { 
+      flex: 1; 
+      min-width: 180px; 
+      padding: 6px 10px; 
+      border: 2px solid var(--border); 
+      border-radius: 7px; 
+      font-size: 11px; 
+      font-family: 'Inter', sans-serif; 
+      background: white; 
+      transition: all 0.3s; 
+    }
+    .upload-form input[type="file"]:focus { 
+      outline: none; 
+      border-color: var(--uniba-primary); 
+      box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.1); 
+    }
+    
+    /* ✅ NOTE (COMPACT) */
+    .note { 
+      font-size: 11px; 
+      color: #92400e; 
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)); 
+      padding: 10px 14px; 
+      border-radius: 8px; 
+      border-left: 3px solid var(--warning); 
+      margin-top: 12px; 
+      display: flex; 
+      align-items: flex-start; 
+      gap: 8px; 
+    }
+    .note strong { 
+      color: #78350f; 
+    }
+    .note i { 
+      color: var(--warning); 
+      font-size: 0.9rem; 
+    }
+    
+    .footer-actions { 
+      display: flex; 
+      gap: 8px; 
+      margin-top: 18px; 
+      flex-wrap: wrap; 
+      align-items: center; 
+    }
+    .footer-actions .btn { 
+      padding: 10px 18px; 
+      font-size: 12px; 
+    }
+    
+    /* ✅ ACCESS BADGE (COMPACT) */
+    .access-badge { 
+      position: absolute; 
+      top: 10px; 
+      right: 10px; 
+      background: linear-gradient(135deg, var(--warning), #fbbf24); 
+      color: #78350f; 
+      padding: 3px 8px; 
+      border-radius: 20px; 
+      font-size: 10px; 
+      font-weight: 700; 
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); 
+      display: flex; 
+      align-items: center; 
+      gap: 4px; 
+    }
+    .access-badge i { 
+      font-size: 0.65rem; 
+    }
+    
+    .faculty-info { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 4px; 
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 82, 130, 0.08)); 
+      padding: 3px 8px; 
+      border-radius: 5px; 
+      font-size: 10px; 
+      color: var(--uniba-primary); 
+      font-weight: 600; 
+      border: 1px solid rgba(26, 58, 92, 0.15); 
+      margin-left: 6px; 
+    }
+    .faculty-info i { 
+      font-size: 0.7rem; 
+      color: var(--uniba-gold); 
+    }
 
+    /* ✅ QUICK NAV (COMPACT) */
     .quick-nav {
       position: fixed;
-      bottom: 30px;
-      right: 30px;
+      bottom: 24px;
+      right: 24px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       z-index: 900;
     }
     .quick-nav-btn {
-      width: 55px;
-      height: 55px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      font-size: 16px;
       text-decoration: none;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -112,43 +491,21 @@
       color: var(--uniba-primary);
       border: 2px solid var(--border);
     }
-    .quick-nav-btn::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      right: 65px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: var(--uniba-dark);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-family: 'Inter', sans-serif;
-      font-weight: 600;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s;
-    }
-    .quick-nav-btn:hover::after {
-      opacity: 1;
-      right: 70px;
-    }
 
     @media (max-width: 768px) {
-      .main-wrapper { margin-left: 0; padding: 20px 15px; }
+      .main-wrapper { margin-left: 0; padding: 16px 12px; }
       .main-wrapper.expanded { margin-left: 0; }
       .container { max-width: 100%; }
-      .header { padding: 20px; }
+      .header { padding: 14px; }
       .header-content { flex-direction: column; align-items: stretch; }
-      .header-info h1 { font-size: 1.4rem; }
+      .header-info h1 { font-size: 1.1rem; }
       .back-link { width: 100%; justify-content: center; }
-      .card { padding: 20px; }
-      .card h3 { font-size: 1.1rem; }
-      .info-grid { grid-template-columns: 1fr; gap: 8px; }
-      .info-grid strong { font-size: 12px; margin-top: 10px; }
+      .card { padding: 14px; }
+      .card h3 { font-size: 0.9rem; }
+      .info-grid { grid-template-columns: 1fr; gap: 6px; }
+      .info-grid strong { font-size: 10px; margin-top: 6px; }
       .info-grid strong:first-child { margin-top: 0; }
-      .doc-item { padding: 15px; }
+      .doc-item { padding: 10px; }
       .doc-header { flex-direction: column; align-items: flex-start; }
       .doc-actions { width: 100%; }
       .doc-actions .btn { flex: 1; justify-content: center; }
@@ -157,24 +514,15 @@
       .upload-form .btn { width: 100%; justify-content: center; }
       .footer-actions { flex-direction: column; }
       .footer-actions .btn { width: 100%; justify-content: center; }
-      .quick-nav { bottom: 20px; right: 15px; gap: 10px; }
-      .quick-nav-btn { width: 48px; height: 48px; font-size: 18px; }
-      .quick-nav-btn::after { display: none; }
+      .quick-nav { bottom: 16px; right: 12px; gap: 6px; }
+      .quick-nav-btn { width: 38px; height: 38px; font-size: 14px; }
     }
-
-    <!-- ::-webkit-scrollbar { width: 10px; } -->
-    <!-- ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; } -->
-    <!-- ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); border-radius: 5px; } -->
-    <!-- ::-webkit-scrollbar-thumb:hover { background: var(--uniba-dark); } -->
   </style>
 </head>
 <body>
   <%- include('partials/_sidebar') %>
   
   <%
-    // ========================================================================
-    // 🔒 HELPER: Exact match fakultas
-    // ========================================================================
     const isSameFaculty = (userFakultasId, mitraFakultasId) => {
       if (!userFakultasId || !mitraFakultasId) return false;
       return userFakultasId.toLowerCase().trim() === mitraFakultasId.toLowerCase().trim();
@@ -194,68 +542,115 @@
       <div class="header" id="section-top">
         <div class="header-content">
           <div class="header-info">
-            <h1>📋 <%= mitra.nama_instansi %></h1>
-            <span class="kode">Kode: <%= mitra.kode_mitra %></span>
+            <h1>
+              <i class="fa-solid fa-handshake"></i>
+              <%= mitra.nama_instansi %>
+            </h1>
+            <span class="kode">
+              <i class="fa-solid fa-hashtag" style="margin-right: 3px; font-size: 0.65rem;"></i>
+              Kode: <%= mitra.kode_mitra %>
+            </span>
             <% if (mitraFakultasCode) { %>
-              <span class="faculty-info">🏛️ Fakultas: <%= mitraFakultasCode.toUpperCase() %></span>
+              <span class="faculty-info">
+                <i class="fa-solid fa-landmark"></i>
+                Fakultas: <%= mitraFakultasCode.toUpperCase() %>
+              </span>
             <% } %>
           </div>
-          <a href="/mitra" class="back-link">← Kembali ke Daftar Mitra</a>
+          <a href="/mitra" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i>
+            Kembali
+          </a>
         </div>
       </div>
 
       <div class="card" id="section-kontak">
-        <h3>📇 Informasi Kontak</h3>
+        <h3>
+          <i class="fa-solid fa-address-book"></i>
+          Informasi Kontak
+        </h3>
         <div class="info-grid">
-          <strong>Nama Kontak</strong><div><%= mitra.nama_kontak || '-' %></div>
-          <strong>Jabatan</strong><div><%= mitra.jabatan || '-' %></div>
-          <strong>Nomor HP</strong>
-          <div><% if (mitra.no_hp_kontak) { %><a href="tel:<%= mitra.no_hp_kontak %>"><%= mitra.no_hp_kontak %></a><% } else { %>-<% } %></div>
+          <strong>Nama Kontak</strong>
+          <div><%= mitra.nama_kontak || '-' %></div>
           
-          <!-- ✅ EMAIL PENANGGUNG JAWAB (sebelumnya Email Fakultas) -->
+          <strong>Jabatan</strong>
+          <div><%= mitra.jabatan || '-' %></div>
+          
+          <strong>Nomor HP</strong>
+          <div>
+            <% if (mitra.no_hp_kontak) { %>
+              <a href="tel:<%= mitra.no_hp_kontak %>">
+                <i class="fa-solid fa-phone" style="margin-right: 4px; font-size: 0.7rem;"></i>
+                <%= mitra.no_hp_kontak %>
+              </a>
+            <% } else { %>-<% } %>
+          </div>
+          
           <strong>Email Penanggung Jawab</strong>
           <div class="email-info-wrapper">
             <% if (mitra.email_fakultas) { %>
-              <a href="mailto:<%= mitra.email_fakultas %>"><%= mitra.email_fakultas %></a>
-              <span class="email-hint">
+              <a href="mailto:<%= mitra.email_fakultas %>">
+                <i class="fa-solid fa-envelope" style="margin-right: 4px; font-size: 0.7rem;"></i>
+                <%= mitra.email_fakultas %>
+              </a>
             <% } else { %>
               <span style="color: var(--text-muted)">-</span>
             <% } %>
           </div>
           
-          <!-- ✅ EMAIL RESMI MITRA (BARU) -->
           <strong>Email Resmi Mitra</strong>
           <div class="email-info-wrapper">
             <% if (mitra.email_mitra_asli) { %>
-              <a href="mailto:<%= mitra.email_mitra_asli %>"><%= mitra.email_mitra_asli %></a>
-              <span class="email-hint">
+              <a href="mailto:<%= mitra.email_mitra_asli %>">
+                <i class="fa-solid fa-building" style="margin-right: 4px; font-size: 0.7rem;"></i>
+                <%= mitra.email_mitra_asli %>
+              </a>
             <% } else { %>
               <span style="color: var(--text-muted)">-</span>
-              <span class="email-hint">
             <% } %>
           </div>
           
-          <strong>Alamat</strong><div><%= mitra.alamat || '-' %></div>
+          <strong>Alamat</strong>
+          <div><%= mitra.alamat || '-' %></div>
         </div>
       </div>
 
       <div class="card" id="section-periode">
-        <h3>📅 Periode Kerja Sama</h3>
+        <h3>
+          <i class="fa-solid fa-calendar-days"></i>
+          Periode Kerja Sama
+        </h3>
         <div class="info-grid">
           <strong>Tanggal Mulai</strong>
-          <div><%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+          <div>
+            <i class="fa-solid fa-play" style="color: var(--success); margin-right: 4px; font-size: 0.7rem;"></i>
+            <%= new Date(mitra.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+          </div>
+          
           <strong>Tanggal Berakhir</strong>
-          <div><%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+          <div>
+            <i class="fa-solid fa-stop" style="color: var(--danger); margin-right: 4px; font-size: 0.7rem;"></i>
+            <%= new Date(mitra.tanggal_berakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+          </div>
+          
           <strong>Sisa Waktu</strong>
           <div>
-            <span style="font-weight:700;color:<%= mitra.color %>;font-size:16px"><%= mitra.sisa_hari %> hari</span>
-            <span class="status-badge" style="background:<%= mitra.color %>"><%= mitra.status %></span>
+            <span style="font-weight:700;color:<%= mitra.color %>;font-size:13px">
+              <i class="fa-solid fa-clock" style="margin-right: 4px;"></i>
+              <%= mitra.sisa_hari %> hari
+            </span>
+            <span class="status-badge" style="background:<%= mitra.color %>">
+              <%= mitra.status %>
+            </span>
           </div>
         </div>
       </div>
 
       <div class="card" id="section-dokumen">
-        <h3>📎 Dokumen Legalitas</h3>
+        <h3>
+          <i class="fa-solid fa-folder-open"></i>
+          Dokumen Legalitas
+        </h3>
         
         <% ['mou', 'moa', 'ia', 'pks'].forEach(jenis => {
            const label = jenis.toUpperCase();
@@ -264,21 +659,37 @@
         %>
           <div class="doc-item <%= !canEdit ? 'read-only' : '' %>">
             <% if (!canEdit && isAdminFakultas && !isOwnFaculty) { %>
-              <span class="access-badge">🔒 Fakultas Lain</span>
+              <span class="access-badge">
+                <i class="fa-solid fa-lock"></i>
+                Fakultas Lain
+              </span>
             <% } %>
             
             <div class="doc-header">
-              <strong>📄 <%= label %></strong>
+              <strong>
+                <i class="fa-solid fa-file-pdf"></i>
+                <%= label %>
+              </strong>
               <span class="doc-status <%= fileUrl ? 'uploaded' : 'missing' %>">
-                <%= fileUrl ? '✅ Sudah diupload' : '⏳ Belum diupload' %>
+                <% if (fileUrl) { %>
+                  <i class="fa-solid fa-circle-check"></i>
+                  Sudah diupload
+                <% } else { %>
+                  <i class="fa-regular fa-clock"></i>
+                  Belum diupload
+                <% } %>
               </span>
             </div>
 
             <% if (fileUrl) { %>
               <div class="doc-actions">
-                <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
+                <a href="<%= fileUrl %>" target="_blank" class="btn btn-primary">
+                  <i class="fa-solid fa-eye"></i>
+                  Preview PDF
+                </a>
                 <button type="button" class="btn btn-success" onclick="forceDownload('<%= fileUrl %>', '<%= mitra.nama_instansi %>-<%= label %>')">
-                  ⬇️ Download
+                  <i class="fa-solid fa-download"></i>
+                  Download
                 </button>
               </div>
             <% } %>
@@ -288,50 +699,79 @@
                 <input type="hidden" name="jenis_file" value="<%= jenis %>">
                 <input type="file" name="file_pdf" accept=".pdf" required>
                 <button type="submit" class="btn <%= fileUrl ? 'btn-outline' : 'btn-primary' %>">
-                  <%= fileUrl ? '🔄 Ganti' : '⬆️ Upload' %> <%= label %>
+                  <% if (fileUrl) { %>
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    Ganti
+                  <% } else { %>
+                    <i class="fa-solid fa-upload"></i>
+                    Upload
+                  <% } %>
+                  <%= label %>
                 </button>
               </form>
             <% } else if (isGuest) { %>
-              <p style="font-size:13px;color:var(--text-muted);margin-top:10px">👁️ Guest mode: Hanya dapat melihat dokumen. Hubungi Humas untuk upload.</p>
+              <p style="font-size:11px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:5px">
+                <i class="fa-solid fa-eye"></i>
+                Guest mode: Hanya dapat melihat dokumen. Hubungi Humas untuk upload.
+              </p>
             <% } else if (isAdminFakultas && !isOwnFaculty) { %>
-              <p style="font-size:13px;color:var(--text-muted);margin-top:10px">🔒 Dokumen ini milik fakultas <strong><%= mitraFakultasCode?.toUpperCase() || 'lain' %></strong>. Hubungi Humas untuk perubahan.</p>
+              <p style="font-size:11px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:5px">
+                <i class="fa-solid fa-lock"></i>
+                Dokumen ini milik fakultas <strong><%= mitraFakultasCode?.toUpperCase() || 'lain' %></strong>. Hubungi Humas untuk perubahan.
+              </p>
             <% } %>
           </div>
         <% }) %>
         
         <div class="note">
-          <span style="font-size:1.2rem">💡</span>
-          <div><strong>Catatan:</strong> Dokumen dapat diupload kapan saja. Tanggal upload tidak mempengaruhi masa berlaku kerja sama yang tercantum di atas.</div>
+          <i class="fa-solid fa-lightbulb"></i>
+          <div>
+            <strong>Catatan:</strong> Dokumen dapat diupload kapan saja. Tanggal upload tidak mempengaruhi masa berlaku kerja sama.
+          </div>
         </div>
       </div>
 
       <div class="footer-actions">
         <% if (canEdit) { %>
-          <a href="/mitra/<%= mitra.id %>/edit" class="btn btn-primary">✏️ Edit Data Mitra</a>
+          <a href="/mitra/<%= mitra.id %>/edit" class="btn btn-primary">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Edit Data Mitra
+          </a>
         <% } else if (isGuest) { %>
-          <span style="font-size:14px;color:var(--text-muted)">👁️ Mode Baca Saja — Hubungi Humas untuk perubahan data</span>
+          <span style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px">
+            <i class="fa-solid fa-eye"></i>
+            Mode Baca Saja — Hubungi Humas untuk perubahan data
+          </span>
         <% } else if (isAdminFakultas && !isOwnFaculty) { %>
-          <span style="font-size:14px;color:var(--text-muted)">🔒 Data milik fakultas <strong><%= mitraFakultasCode?.toUpperCase() || 'lain' %></strong> — Hubungi Humas untuk edit</span>
+          <span style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px">
+            <i class="fa-solid fa-lock"></i>
+            Data milik fakultas <strong><%= mitraFakultasCode?.toUpperCase() || 'lain' %></strong> — Hubungi Humas untuk edit
+          </span>
         <% } %>
       </div>
     </div>
   </div>
 
   <div class="quick-nav">
-    <a href="#section-dokumen" class="quick-nav-btn doc-jump" data-tooltip="Lompat ke Dokumen">📄</a>
-    <a href="#section-top" class="quick-nav-btn top-jump" data-tooltip="Kembali ke Atas">⬆️</a>
+    <a href="#section-dokumen" class="quick-nav-btn doc-jump" title="Lompat ke Dokumen">
+      <i class="fa-solid fa-file-contract"></i>
+    </a>
+    <a href="#section-top" class="quick-nav-btn top-jump" title="Kembali ke Atas">
+      <i class="fa-solid fa-arrow-up"></i>
+    </a>
   </div>
 
   <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 36, 57, 0.85); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
-    <div style="width: 60px; height: 60px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid #d4a017; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
-    <div style="color: white; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; text-align: center;">
+    <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #d4a017; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
+    <div style="color: white; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; text-align: center;">
       <div id="loadingText">Mengupload dokumen...</div>
-      <div style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Mohon tunggu, sedang menyimpan ke Google Drive</div>
+      <div style="font-size: 11px; opacity: 0.8; margin-top: 6px;">Mohon tunggu, sedang menyimpan ke Google Drive</div>
     </div>
   </div>
 
-  <div id="successToast" style="display: none; position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); z-index: 10000; font-family: 'Inter', sans-serif; font-weight: 600; animation: slideIn 0.3s ease;">
-    ✅ <span id="toastMessage">Berhasil!</span>
+  <div id="successToast" style="display: none; position: fixed; top: 16px; right: 16px; background: #10b981; color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); z-index: 10000; font-family: 'Inter', sans-serif; font-weight: 600; animation: slideIn 0.3s ease; font-size: 12px;">
+    <i class="fa-solid fa-circle-check" style="margin-right: 5px;"></i>
+    <span id="toastMessage">Berhasil!</span>
   </div>
 
   <style>
@@ -380,13 +820,13 @@
         const overlay = document.getElementById('loadingOverlay');
         document.getElementById('loadingText').textContent = `Mengupload: ${fileInput.files[0].name}`;
         overlay.style.display = 'flex';
-        submitBtn.disabled = true; submitBtn.innerHTML = '⏳ Memproses...';
+        submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
         const formData = new FormData(form);
 
         try {
           const response = await fetch(form.action, { method: 'POST', body: formData });
           const result = await response.json();
-          overlay.style.display = 'none'; submitBtn.disabled = false; submitBtn.innerHTML = '🔄 Ganti';
+          overlay.style.display = 'none'; submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Ganti';
 
           if (result.success) {
             const toast = document.getElementById('successToast');
@@ -404,14 +844,23 @@
             }
             const label = jenisFile.toUpperCase();
             actionsDiv.innerHTML = `
-              <a href="${result.previewLink}" target="_blank" class="btn btn-primary">👁️ Preview PDF</a>
-              <button type="button" class="btn btn-success" onclick="forceDownload('${result.previewLink}', '<%= mitra.nama_instansi %>-${label}')">⬇️ Download</button>
+              <a href="${result.previewLink}" target="_blank" class="btn btn-primary">
+                <i class="fa-solid fa-eye"></i>
+                Preview PDF
+              </a>
+              <button type="button" class="btn btn-success" onclick="forceDownload('${result.previewLink}', '<%= mitra.nama_instansi %>-${label}')">
+                <i class="fa-solid fa-download"></i>
+                Download
+              </button>
             `;
             const statusBadge = docItem.querySelector('.doc-status');
-            if (statusBadge) { statusBadge.className = 'doc-status uploaded'; statusBadge.innerHTML = '✅ Sudah diupload'; }
+            if (statusBadge) { 
+              statusBadge.className = 'doc-status uploaded'; 
+              statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Sudah diupload'; 
+            }
           } else { alert('❌ Gagal: ' + result.message); }
         } catch (error) {
-          overlay.style.display = 'none'; submitBtn.disabled = false; submitBtn.innerHTML = '⬆️ Upload';
+          overlay.style.display = 'none'; submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload';
           alert('❌ Terjadi kesalahan jaringan. Coba lagi.'); console.error('AJAX Error:', error);
         }
       });

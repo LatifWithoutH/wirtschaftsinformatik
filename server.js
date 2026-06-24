@@ -293,33 +293,94 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
 // ========================================================================
 // 📋 DAFTAR MITRA
 // ========================================================================
+// ========================================================================
+// 📋 DAFTAR MITRA (DENGAN PAGINATION)
+// ========================================================================
 app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const { data: allMitra, error } = await supabase.from('mitra').select('*').order('tanggal_berakhir', { ascending: true });
+    // ✅ PAGINATION PARAMS
+    const page = parseInt(req.query.page) || 1;
+    const limit = 15;
+    const offset = (page - 1) * limit;
+    const search = (req.query.search || '').toLowerCase().trim();
+    
+    const { data: allMitra, error } = await supabase
+      .from('mitra')
+      .select('*')
+      .order('tanggal_berakhir', { ascending: true });
+    
     if (error) throw error;
     
-    const filteredMitra = filterMitraByFaculty(allMitra, req.session.user);
-
+    let filteredMitra = filterMitraByFaculty(allMitra, req.session.user);
+    
+    // ✅ SEARCH SERVER-SIDE
+    if (search) {
+      filteredMitra = filteredMitra.filter(m =>
+        (m.nama_instansi || '').toLowerCase().includes(search) ||
+        (m.nama_kontak || '').toLowerCase().includes(search) ||
+        (m.email_fakultas || '').toLowerCase().includes(search) ||
+        (m.email_mitra_asli || '').toLowerCase().includes(search) ||
+        (m.kode_mitra || '').toLowerCase().includes(search)
+      );
+    }
+    
+    // ✅ HITUNG STATS + STATUS UNTUK SEMUA DATA
+    const stats = { aktif: 0, akanBerakhir: 0, segeraBerakhir: 0, expired: 0 };
     const mitraDenganStatus = filteredMitra.map(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
       endDate.setHours(0, 0, 0, 0);
       
-      if (isNaN(endDate.getTime())) return { ...mitra, sisa_hari: 0, status: 'Invalid', color: '#999', badgeClass: 'expired' };
+      if (isNaN(endDate.getTime())) {
+        return { ...mitra, sisa_hari: 0, status: 'Invalid', color: '#999', badgeClass: 'expired' };
+      }
       
       const diffDays = Math.ceil((endDate - today) / (1000*60*60*24));
       let status, color, badgeClass;
-      if (diffDays < 0) { status = 'Expired'; color = '#6c757d'; badgeClass = 'expired'; }
-      else if (diffDays <= 7) { status = 'Segera Berakhir'; color = '#dc3545'; badgeClass = 'danger'; }
-      else if (diffDays <= 30) { status = 'Akan Berakhir'; color = '#ffc107'; badgeClass = 'warning'; }
-      else { status = 'Aktif'; color = '#28a745'; badgeClass = 'active'; }
+      
+      if (diffDays < 0) { 
+        status = 'Expired'; color = '#6c757d'; badgeClass = 'expired'; 
+        stats.expired++;
+      }
+      else if (diffDays <= 7) { 
+        status = 'Segera Berakhir'; color = '#dc3545'; badgeClass = 'danger'; 
+        stats.segeraBerakhir++;
+      }
+      else if (diffDays <= 30) { 
+        status = 'Akan Berakhir'; color = '#ffc107'; badgeClass = 'warning'; 
+        stats.akanBerakhir++;
+      }
+      else { 
+        status = 'Aktif'; color = '#28a745'; badgeClass = 'active'; 
+        stats.aktif++;
+      }
+      
       return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
     });
-
-    const alertCount = mitraDenganStatus.filter(m => m.sisa_hari > 0 && m.sisa_hari <= 30).length;
-    res.render('mitra-table', { mitra: mitraDenganStatus, user: req.session.user, activePage: 'mitra', alertCount });
+    
+    // ✅ PAGINATION
+    const totalItems = mitraDenganStatus.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const mitraPage = mitraDenganStatus.slice(offset, offset + limit);
+    
+    const alertCount = stats.akanBerakhir + stats.segeraBerakhir;
+    
+    res.render('mitra-table', { 
+      mitra: mitraPage, 
+      user: req.session.user, 
+      activePage: 'mitra', 
+      alertCount,
+      stats,  // ✅ KIRIM STATS
+      pagination: {  // ✅ KIRIM PAGINATION
+        currentPage: page,
+        totalPages,
+        totalItems,
+        limit,
+        search
+      }
+    });
   } catch (err) {
     console.error('❌ Error table view:', err.message);
     res.status(500).send('Gagal memuat daftar mitra.');

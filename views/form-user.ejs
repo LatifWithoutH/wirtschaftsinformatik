@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah User - SI Mitra DUDIKA</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- ✅ FONT AWESOME 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
         :root { 
             --uniba-primary: #1a3a5c; 
@@ -20,26 +24,198 @@
             --warning: #f59e0b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-light); color: var(--text-dark); min-height: 100vh; }
-        .main-wrapper { margin-left: var(--sidebar-width); display: flex; justify-content: center; align-items: center; padding: 40px 20px; min-height: 100vh; }
-        .form-container { width: 100%; max-width: 600px; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--border); }
-        .form-header { text-align: center; margin-bottom: 30px; }
-        .form-header h1 { font-family: 'Poppins', sans-serif; color: var(--uniba-primary); font-size: 1.5rem; }
-        .form-header p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; margin-bottom: 8px; color: var(--text-dark); }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.3s; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--uniba-primary); box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1); }
-        .form-actions { display: flex; gap: 12px; margin-top: 30px; }
-        .btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; border: none; font-size: 14px; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn-primary { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35); }
-        .btn-secondary { background: white; border: 2px solid var(--border); color: var(--text-muted); }
-        .btn-secondary:hover { border-color: var(--uniba-primary); color: var(--uniba-primary); }
-        .info-box { margin-top: 20px; padding: 12px; background: rgba(212, 160, 23, 0.1); border-left: 4px solid var(--uniba-gold); border-radius: 6px; font-size: 13px; color: #92400e; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-light); 
+            color: var(--text-dark); 
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(26, 58, 92, 0.03) 0%, transparent 40%);
+        }
+        .main-wrapper { 
+            margin-left: var(--sidebar-width); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 32px 20px; 
+            min-height: 100vh; 
+        }
+        
+        /* ✅ FORM CONTAINER (DIKECILKAN) */
+        .form-container { 
+            width: 100%; 
+            max-width: 600px; 
+            background: white; 
+            padding: 32px; 
+            border-radius: 14px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08); 
+            border: 1px solid var(--border);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ✅ FORM HEADER (DIKECILKAN) */
+        .form-header { 
+            text-align: center; 
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        .form-header .header-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 8px 20px rgba(26, 58, 92, 0.25);
+        }
+        .form-header h1 { 
+            font-family: 'Poppins', sans-serif; 
+            color: var(--uniba-primary); 
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+        .form-header p { 
+            color: var(--text-muted); 
+            font-size: 12px;
+        }
+        
+        /* ✅ FORM GROUP (DIKECILKAN) */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            font-weight: 600; 
+            font-size: 12px;
+            margin-bottom: 7px; 
+            color: var(--text-dark); 
+        }
+        .form-group label i {
+            color: var(--uniba-gold);
+            font-size: 0.85rem;
+        }
+        
+        /* ✅ INPUT & SELECT (DIKECILKAN) */
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 10px 14px;
+            border: 2px solid var(--border); 
+            border-radius: 9px; 
+            font-size: 13px;
+            font-family: 'Inter', sans-serif; 
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        .form-group input:focus, .form-group select:focus { 
+            outline: none; 
+            border-color: var(--uniba-primary); 
+            box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
+            background: white;
+        }
+        
+        /* ✅ FORM ACTIONS (DIKECILKAN) */
+        .form-actions { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 24px; 
+        }
+        
+        /* ✅ BUTTONS (DIKECILKAN) */
+        .btn { 
+            flex: 1; 
+            padding: 11px 20px;
+            border-radius: 9px; 
+            font-weight: 600; 
+            text-align: center; 
+            text-decoration: none; 
+            cursor: pointer; 
+            border: none; 
+            font-size: 13px;
+            transition: all 0.3s; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 7px;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn i {
+            font-size: 0.85rem;
+            transition: transform 0.3s;
+        }
+        .btn:hover i {
+            transform: scale(1.15);
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); 
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35); 
+        }
+        .btn-secondary { 
+            background: white; 
+            border: 2px solid var(--border); 
+            color: var(--text-muted); 
+        }
+        .btn-secondary:hover { 
+            border-color: var(--uniba-primary); 
+            color: var(--uniba-primary); 
+        }
+        
+        /* ✅ INFO BOX (DIKECILKAN) */
+        .info-box { 
+            margin-top: 20px; 
+            padding: 12px 14px;
+            background: rgba(212, 160, 23, 0.1); 
+            border-left: 4px solid var(--uniba-gold); 
+            border-radius: 8px; 
+            font-size: 12px;
+            color: #92400e;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .info-box > i {
+            color: var(--uniba-gold);
+            font-size: 1rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        .info-box ul {
+            margin-top: 5px;
+            padding-left: 18px;
+            line-height: 1.7;
+        }
+        
         .hidden { display: none; }
         .required { color: var(--danger); }
-        .small-text { color: var(--text-muted); font-size: 12px; margin-top: 6px; display: block; }
+        
+        /* ✅ SMALL TEXT (DIKECILKAN) */
+        .small-text { 
+            color: var(--text-muted); 
+            font-size: 11px;
+            margin-top: 5px; 
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .small-text i {
+            font-size: 0.7rem;
+            color: var(--uniba-gold);
+        }
 
         /* ========== PASSWORD FIELD ENHANCEMENTS ========== */
         .password-wrapper {
@@ -62,9 +238,11 @@
             top: 50%;
             transform: translateY(-50%);
         }
+        
+        /* ✅ PW BTN (DIKECILKAN) */
         .pw-btn {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border: none;
             background: rgba(26, 58, 92, 0.08);
             border-radius: 6px;
@@ -72,7 +250,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.2s;
             color: var(--uniba-primary);
         }
@@ -86,19 +264,21 @@
             color: white;
         }
 
-        /* ========== PASSWORD TOOLS (di bawah input) ========== */
+        /* ========== PASSWORD TOOLS ========== */
         .password-tools {
             display: flex;
             gap: 8px;
             margin-top: 8px;
         }
+        
+        /* ✅ TOOL BTN (DIKECILKAN) */
         .tool-btn {
             flex: 1;
             padding: 8px 12px;
             border: 2px solid var(--border);
             background: white;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -109,10 +289,17 @@
             color: var(--text-muted);
             font-family: 'Inter', sans-serif;
         }
+        .tool-btn i {
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+        }
         .tool-btn:hover {
             border-color: var(--uniba-primary);
             color: var(--uniba-primary);
             background: rgba(26, 58, 92, 0.03);
+        }
+        .tool-btn:hover i {
+            transform: scale(1.15);
         }
         .tool-btn.generate:hover {
             border-color: var(--uniba-gold);
@@ -125,11 +312,11 @@
             margin-top: 10px;
         }
         .strength-bar {
-            height: 6px;
+            height: 5px;
             background: #e2e8f0;
             border-radius: 3px;
             overflow: hidden;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
         .strength-fill {
             height: 100%;
@@ -142,10 +329,16 @@
         .strength-fill.good { width: 75%; background: #3b82f6; }
         .strength-fill.strong { width: 100%; background: var(--success); }
         .strength-text {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .strength-text i {
+            font-size: 0.7rem;
         }
         .strength-text.weak { color: var(--danger); }
         .strength-text.fair { color: var(--warning); }
@@ -162,7 +355,7 @@
             padding: 12px 20px;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -173,17 +366,22 @@
             z-index: 9999;
             pointer-events: none;
         }
+        .toast i {
+            font-size: 1rem;
+        }
         .toast.show {
             opacity: 1;
             transform: translateY(0);
         }
         .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
             .main-wrapper { margin-left: 0; padding: 20px; }
-            .form-container { padding: 25px 20px; }
+            .form-container { padding: 24px 18px; }
             .password-tools { flex-direction: column; }
+            .form-header h1 { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -192,30 +390,42 @@
     <div class="main-wrapper">
         <div class="form-container">
             <div class="form-header">
-                <h1>➕ Tambah User Baru</h1>
+                <div class="header-icon">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <h1>Tambah User Baru</h1>
                 <p>Kelola akses pengguna sistem SI Mitra DUDIKA</p>
             </div>
             
             <form method="POST" action="/users" id="userForm">
                 <div class="form-group">
-                    <label>👤 Nama Lengkap <span class="required">*</span></label>
+                    <label>
+                        <i class="fa-solid fa-user"></i>
+                        Nama Lengkap <span class="required">*</span>
+                    </label>
                     <input type="text" name="name" required placeholder="Contoh: Budi Santoso, S.Kom.">
                 </div>
                 
                 <div class="form-group">
-                    <label>📧 Email <span class="required">*</span></label>
+                    <label>
+                        <i class="fa-solid fa-envelope"></i>
+                        Email <span class="required">*</span>
+                    </label>
                     <input type="email" name="email" required placeholder="user@uniba.ac.id">
                 </div>
 
                 <!-- ========== PASSWORD FIELD (ENHANCED) ========== -->
                 <div class="form-group">
-                    <label>🔑 Password Sementara <span class="required">*</span></label>
+                    <label>
+                        <i class="fa-solid fa-key"></i>
+                        Password Sementara <span class="required">*</span>
+                    </label>
                     <div class="password-wrapper">
                         <input type="text" name="password" id="passwordInput" required readonly 
                                placeholder="Klik 'Generate' untuk membuat password">
                         <div class="password-actions">
                             <button type="button" class="pw-btn" onclick="togglePasswordVisibility()" title="Lihat/Sembunyikan">
-                                <span id="eyeIcon">👁️</span>
+                                <i class="fa-solid fa-eye" id="eyeIcon"></i>
                             </button>
                         </div>
                     </div>
@@ -223,10 +433,12 @@
                     <!-- Tombol Tools -->
                     <div class="password-tools">
                         <button type="button" class="tool-btn generate" onclick="generateAndSetPassword()">
-                            🎲 Generate Baru
+                            <i class="fa-solid fa-shuffle"></i>
+                            Generate Baru
                         </button>
                         <button type="button" class="tool-btn" onclick="copyPassword()">
-                            📋 Salin Password
+                            <i class="fa-solid fa-copy"></i>
+                            Salin Password
                         </button>
                     </div>
 
@@ -235,22 +447,31 @@
                         <div class="strength-bar">
                             <div class="strength-fill" id="strengthFill"></div>
                         </div>
-                        <div class="strength-text" id="strengthText">Kekuatan password akan muncul di sini</div>
+                        <div class="strength-text" id="strengthText">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Kekuatan password akan muncul di sini</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>🛡️ Role / Peran <span class="required">*</span></label>
+                    <label>
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Role / Peran <span class="required">*</span>
+                    </label>
                     <select name="role" id="roleSelect" required onchange="toggleFakultas()">
                         <option value="">-- Pilih Role --</option>
-                        <option value="admin_fakultas">🎓 Admin Fakultas</option>
-                        <option value="guest">👁️ Guest (Auditor / Eksternal)</option>
+                        <option value="admin_fakultas">Admin Fakultas</option>
+                        <option value="guest">Guest (Auditor / Eksternal)</option>
                     </select>
                 </div>
 
                 <!-- ========== DROPDOWN FAKULTAS (DINAMIS DARI DATABASE) ========== -->
                 <div class="form-group hidden" id="fakultasGroup">
-                    <label>🏛️ Fakultas <span class="required">*</span></label>
+                    <label>
+                        <i class="fa-solid fa-landmark"></i>
+                        Fakultas <span class="required">*</span>
+                    </label>
                     <select name="fakultas_id" id="fakultasSelect">
                         <option value="">-- Pilih Fakultas --</option>
                         <% if (typeof fakultas !== 'undefined' && fakultas && fakultas.length > 0) { %>
@@ -260,27 +481,37 @@
                                 </option>
                             <% }); %>
                         <% } else { %>
-                            <option value="" disabled>⚠️ Data fakultas belum tersedia di database</option>
+                            <option value="" disabled>Data fakultas belum tersedia di database</option>
                         <% } %>
                     </select>
                     <small class="small-text">
-                        💡 Data fakultas diambil otomatis dari database. Hubungi developer jika ada fakultas baru.
+                        <i class="fa-solid fa-circle-info"></i>
+                        Data fakultas diambil otomatis dari database. Hubungi developer jika ada fakultas baru.
                     </small>
                 </div>
 
                 <div class="info-box">
-                    💡 <strong>Tips:</strong> 
-                    <ul style="margin-top: 6px; padding-left: 20px; line-height: 1.8;">
-                        <li>Password di-generate otomatis dengan kombinasi huruf besar, kecil, angka & simbol</li>
-                        <li>Klik <strong>"🎲 Generate Baru"</strong> jika ingin password berbeda</li>
-                        <li>Segera berikan password ini ke user setelah akun dibuat</li>
-                        <li>User dapat mengganti password sendiri setelah login pertama</li>
-                    </ul>
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <div>
+                        <strong>Tips:</strong> 
+                        <ul>
+                            <li>Password di-generate otomatis dengan kombinasi huruf besar, kecil, angka & simbol</li>
+                            <li>Klik <strong>"Generate Baru"</strong> jika ingin password berbeda</li>
+                            <li>Segera berikan password ini ke user setelah akun dibuat</li>
+                            <li>User dapat mengganti password sendiri setelah login pertama</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="form-actions">
-                    <a href="/users" class="btn btn-secondary">← Batal</a>
-                    <button type="submit" class="btn btn-primary">💾 Simpan User</button>
+                    <a href="/users" class="btn btn-secondary">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Batal
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Simpan User
+                    </button>
                 </div>
             </form>
         </div>
@@ -316,7 +547,9 @@
             const input = document.getElementById('passwordInput');
             input.value = generatePassword(14);
             input.type = 'text';
-            document.getElementById('eyeIcon').textContent = '🙈';
+            const eyeIcon = document.getElementById('eyeIcon');
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
             updateStrengthMeter();
             showToast('✅ Password baru telah di-generate!', 'success');
         }
@@ -327,10 +560,12 @@
             const icon = document.getElementById('eyeIcon');
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.textContent = '🙈';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             } else {
                 input.type = 'password';
-                icon.textContent = '👁️';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         }
 
@@ -338,7 +573,7 @@
         function copyPassword() {
             const input = document.getElementById('passwordInput');
             if (!input.value) {
-                showToast('⚠️ Generate password terlebih dahulu!', '');
+                showToast('⚠️ Generate password terlebih dahulu!', 'error');
                 return;
             }
             
@@ -348,13 +583,13 @@
             
             try {
                 navigator.clipboard.writeText(input.value).then(() => {
-                    showToast('📋 Password berhasil disalin ke clipboard!', 'success');
+                    showToast('📋 Password berhasil disalin!', 'success');
                 }).catch(() => {
                     document.execCommand('copy');
                     showToast('📋 Password berhasil disalin!', 'success');
                 });
             } catch (err) {
-                showToast('❌ Gagal menyalin password', '');
+                showToast('❌ Gagal menyalin password', 'error');
             }
             
             input.type = originalType;
@@ -368,7 +603,7 @@
             
             if (!password) {
                 fill.className = 'strength-fill';
-                text.textContent = 'Kekuatan password akan muncul di sini';
+                text.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span>Kekuatan password akan muncul di sini</span>';
                 text.className = 'strength-text';
                 return;
             }
@@ -386,26 +621,26 @@
             if (score <= 2) {
                 fill.classList.add('weak');
                 text.classList.add('weak');
-                text.textContent = '⚠️ Lemah - Mudah ditebak';
+                text.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>Lemah - Mudah ditebak</span>';
             } else if (score === 3) {
                 fill.classList.add('fair');
                 text.classList.add('fair');
-                text.textContent = '🟡 Cukup - Bisa lebih kuat';
+                text.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span>Cukup - Bisa lebih kuat</span>';
             } else if (score === 4) {
                 fill.classList.add('good');
                 text.classList.add('good');
-                text.textContent = '🔵 Bagus - Cukup aman';
+                text.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Bagus - Cukup aman</span>';
             } else {
                 fill.classList.add('strong');
                 text.classList.add('strong');
-                text.textContent = '🟢 Sangat Kuat - Excellent!';
+                text.innerHTML = '<i class="fa-solid fa-shield-halved"></i> <span>Sangat Kuat - Excellent!</span>';
             }
         }
 
         // ========== TOAST NOTIFICATION ==========
         function showToast(message, type = '') {
             const toast = document.getElementById('toast');
-            toast.textContent = message;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info'}"></i> ${message}`;
             toast.className = 'toast show ' + type;
             setTimeout(() => {
                 toast.className = 'toast';
@@ -433,7 +668,7 @@
             const password = document.getElementById('passwordInput').value;
             if (!password || password.length < 8) {
                 e.preventDefault();
-                showToast('⚠️ Password harus minimal 8 karakter!', '');
+                showToast('⚠️ Password harus minimal 8 karakter!', 'error');
                 return false;
             }
         });

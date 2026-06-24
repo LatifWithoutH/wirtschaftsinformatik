@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= action === 'tambah' ? 'Tambah' : 'Edit' %> Mitra - SI Mitra DUDIKA | UNIBA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- ✅ FONT AWESOME 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
   <style>
     :root {
       --uniba-primary: #1a3a5c;
@@ -49,17 +53,18 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 40px 20px;
+      padding: 32px 20px;
     }
     
     .main-wrapper.expanded { margin-left: 0; }
     
+    /* ✅ FORM CONTAINER (DIKECILKAN) */
     .form-container {
       width: 100%;
-      max-width: 800px;
+      max-width: 780px;
       background: rgba(255, 255, 255, 0.97);
-      padding: 40px;
-      border-radius: 20px;
+      padding: 32px;
+      border-radius: 18px;
       box-shadow: var(--shadow-lg);
       border: 1px solid rgba(226, 232, 240, 0.6);
       backdrop-filter: blur(10px);
@@ -71,24 +76,25 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
+    /* ✅ FORM HEADER (DIKECILKAN) */
     .form-header {
       text-align: center;
-      margin-bottom: 35px;
+      margin-bottom: 28px;
       position: relative;
-      padding-bottom: 20px;
+      padding-bottom: 18px;
       border-bottom: 2px solid #f1f5f9;
     }
     
     .form-header .logo-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 15px;
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
-      border-radius: 16px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       color: white;
       box-shadow: 0 8px 20px rgba(26, 58, 92, 0.25);
     }
@@ -96,43 +102,54 @@
     .form-header h1 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
-      font-size: 1.6rem;
+      font-size: 1.4rem;
       font-weight: 700;
       letter-spacing: -0.5px;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     
-    .form-header p { color: var(--text-muted); font-size: 0.9rem; }
+    .form-header p { 
+      color: var(--text-muted); 
+      font-size: 0.82rem; 
+    }
     
+    /* ✅ FORM GRID */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 16px;
     }
     
     .form-group { display: flex; flex-direction: column; }
     .form-group.full-width { grid-column: span 2; }
     
+    /* ✅ LABEL (DIKECILKAN) */
     .form-group label {
       font-weight: 600;
       color: var(--text-dark);
-      font-size: 0.85rem;
-      margin-bottom: 8px;
+      font-size: 0.78rem;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+    }
+    
+    .form-group label i {
+      font-size: 0.8rem;
+      color: var(--uniba-gold);
     }
     
     .required { color: var(--danger); font-weight: 700; }
     
+    /* ✅ INPUT/SELECT/TEXTAREA (DIKECILKAN) */
     .form-group input,
     .form-group select,
     .form-group textarea {
       width: 100%;
-      padding: 12px 16px;
+      padding: 10px 14px;
       border: 2px solid var(--border);
-      border-radius: 10px;
-      font-size: 0.95rem;
+      border-radius: 9px;
+      font-size: 0.88rem;
       font-family: 'Inter', sans-serif;
       transition: all 0.3s ease;
       background: #f8fafc;
@@ -145,8 +162,8 @@
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       background-repeat: no-repeat;
       background-position: right 12px center;
-      background-size: 18px;
-      padding-right: 40px;
+      background-size: 16px;
+      padding-right: 38px;
     }
     
     .form-group input:focus,
@@ -158,7 +175,7 @@
       box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.1);
     }
     
-    .form-group textarea { resize: vertical; min-height: 100px; }
+    .form-group textarea { resize: vertical; min-height: 90px; }
     
     /* Style untuk input/select readonly */
     .form-group input[readonly],
@@ -178,54 +195,73 @@
       background: #f1f5f9;
     }
     
-    /* Info box untuk field yang di-lock */
+    /* ✅ INFO BOX LOCK (DIKECILKAN) */
     .field-lock-info {
-      margin-top: 8px;
-      padding: 10px 14px;
+      margin-top: 6px;
+      padding: 8px 12px;
       background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
       border-left: 3px solid var(--warning);
-      border-radius: 8px;
-      font-size: 0.8rem;
+      border-radius: 7px;
+      font-size: 0.75rem;
       color: #92400e;
       display: flex;
       align-items: flex-start;
-      gap: 8px;
+      gap: 7px;
       line-height: 1.5;
     }
     
     .field-lock-info strong { color: #78350f; }
+    .field-lock-info i { color: var(--warning); font-size: 0.85rem; }
     
-    /* Info text kecil di bawah field */
+    /* ✅ FIELD HINT (DIKECILKAN) */
     .field-hint {
-      margin-top: 6px;
-      font-size: 0.75rem;
+      margin-top: 5px;
+      font-size: 0.7rem;
       color: var(--text-muted);
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       line-height: 1.5;
     }
     
+    .field-hint i {
+      font-size: 0.7rem;
+      color: var(--uniba-gold);
+    }
+    
+    /* ✅ FORM ACTIONS (DIKECILKAN) */
     .form-actions {
-      margin-top: 35px;
+      margin-top: 28px;
       display: flex;
-      gap: 15px;
+      gap: 12px;
       justify-content: flex-end;
       align-items: center;
       flex-wrap: wrap;
     }
     
+    /* ✅ BUTTONS (DIKECILKAN) */
     .btn {
-      padding: 12px 28px;
-      border-radius: 10px;
+      padding: 10px 24px;
+      border-radius: 9px;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       cursor: pointer;
       transition: all 0.3s;
       border: none;
       font-family: 'Inter', sans-serif;
+    }
+    
+    .btn i {
+      font-size: 0.85rem;
+      transition: transform 0.3s ease;
+    }
+    
+    .btn:hover i {
+      transform: scale(1.15);
     }
     
     .btn-primary {
@@ -251,20 +287,36 @@
       background: #f8fafc;
     }
     
+    /* ✅ INFO BOX (DIKECILKAN) */
     .info-box {
-      margin-top: 30px;
-      padding: 16px 20px;
+      margin-top: 24px;
+      padding: 14px 18px;
       background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.02));
       border-left: 4px solid var(--warning);
-      border-radius: 10px;
-      font-size: 0.85rem;
+      border-radius: 9px;
+      font-size: 0.8rem;
       color: #92400e;
       display: flex;
       align-items: flex-start;
-      gap: 12px;
+      gap: 10px;
     }
     
     .info-box strong { color: #78350f; }
+    .info-box > i { 
+      color: var(--warning); 
+      font-size: 1.1rem; 
+      margin-top: 2px;
+    }
+    
+    .info-box ul {
+      margin-top: 5px;
+      padding-left: 18px;
+      line-height: 1.7;
+    }
+    
+    .info-box li {
+      margin-bottom: 2px;
+    }
     
     @media (max-width: 768px) {
       .main-wrapper { margin-left: 0; padding: 20px; }
@@ -272,18 +324,14 @@
     }
     
     @media (max-width: 640px) {
-      .form-container { padding: 25px 20px; }
+      .form-container { padding: 22px 18px; }
       .form-grid { grid-template-columns: 1fr; }
       .form-group.full-width { grid-column: span 1; }
       .form-actions { flex-direction: column-reverse; width: 100%; }
       .btn { width: 100%; justify-content: center; }
-      .form-header h1 { font-size: 1.3rem; }
+      .form-header h1 { font-size: 1.2rem; }
+      .form-header p { font-size: 0.78rem; }
     }
-    
-    <!-- ::-webkit-scrollbar { width: 10px; height: 10px; } -->
-    <!-- ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 5px; } -->
-    <!-- ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light)); border-radius: 5px; } -->
-    <!-- ::-webkit-scrollbar-thumb:hover { background: var(--uniba-dark); } -->
   </style>
 </head>
 <body>
@@ -292,9 +340,6 @@
   <%
     // ========================================================================
     // 🔒 LOGIKA: Siapa yang boleh edit fakultas & email?
-    // - action === 'tambah' → hanya humas yang bisa akses (sudah di-lock di server.js)
-    // - action === 'edit' + humas → boleh edit
-    // - action === 'edit' + admin_fakultas → TIDAK BOLEH (readonly/disabled)
     // ========================================================================
     const canEditFakultasField = (action === 'tambah') || (user?.role === 'humas');
   %>
@@ -302,7 +347,9 @@
   <div class="main-wrapper">
     <div class="form-container">
       <div class="form-header">
-        <div class="logo-icon">🤝</div>
+        <div class="logo-icon">
+          <i class="fa-solid fa-handshake"></i>
+        </div>
         <h1><%= action === 'tambah' ? 'Tambah Mitra Baru' : 'Edit Data Mitra' %></h1>
         <p>SI Mitra DUDIKA — Universitas Islam Batik Surakarta</p>
       </div>
@@ -312,18 +359,21 @@
           
           <!-- Nama Instansi (Full Width) -->
           <div class="form-group full-width">
-            <label for="nama_instansi">🏢 Nama Instansi / Perusahaan <span class="required">*</span></label>
+            <label for="nama_instansi">
+              <i class="fa-solid fa-building"></i>
+              Nama Instansi / Perusahaan <span class="required">*</span>
+            </label>
             <input type="text" id="nama_instansi" name="nama_instansi" required value="<%= mitra?.nama_instansi || '' %>" placeholder="Contoh: PT. Maju Bersama">
           </div>
 
           <!-- ✨ FAKULTAS — DROPDOWN DINAMIS DARI DATABASE ✨ -->
           <div class="form-group">
             <label for="fakultas_id">
-              🏛️ Fakultas Penanggung Jawab <span class="required">*</span>
+              <i class="fa-solid fa-landmark"></i>
+              Fakultas Penanggung Jawab <span class="required">*</span>
             </label>
             
             <% if (canEditFakultasField) { %>
-              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
               <select id="fakultas_id" name="fakultas_id" required>
                 <option value="">-- Pilih Fakultas --</option>
                 <% if (typeof fakultas !== 'undefined' && fakultas && fakultas.length > 0) { %>
@@ -333,11 +383,10 @@
                     </option>
                   <% }); %>
                 <% } else { %>
-                  <option value="" disabled>⚠️ Data fakultas belum tersedia</option>
+                  <option value="" disabled>Data fakultas belum tersedia</option>
                 <% } %>
               </select>
             <% } else { %>
-              <!-- 🔒 ADMIN FAKULTAS: disabled + hidden field -->
               <% 
                 const currentFakultas = (typeof fakultas !== 'undefined' && fakultas) 
                   ? fakultas.find(f => f.id === mitra?.fakultas_id) 
@@ -353,7 +402,7 @@
               <input type="hidden" name="fakultas_id" value="<%= mitra?.fakultas_id || '' %>">
               
               <div class="field-lock-info">
-                <span style="font-size:1rem">🔒</span>
+                <i class="fa-solid fa-lock"></i>
                 <div>
                   <strong>Hanya Humas yang dapat mengubah fakultas penanggung jawab.</strong><br>
                   Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
@@ -365,11 +414,11 @@
           <!-- ✨ EMAIL PENANGGUNG JAWAB (FAKULTAS) — WAJIB ✨ -->
           <div class="form-group">
             <label for="email_fakultas">
-              📧 Email Penanggung Jawab (Fakultas) <span class="required">*</span>
+              <i class="fa-solid fa-envelope"></i>
+              Email Penanggung Jawab (Fakultas) <span class="required">*</span>
             </label>
             
             <% if (canEditFakultasField) { %>
-              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
               <input type="email" 
                      id="email_fakultas" 
                      name="email_fakultas" 
@@ -377,11 +426,7 @@
                      value="<%= mitra?.email_fakultas || '' %>" 
                      placeholder="dekan.fti@uniba.ac.id"
                      style="text-transform: lowercase;">
-              <small class="field-hint">
-                💡 Email ini akan menerima notifikasi otomatis saat kerja sama akan berakhir
-              </small>
             <% } else { %>
-              <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
               <input type="email" 
                      id="email_fakultas_display" 
                      value="<%= mitra?.email_fakultas || '' %>" 
@@ -391,7 +436,7 @@
               <input type="hidden" name="email_fakultas" value="<%= mitra?.email_fakultas || '' %>">
               
               <div class="field-lock-info">
-                <span style="font-size:1rem">🔒</span>
+                <i class="fa-solid fa-lock"></i>
                 <div>
                   <strong>Hanya Humas yang dapat mengubah email penanggung jawab.</strong><br>
                   Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
@@ -403,22 +448,18 @@
           <!-- ✨ EMAIL RESMI MITRA — OPSIONAL ✨ -->
           <div class="form-group">
             <label for="email_mitra_asli">
-              🏢 Email Resmi Mitra
+              <i class="fa-solid fa-building-columns"></i>
+              Email Resmi Mitra
             </label>
             
             <% if (canEditFakultasField) { %>
-              <!-- ✅ HUMAS atau Form Tambah: boleh edit -->
               <input type="email" 
                      id="email_mitra_asli" 
                      name="email_mitra_asli" 
                      value="<%= mitra?.email_mitra_asli || '' %>" 
                      placeholder="info@pt-maju.com"
                      style="text-transform: lowercase;">
-              <small class="field-hint">
-                💡 Opsional — ditampilkan sebagai info kontak di notifikasi (tidak dikirimi email)
-              </small>
             <% } else { %>
-              <!-- 🔒 ADMIN FAKULTAS: readonly + hidden field -->
               <input type="email" 
                      id="email_mitra_asli_display" 
                      value="<%= mitra?.email_mitra_asli || '' %>" 
@@ -428,7 +469,7 @@
               <input type="hidden" name="email_mitra_asli" value="<%= mitra?.email_mitra_asli || '' %>">
               
               <div class="field-lock-info">
-                <span style="font-size:1rem">🔒</span>
+                <i class="fa-solid fa-lock"></i>
                 <div>
                   <strong>Hanya Humas yang dapat mengubah email resmi mitra.</strong><br>
                   Jika ada kesalahan data, silakan hubungi Humas untuk perbaikan.
@@ -439,37 +480,55 @@
 
           <!-- Nama Kontak -->
           <div class="form-group">
-            <label for="nama_kontak">👤 Nama Kontak Person</label>
+            <label for="nama_kontak">
+              <i class="fa-solid fa-user"></i>
+              Nama Kontak Person
+            </label>
             <input type="text" id="nama_kontak" name="nama_kontak" value="<%= mitra?.nama_kontak || '' %>" placeholder="Nama penanggung jawab">
           </div>
 
           <!-- Jabatan -->
           <div class="form-group">
-            <label for="jabatan">💼 Jabatan</label>
+            <label for="jabatan">
+              <i class="fa-solid fa-briefcase"></i>
+              Jabatan
+            </label>
             <input type="text" id="jabatan" name="jabatan" value="<%= mitra?.jabatan || '' %>" placeholder="Contoh: HRD Manager">
+          </div>
+
+		  
+          <!-- No HP -->
+          <div class="form-group">
+            <label for="no_hp_kontak">
+              <i class="fa-solid fa-mobile-screen"></i>
+              Nomor HP Kontak <span class="required">*</span>
+            </label>
+            <input type="tel" id="no_hp_kontak" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxxxxxx">
           </div>
 
           <!-- Tanggal Mulai -->
           <div class="form-group">
-            <label for="tanggal_mulai">📅 Tanggal Mulai Kerja Sama <span class="required">*</span></label>
+            <label for="tanggal_mulai">
+              <i class="fa-solid fa-calendar-check"></i>
+              Tanggal Mulai Kerja Sama <span class="required">*</span>
+            </label>
             <input type="date" id="tanggal_mulai" name="tanggal_mulai" required value="<%= mitra?.tanggal_mulai || '' %>">
           </div>
-		  
-          <!-- No HP -->
-          <div class="form-group">
-            <label for="no_hp_kontak">📱 Nomor HP Kontak <span class="required">*</span></label>
-            <input type="tel" id="no_hp_kontak" name="no_hp_kontak" required value="<%= mitra?.no_hp_kontak || '' %>" placeholder="0812xxxxxxxx">
-          </div>
-
           <!-- Tanggal Berakhir -->
           <div class="form-group">
-            <label for="tanggal_berakhir">📅 Tanggal Berakhir Kerja Sama <span class="required">*</span></label>
+            <label for="tanggal_berakhir">
+              <i class="fa-solid fa-calendar-xmark"></i>
+              Tanggal Berakhir Kerja Sama <span class="required">*</span>
+            </label>
             <input type="date" id="tanggal_berakhir" name="tanggal_berakhir" required value="<%= mitra?.tanggal_berakhir || '' %>">
           </div>
 
           <!-- Alamat (Full Width) -->
           <div class="form-group full-width">
-            <label for="alamat">📍 Alamat Lengkap</label>
+            <label for="alamat">
+              <i class="fa-solid fa-location-dot"></i>
+              Alamat Lengkap
+            </label>
             <textarea id="alamat" name="alamat" rows="3" placeholder="Alamat lengkap instansi..."><%= mitra?.alamat || '' %></textarea>
           </div>
           
@@ -477,17 +536,23 @@
         
         <!-- Actions -->
         <div class="form-actions">
-          <a href="/mitra" class="btn btn-secondary">← Kembali ke Daftar</a>
-          <button type="submit" class="btn btn-primary">💾 Simpan Data</button>
+          <a href="/mitra" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i>
+            Kembali ke Daftar
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Simpan Data
+          </button>
         </div>
       </form>
       
       <!-- Info Box -->
       <div class="info-box">
-        <span style="font-size: 1.2rem;">💡</span>
+        <i class="fa-solid fa-lightbulb"></i>
         <div>
           <strong>Catatan Penting:</strong> 
-          <ul style="margin-top: 6px; padding-left: 20px; line-height: 1.8;">
+          <ul>
             <li><strong>Fakultas Penanggung Jawab</strong> menentukan siapa yang bisa mengelola data mitra ini</li>
             <li><strong>Email Penanggung Jawab</strong> akan menerima notifikasi otomatis saat kerja sama akan berakhir</li>
             <li><strong>Email Resmi Mitra</strong> bersifat opsional, ditampilkan sebagai referensi kontak di notifikasi</li>
@@ -498,186 +563,28 @@
     </div>
   </div>
 
-    <script>
-    // ========== WRAP SEMUA DALAM DOMContentLoaded ==========
+  <script>
     document.addEventListener('DOMContentLoaded', function() {
-      
-   
-        window.addEventListener('resize', () => {
-          if (window.innerWidth > 768) {
-            sidebar.classList.remove('active');
-          } else {
-            sidebar.classList.remove('hidden');
-            if (mainWrapper) mainWrapper.classList.remove('expanded');
-            sidebarToggle.classList.remove('shifted');
-          }
-        });
-      }
-    
-      // ========== 2. GENERATE PASSWORD RANDOM ==========
-      function generatePassword(length = 14) {
-        const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const lower = 'abcdefghijklmnopqrstuvwxyz';
-        const numbers = '0123456789';
-        const symbols = '!@#$%^&*';
-        const allChars = upper + lower + numbers + symbols;
-        let password = '';
-        password += upper[Math.floor(Math.random() * upper.length)];
-        password += lower[Math.floor(Math.random() * lower.length)];
-        password += numbers[Math.floor(Math.random() * numbers.length)];
-        password += symbols[Math.floor(Math.random() * symbols.length)];
-        for (let i = password.length; i < length; i++) {
-          password += allChars[Math.floor(Math.random() * allChars.length)];
-        }
-        return password.split('').sort(() => Math.random() - 0.5).join('');
-      }
-    
-      // ========== 3. SET PASSWORD KE INPUT ==========
-      function generateAndSetPassword() {
-        const input = document.getElementById('passwordInput');
-        if (!input) return;
-        input.value = generatePassword(14);
-        input.type = 'text';
-        const eyeIcon = document.getElementById('eyeIcon');
-        if (eyeIcon) eyeIcon.textContent = '🙈';
-        updateStrengthMeter();
-        showToast('✅ Password baru telah di-generate!', 'success');
-      }
-    
-      // ========== 4. TOGGLE SHOW/HIDE PASSWORD ==========
-      window.togglePasswordVisibility = function() {
-        const input = document.getElementById('passwordInput');
-        const icon = document.getElementById('eyeIcon');
-        if (!input) return;
-        if (input.type === 'password') {
-          input.type = 'text';
-          if (icon) icon.textContent = '🙈';
-        } else {
-          input.type = 'password';
-          if (icon) icon.textContent = '👁️';
-        }
-      };
-    
-      // ========== 5. COPY PASSWORD ==========
-      window.copyPassword = function() {
-        const input = document.getElementById('passwordInput');
-        if (!input || !input.value) {
-          showToast('⚠️ Generate password terlebih dahulu!', '');
-          return;
-        }
-        const originalType = input.type;
-        input.type = 'text';
-        input.select();
-        try {
-          navigator.clipboard.writeText(input.value).then(() => {
-            showToast('📋 Password berhasil disalin ke clipboard!', 'success');
-          }).catch(() => {
-            document.execCommand('copy');
-            showToast('📋 Password berhasil disalin!', 'success');
-          });
-        } catch (err) {
-          showToast('❌ Gagal menyalin password', '');
-        }
-        input.type = originalType;
-      };
-    
-      // ========== 6. PASSWORD STRENGTH METER ==========
-      function updateStrengthMeter() {
-        const passwordInput = document.getElementById('passwordInput');
-        const fill = document.getElementById('strengthFill');
-        const text = document.getElementById('strengthText');
-        if (!passwordInput || !fill || !text) return;
+      // Resize handler untuk sidebar
+      window.addEventListener('resize', () => {
+        const sidebar = document.querySelector('.sidebar');
+        const mainWrapper = document.querySelector('.main-wrapper');
+        const sidebarToggle = document.getElementById('sidebarToggle');
         
-        const password = passwordInput.value;
-        if (!password) {
-          fill.className = 'strength-fill';
-          text.textContent = 'Kekuatan password akan muncul di sini';
-          text.className = 'strength-text';
-          return;
-        }
-        let score = 0;
-        if (password.length >= 8) score++;
-        if (password.length >= 12) score++;
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-        if (/\d/.test(password)) score++;
-        if (/[^A-Za-z0-9]/.test(password)) score++;
-        
-        fill.className = 'strength-fill';
-        text.className = 'strength-text';
-        if (score <= 2) {
-          fill.classList.add('weak');
-          text.classList.add('weak');
-          text.textContent = '⚠️ Lemah - Mudah ditebak';
-        } else if (score === 3) {
-          fill.classList.add('fair');
-          text.classList.add('fair');
-          text.textContent = '🟡 Cukup - Bisa lebih kuat';
-        } else if (score === 4) {
-          fill.classList.add('good');
-          text.classList.add('good');
-          text.textContent = '🔵 Bagus - Cukup aman';
+        if (window.innerWidth > 768) {
+          if (sidebar) sidebar.classList.remove('active');
         } else {
-          fill.classList.add('strong');
-          text.classList.add('strong');
-          text.textContent = '🟢 Sangat Kuat - Excellent!';
+          if (sidebar) sidebar.classList.remove('hidden');
+          if (mainWrapper) mainWrapper.classList.remove('expanded');
+          if (sidebarToggle) sidebarToggle.classList.remove('shifted');
         }
-      }
-    
-      // ========== 7. TOAST NOTIFICATION ==========
-      function showToast(message, type = '') {
-        const toast = document.getElementById('toast');
-        if (!toast) return;
-        toast.textContent = message;
-        toast.className = 'toast show ' + type;
-        setTimeout(() => {
-          toast.className = 'toast';
-        }, 2500);
-      }
-    
-      // ========== 8. TOGGLE FAKULTAS ==========
-      window.toggleFakultas = function() {
-        const role = document.getElementById('roleSelect');
-        const fakultasGroup = document.getElementById('fakultasGroup');
-        const fakultasInput = document.getElementById('fakultasSelect');
-        if (!role || !fakultasGroup || !fakultasInput) return;
-        
-        if (role.value === 'admin_fakultas') {
-          fakultasGroup.classList.remove('hidden');
-          fakultasInput.setAttribute('required', 'required');
-        } else {
-          fakultasGroup.classList.add('hidden');
-          fakultasInput.removeAttribute('required');
-          fakultasInput.value = '';
-        }
-      };
-    
-      // ========== 9. VALIDASI FORM ==========
-      const userForm = document.getElementById('userForm');
-      if (userForm) {
-        userForm.addEventListener('submit', function(e) {
-          const password = document.getElementById('passwordInput');
-          if (password && (!password.value || password.value.length < 8)) {
-            e.preventDefault();
-            showToast('⚠️ Password harus minimal 8 karakter!', '');
-            return false;
-          }
-        });
-      }
-    
-      // ========== 10. INIT: Generate password + focus ==========
-      generateAndSetPassword();
+      });
       
-      const nameInput = document.querySelector('input[name="name"]');
-      if (nameInput) nameInput.focus();
-    
-      // ========== 11. Strength meter listener ==========
-      const passwordInput = document.getElementById('passwordInput');
-      if (passwordInput) {
-        passwordInput.addEventListener('input', updateStrengthMeter);
-      }
-      
-    }); // ===== AKHIR DOMContentLoaded =====
-    </script>
+      // Focus ke input pertama
+      const firstInput = document.querySelector('input[name="nama_instansi"]');
+      if (firstInput) firstInput.focus();
+    });
+  </script>
 
 </body>
 </html>
