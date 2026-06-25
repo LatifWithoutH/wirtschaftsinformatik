@@ -2,396 +2,450 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
-  /* ========== CSS VARIABLES ========== */
-  :root {
-    --uniba-primary: #1a3a5c;
-    --uniba-secondary: #8b6f47;
-    --uniba-gold: #d4a017;
-    --uniba-blue-light: #2c5282;
-    --uniba-dark: #0f2439;
-    --danger: #ef4444;
-    --sidebar-width: 280px;
-  }
+/* ========== CSS VARIABLES ========== */
+:root {
+  --uniba-primary: #1a3a5c;
+  --uniba-secondary: #8b6f47;
+  --uniba-gold: #d4a017;
+  --uniba-blue-light: #2c5282;
+  --uniba-dark: #0f2439;
+  --danger: #ef4444;
+  --sidebar-width: 280px;
+}
 
-  /* ========== SIDEBAR (PARENT - TIDAK SCROLL) ========== */
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: var(--sidebar-width);
-    background: linear-gradient(180deg, var(--uniba-primary) 0%, var(--uniba-dark) 100%);
-    color: white;
-    padding: 0;
-    overflow: hidden;
-    overflow-x: hidden;
-    z-index: 1000;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateX(0);
+/* ========== SIDEBAR (PARENT - TIDAK SCROLL) ========== */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: linear-gradient(180deg, var(--uniba-primary) 0%, var(--uniba-dark) 100%);
+  color: white;
+  padding: 0;
+  overflow: hidden;
+  overflow-x: hidden;
+  z-index: 1000;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(0);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.hidden { transform: translateX(-100%); }
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 200px;
+  height: 200px;
+  background: var(--uniba-gold);
+  border-radius: 50%;
+  opacity: 0.08;
+  filter: blur(60px);
+}
+
+/* ========== SIDEBAR HEADER ========== */
+.sidebar-header {
+  text-align: center;
+  padding: 20px 15px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sidebar-header .logo-wrapper {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 6px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(212, 160, 23, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-header .logo-wrapper:hover {
+  transform: scale(1.05) rotate(3deg);
+}
+
+.sidebar-header .logo-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sidebar-header h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.sidebar-header p {
+  font-size: 0.65rem;
+  opacity: 0.7;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ========== USER PROFILE ========== */
+.user-profile {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.user-profile .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--uniba-dark);
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
+}
+
+.user-profile .user-info { flex: 1; min-width: 0; }
+
+.user-profile .user-info strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-profile .user-info small {
+  display: block;
+  font-size: 0.65rem;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-profile .role-badge {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+/* ========== NAV MENU ========== */
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 15px;
+}
+
+.nav-section-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.5;
+  margin: 15px 0 8px 12px;
+  font-weight: 600;
+}
+
+.nav-section-title:first-child { margin-top: 0; }
+
+.nav-menu { list-style: none; padding: 0; margin: 0; }
+.nav-menu li { margin-bottom: 4px; }
+
+.nav-menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-menu a::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--uniba-gold), transparent);
+  opacity: 0.15;
+  transition: width 0.3s ease;
+}
+
+.nav-menu a:hover::before { width: 100%; }
+
+.nav-menu a:hover {
+  color: white;
+  transform: translateX(5px);
+}
+
+.nav-menu a.active {
+  background: rgba(212, 160, 23, 0.15);
+  color: white;
+  font-weight: 600;
+  position: relative;
+}
+
+.nav-menu a.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background: var(--uniba-gold);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
+}
+
+/* ✅ ICON FONT AWESOME STYLING */
+.nav-menu a .nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+  opacity: 0.9;
+}
+
+.nav-menu a:hover .nav-icon {
+  transform: scale(1.15);
+  opacity: 1;
+  color: var(--uniba-gold);
+}
+
+.nav-menu a.active .nav-icon {
+  color: var(--uniba-gold);
+  opacity: 1;
+}
+
+.nav-menu a .nav-text { flex: 1; }
+
+/* ========== SIDEBAR FOOTER ========== */
+.sidebar-footer {
+  padding: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-footer .logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.sidebar-footer .logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: white;
+  transform: translateX(5px);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.sidebar-footer .logout-btn .nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+}
+
+.sidebar-footer .version {
+  text-align: center;
+  font-size: 0.6rem;
+  opacity: 0.4;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* ========== TOGGLE BUTTON (DESKTOP - DI SISI SIDEBAR) ========== */
+.sidebar-toggle {
+  position: fixed;
+  left: var(--sidebar-width);
+  top: 100px;
+  z-index: 1001;
+  background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+  color: white;
+  border: none;
+  width: 28px;
+  height: 56px;
+  border-radius: 0 12px 12px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-toggle:hover {
+  background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+  color: var(--uniba-dark);
+  width: 32px;
+}
+
+.sidebar-toggle.shifted { left: 0; }
+
+.sidebar-toggle .chevron {
+  transition: transform 0.4s ease;
+  display: inline-block;
+}
+
+.sidebar-toggle.shifted .chevron {
+  transform: rotate(180deg);
+}
+
+/* ========== HAMBURGER BUTTON (MOBILE - POJOK KIRI ATAS) ========== */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1002;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
+  color: white;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn:hover {
+  background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
+  color: var(--uniba-dark);
+  transform: scale(1.05);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+.hamburger-btn i {
+  transition: transform 0.3s ease;
+}
+
+.hamburger-btn.active i {
+  transform: rotate(90deg);
+}
+
+/* ========== MOBILE ========== */
+@media (max-width: 768px) {
+  .sidebar { 
+    transform: translateX(-100%); 
+    width: 240px; 
+  }
+  
+  .sidebar.active { 
+    transform: translateX(0); 
+  }
+  
+  .sidebar.hidden { 
+    transform: translateX(-100%); 
+  }
+  
+  /* Tampilkan hamburger button di mobile */
+  .hamburger-btn {
     display: flex;
-    flex-direction: column;
   }
-
-  .sidebar.hidden { transform: translateX(-100%); }
-
-  .sidebar::before {
-    content: '';
-    position: absolute;
-    top: -100px;
-    right: -100px;
-    width: 200px;
-    height: 200px;
-    background: var(--uniba-gold);
-    border-radius: 50%;
-    opacity: 0.08;
-    filter: blur(60px);
-  }
-
-  /* ========== SIDEBAR HEADER ========== */
-  .sidebar-header {
-    text-align: center;
-    padding: 20px 15px 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .sidebar-header .logo-wrapper {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 6px;
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(212, 160, 23, 0.3);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease;
-  }
-
-  .sidebar-header .logo-wrapper:hover {
-    transform: scale(1.05) rotate(3deg);
-  }
-
-  .sidebar-header .logo-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .sidebar-header h2 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-
-  .sidebar-header p {
-    font-size: 0.65rem;
-    opacity: 0.7;
-    margin-top: 2px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-
-  /* ========== USER PROFILE ========== */
-  .user-profile {
-    padding: 12px 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.1);
-  }
-
-  .user-profile .avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--uniba-dark);
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
-  }
-
-  .user-profile .user-info { flex: 1; min-width: 0; }
-
-  .user-profile .user-info strong {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .user-profile .user-info small {
-    display: block;
-    font-size: 0.65rem;
-    opacity: 0.7;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .user-profile .role-badge {
-    font-size: 0.6rem;
-    padding: 2px 6px;
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-    border-radius: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 2px;
-    display: inline-block;
-  }
-
-  /* ========== NAV MENU ========== */
-  .sidebar-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 15px;
-  }
-
-  .nav-section-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.5;
-    margin: 15px 0 8px 12px;
-    font-weight: 600;
-  }
-
-  .nav-section-title:first-child { margin-top: 0; }
-
-  .nav-menu { list-style: none; padding: 0; margin: 0; }
-  .nav-menu li { margin-bottom: 4px; }
-
-  .nav-menu a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    color: rgba(255, 255, 255, 0.85);
-    text-decoration: none;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    font-size: 0.85rem;
-    font-weight: 500;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .nav-menu a::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--uniba-gold), transparent);
-    opacity: 0.15;
-    transition: width 0.3s ease;
-  }
-
-  .nav-menu a:hover::before { width: 100%; }
-
-  .nav-menu a:hover {
-    color: white;
-    transform: translateX(5px);
-  }
-
-  .nav-menu a.active {
-    background: rgba(212, 160, 23, 0.15);
-    color: white;
-    font-weight: 600;
-    position: relative;
-  }
-
-  .nav-menu a.active::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 70%;
-    background: var(--uniba-gold);
-    border-radius: 0 4px 4px 0;
-    box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
-  }
-
-  /* ✅ ICON FONT AWESOME STYLING */
-  .nav-menu a .nav-icon {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 1.05rem;
-    transition: all 0.3s ease;
-    opacity: 0.9;
-  }
-
-  .nav-menu a:hover .nav-icon {
-    transform: scale(1.15);
-    opacity: 1;
-    color: var(--uniba-gold);
-  }
-
-  .nav-menu a.active .nav-icon {
-    color: var(--uniba-gold);
-    opacity: 1;
-  }
-
-  .nav-menu a .nav-text { flex: 1; }
-
-  /* ========== SIDEBAR FOOTER ========== */
-  .sidebar-footer {
-    padding: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.1);
-  }
-
-  .sidebar-footer .logout-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: rgba(239, 68, 68, 0.1);
-    color: #fca5a5;
-    text-decoration: none;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-
-  .sidebar-footer .logout-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: white;
-    transform: translateX(5px);
-    border-color: rgba(239, 68, 68, 0.4);
-  }
-
-  .sidebar-footer .logout-btn .nav-icon {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 1.05rem;
-  }
-
-  .sidebar-footer .version {
-    text-align: center;
-    font-size: 0.6rem;
-    opacity: 0.4;
-    margin-top: 8px;
-    letter-spacing: 0.5px;
-  }
-
-  /* ========== TOGGLE BUTTON ========== */
+  
+  /* Sembunyikan toggle button desktop di mobile */
   .sidebar-toggle {
-    position: fixed;
-    left: var(--sidebar-width);
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1001;
-    background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
-    color: white;
-    border: none;
-    width: 28px;
-    height: 56px;
-    border-radius: 0 12px 12px 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
   }
+}
 
-  .sidebar-toggle:hover {
-    background: linear-gradient(135deg, var(--uniba-gold), #f4b942);
-    color: var(--uniba-dark);
-    width: 32px;
-  }
+/* ========== SCROLLBAR SIDEBAR ========== */
+.sidebar-content::-webkit-scrollbar { width: 6px; }
 
-  .sidebar-toggle.shifted { left: 0; }
+.sidebar-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+  margin: 10px 0;
+}
 
-  .sidebar-toggle .chevron {
-    transition: transform 0.4s ease;
-    display: inline-block;
-  }
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--uniba-blue-light), var(--uniba-primary));
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
 
-  .sidebar-toggle.shifted .chevron {
-    transform: rotate(180deg);
-  }
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4a7ab5, var(--uniba-blue-light));
+}
 
-  /* ========== MOBILE ========== */
-  @media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); width: 240px; }
-    .sidebar.active { transform: translateX(0); }
-    .sidebar.hidden { transform: translateX(-100%); }
-    .sidebar-toggle {
-      left: 0;
-      top: 20px;
-      transform: none;
-      border-radius: 0 12px 12px 0;
-      width: 40px;
-      height: 40px;
-    }
-    .sidebar-toggle.shifted { left: 240px; }
-  }
+.sidebar-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--uniba-blue-light) rgba(255, 255, 255, 0.03);
+}
 
-  /* ========== SCROLLBAR SIDEBAR (BIRU GRADASI) ========== */
-  .sidebar-content::-webkit-scrollbar { width: 6px; }
+.sidebar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 
-  .sidebar-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 3px;
-    margin: 10px 0;
-  }
-
-  .sidebar-content::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, var(--uniba-blue-light), var(--uniba-primary));
-    border-radius: 3px;
-    transition: all 0.3s ease;
-  }
-
-  .sidebar-content::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #4a7ab5, var(--uniba-blue-light));
-  }
-
-  .sidebar-content {
-    scrollbar-width: thin;
-    scrollbar-color: var(--uniba-blue-light) rgba(255, 255, 255, 0.03);
-  }
-
-  .sidebar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .sidebar::-webkit-scrollbar { display: none; }
+.sidebar::-webkit-scrollbar { display: none; }
 </style>
 
-<!-- Tombol Toggle Sidebar -->
+<!-- ✅ HAMBURGER BUTTON (MOBILE ONLY) -->
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle Menu">
+  <i class="fa-solid fa-bars"></i>
+</button>
+
+<!-- ✅ TOGGLE BUTTON (DESKTOP ONLY) -->
 <button class="sidebar-toggle" id="sidebarToggle" title="Buka/Tutup Menu" aria-label="Toggle Sidebar">
   <span class="chevron">‹</span>
 </button>
@@ -494,36 +548,77 @@
   
   function initSidebar() {
     const toggle = document.getElementById('sidebarToggle');
+    const hamburger = document.getElementById('hamburgerBtn');
     const sidebar = document.querySelector('.sidebar');
     const mainWrapper = document.querySelector('.main-wrapper');
     
-    if (!toggle || !sidebar) return;
-    if (toggle.dataset.initialized === 'true') return;
-    toggle.dataset.initialized = 'true';
-
-    function handleToggle() {
-      if (window.innerWidth <= 768) {
+    if (!sidebar) return;
+    
+    // ✅ DESKTOP TOGGLE
+    if (toggle) {
+      if (toggle.dataset.initialized === 'true') return;
+      toggle.dataset.initialized = 'true';
+      
+      function handleToggle() {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.toggle('active');
+        } else {
+          sidebar.classList.toggle('hidden');
+          if (mainWrapper) mainWrapper.classList.toggle('expanded');
+        }
+        toggle.classList.toggle('shifted');
+      }
+      
+      function handleResize() {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('active');
+        } else {
+          sidebar.classList.remove('hidden');
+          if (mainWrapper) mainWrapper.classList.remove('expanded');
+        }
+        toggle.classList.remove('shifted');
+      }
+      
+      toggle.addEventListener('click', handleToggle);
+      window.addEventListener('resize', handleResize);
+    }
+    
+    // ✅ MOBILE HAMBURGER
+    if (hamburger) {
+      if (hamburger.dataset.initialized === 'true') return;
+      hamburger.dataset.initialized = 'true';
+      
+      hamburger.addEventListener('click', function() {
         sidebar.classList.toggle('active');
-      } else {
-        sidebar.classList.toggle('hidden');
-        if (mainWrapper) mainWrapper.classList.toggle('expanded');
-      }
-      toggle.classList.toggle('shifted');
+        hamburger.classList.toggle('active');
+        
+        // Ganti icon
+        const icon = hamburger.querySelector('i');
+        if (sidebar.classList.contains('active')) {
+          icon.classList.remove('fa-bars');
+          icon.classList.add('fa-xmark');
+        } else {
+          icon.classList.remove('fa-xmark');
+          icon.classList.add('fa-bars');
+        }
+      });
+      
+      // Tutup sidebar saat klik link di mobile
+      const navLinks = sidebar.querySelectorAll('.nav-menu a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            sidebar.classList.remove('active');
+            hamburger.classList.remove('active');
+            const icon = hamburger.querySelector('i');
+            icon.classList.remove('fa-xmark');
+            icon.classList.add('fa-bars');
+          }
+        });
+      });
     }
-
-    function handleResize() {
-      if (window.innerWidth > 768) {
-        sidebar.classList.remove('active');
-      } else {
-        sidebar.classList.remove('hidden');
-        if (mainWrapper) mainWrapper.classList.remove('expanded');
-      }
-      toggle.classList.remove('shifted');
-    }
-
-    toggle.addEventListener('click', handleToggle);
-    window.addEventListener('resize', handleResize);
-    console.log('✅ Sidebar toggle initialized globally');
+    
+    console.log('✅ Sidebar toggle initialized');
   }
 
   if (document.readyState === 'loading') {
