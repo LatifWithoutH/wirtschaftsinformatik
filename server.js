@@ -6,12 +6,65 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron'); // ✅ TAMBAH: buat auto-send alert
+const helmet = require('helmet');
 
 // ✅ AUDIT LOGGER
 const { logAudit } = require('./utils/auditLogger');
 const { uploadFileToDrive } = require('./utils/gasUploader');
-
+// Tambahkan di server.js
 const app = express();
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      
+      // ✅ INI YANG PENTING - Allow CDN Icon
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",                    // Buat inline style
+        "https://cdnjs.cloudflare.com",       // Font Awesome CDN
+        "https://cdn.jsdelivr.net",           // Bootstrap Icons CDN
+        "https://fonts.googleapis.com",       // Google Fonts
+        "https://use.fontawesome.com"         // Font Awesome Kit
+      ],
+      
+      // ✅ Allow font files dari CDN
+      fontSrc: [
+        "'self'",
+        "https://cdnjs.cloudflare.com",
+        "https://cdn.jsdelivr.net",
+        "https://fonts.gstatic.com",
+        "https://use.fontawesome.com"
+      ],
+      
+      // ✅ Allow script dari CDN (kalau perlu)
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdnjs.cloudflare.com",
+        "https://cdn.jsdelivr.net",
+        "https://use.fontawesome.com"
+      ],
+      
+      // ✅ Allow image dari CDN
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https:",
+        "http:"
+      ],
+      
+      // ✅ Allow connect ke API eksternal
+      connectSrc: [
+        "'self'",
+        "https://*.supabase.co"
+      ]
+    }
+  },
+  
+  // Disable crossOriginEmbedderPolicy kalau ada masalah
+  crossOriginEmbedderPolicy: false
+}));
 app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
