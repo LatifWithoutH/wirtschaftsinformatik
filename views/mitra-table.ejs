@@ -462,60 +462,8 @@
     .table-footer span:first-child { font-weight: 600; color: var(--uniba-primary); }
     .table-footer span:last-child i { color: var(--uniba-gold); margin-right: 4px; }
     
-    .pagination-wrapper {
-      padding: 20px 40px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    
-    .pagination-btn {
-      padding: 8px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      text-decoration: none;
-      color: var(--text-dark);
-      font-size: 13px;
-      font-weight: 600;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: white;
-      font-family: 'Inter', sans-serif;
-    }
-    
-    .pagination-btn:hover {
-      border-color: var(--uniba-primary);
-      color: var(--uniba-primary);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    
-    .pagination-btn.active {
-      background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
-      color: white;
-      border-color: var(--uniba-primary);
-      box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
-    }
-    
-    .pagination-btn.active:hover {
-      color: white;
-      transform: translateY(-1px);
-    }
-    
-    .pagination-dots {
-      padding: 8px 6px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-    
-    .pagination-info {
-      margin-left: 15px;
-      font-size: 12px;
-      color: var(--text-muted);
+    .hidden-row {
+      display: none !important;
     }
     
     @media (max-width: 768px) {
@@ -617,9 +565,6 @@
       
       .table-footer { flex-direction: column; text-align: center; padding: 12px 16px; background: white; border-radius: 10px; margin-top: 8px; font-size: 11px; }
       
-      .pagination-wrapper { padding: 16px 20px; }
-      .pagination-info { margin-left: 0; margin-top: 8px; width: 100%; text-align: center; }
-      
       .empty-state { padding: 40px 20px; }
       .empty-state-icon { font-size: 2.5rem; }
       .empty-state h3 { font-size: 1rem; }
@@ -634,8 +579,6 @@
       tbody tr { padding: 12px; }
       tbody tr td { padding: 7px 0; font-size: 12px; }
       tbody tr td::before { min-width: 75px; font-size: 8px; }
-      
-      .pagination-btn { padding: 6px 10px; font-size: 12px; }
     }
     
     @media (prefers-reduced-motion: reduce) {
@@ -658,7 +601,7 @@
       </h1>
     </div>
     
-    <!-- ✅ STATS BAR - Pakai data dari SERVER -->
+    <!-- ✅ STATS BAR -->
     <div class="stats-bar">
       <div class="stat-item">
         <div class="stat-icon active">
@@ -701,22 +644,18 @@
       </div>
     </div>
     
-    <!-- ✅ TOOLBAR - Search pakai form GET (server-side) -->
+    <!-- ✅ TOOLBAR -->
     <div class="toolbar">
-      <form method="GET" action="/mitra" class="search-box">
+      <div class="search-box">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
-        <input type="text" name="search" value="<%= pagination?.search || '' %>" 
-               placeholder="Cari instansi, kontak, atau email...">
-      </form>
+        <input type="text" id="searchInput" placeholder="Cari instansi, kontak, atau email...">
+      </div>
       <div class="toolbar-actions">
         <% if (user && user.role === 'humas') { %>
           <a href="/mitra/tambah" class="btn btn-success">
             <i class="fa-solid fa-user-plus"></i> Tambah Mitra
           </a>
         <% } %>
-        <a href="/mitra/export/csv?search=<%= pagination?.search || '' %>" class="btn">
-          <i class="fa-solid fa-file-csv"></i> Export CSV
-        </a>
       </div>
     </div>
     
@@ -863,63 +802,71 @@
         </div>
         
         <div class="table-footer">
-          <span>
-            <% if (pagination) { %>
-              Menampilkan <%= mitra?.length || 0 %> dari <%= pagination.totalItems || 0 %> mitra
-            <% } else { %>
-              <%= mitra?.length || 0 %> mitra ditemukan
-            <% } %>
-          </span>
-          <span><i class="fa-solid fa-lightbulb"></i> Klik header untuk sort di halaman ini</span>
+          <span id="resultCount"><%= mitra ? mitra.length : 0 %> mitra terdaftar</span>
+          <span><i class="fa-solid fa-lightbulb"></i> Ketik untuk mencari secara realtime</span>
         </div>
       </div>
-      
-      <!-- ✅ PAGINATION -->
-      <% if (pagination && pagination.totalPages > 1) { %>
-        <div class="pagination-wrapper">
-          <% if (pagination.currentPage > 1) { %>
-            <a href="?page=<%= pagination.currentPage - 1 %>&search=<%= encodeURIComponent(pagination.search || '') %>" 
-               class="pagination-btn">
-              <i class="fa-solid fa-chevron-left"></i> Prev
-            </a>
-          <% } %>
-          
-          <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-            <% if (i === 1 || i === pagination.totalPages || 
-                   (i >= pagination.currentPage - 2 && i <= pagination.currentPage + 2)) { %>
-              <a href="?page=<%= i %>&search=<%= encodeURIComponent(pagination.search || '') %>" 
-                 class="pagination-btn <%= i === pagination.currentPage ? 'active' : '' %>">
-                <%= i %>
-              </a>
-            <% } else if (i === pagination.currentPage - 3 || i === pagination.currentPage + 3) { %>
-              <span class="pagination-dots">...</span>
-            <% } %>
-          <% } %>
-          
-          <% if (pagination.currentPage < pagination.totalPages) { %>
-            <a href="?page=<%= pagination.currentPage + 1 %>&search=<%= encodeURIComponent(pagination.search || '') %>" 
-               class="pagination-btn">
-              Next <i class="fa-solid fa-chevron-right"></i>
-            </a>
-          <% } %>
-          
-          <span class="pagination-info">
-            Halaman <%= pagination.currentPage %> dari <%= pagination.totalPages %>
-          </span>
-        </div>
-      <% } %>
     </div>
   </div>
   
-  <!-- ✅ SCRIPT - Hanya sort table (client-side untuk halaman aktif) -->
   <script>
-    // Sort table (hanya untuk halaman aktif)
-    window.sortTable = function(colIndex) {
-      const table = document.getElementById('mitraTable');
-      if (!table) return;
+  window.addEventListener('load', function() {
+    console.log('🚀 Mitra table loaded with realtime search');
+    
+    const searchInput = document.getElementById('searchInput');
+    const table = document.getElementById('mitraTable');
+    const resultCount = document.getElementById('resultCount');
+    
+    if (!searchInput || !table) {
+      console.error('❌ Element tidak ditemukan!');
+      return;
+    }
+    
+    const dataRows = [];
+    const allTr = table.querySelectorAll('tbody tr');
+    allTr.forEach(tr => {
+      if (!tr.querySelector('.empty-state') && tr.querySelector('td')) {
+        dataRows.push(tr);
+      }
+    });
+    
+    console.log(`✅ Found ${dataRows.length} data rows`);
+    
+    searchInput.addEventListener('input', function() {
+      const keyword = this.value.toLowerCase().trim();
+      let visibleCount = 0;
       
+      dataRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        
+        if (keyword === '' || text.includes(keyword)) {
+          row.classList.remove('hidden-row');
+          visibleCount++;
+        } else {
+          row.classList.add('hidden-row');
+        }
+      });
+      
+      if (resultCount) {
+        resultCount.textContent = `${visibleCount} mitra ditemukan`;
+      }
+      
+      console.log(`🔍 Search: "${keyword}" → ${visibleCount} results`);
+    });
+    
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+    
+    window.sortTable = function(colIndex) {
       const tbody = table.querySelector('tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('td'));
+      const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => 
+        r.querySelector('td') && !r.classList.contains('hidden-row')
+      );
       
       if (rows.length === 0) return;
       
@@ -952,20 +899,7 @@
       
       rows.forEach(row => tbody.appendChild(row));
     };
-    
-    // Shortcut Ctrl+K untuk fokus ke search
-    document.addEventListener('keydown', function(e) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        const searchInput = document.querySelector('.search-box input');
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
-      }
-    });
-    
-    console.log('✅ Daftar Mitra page loaded with server-side pagination');
+  });
   </script>
 </body>
 </html>
