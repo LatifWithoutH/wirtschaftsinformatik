@@ -5,6 +5,7 @@ const multer = require('multer');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
+const cron = require('node-cron'); // ✅ TAMBAH: buat auto-send alert
 
 // ✅ AUDIT LOGGER
 const { logAudit } = require('./utils/auditLogger');
@@ -212,7 +213,6 @@ app.post('/login', loginLimiter, async (req, res) => {
       return res.render('login', { error: '❌ Password salah' });
     }
 
-    // ✅ LOGIN BERHASIL
     await logAudit({
       action: 'LOGIN',
       tableName: 'users',
@@ -230,7 +230,7 @@ app.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-// ✅ LOGOUT DENGAN AUDIT LOG
+// ✅ LOGOUT
 app.get('/logout', async (req, res) => {
   if (req.session.user) {
     await logAudit({
@@ -246,10 +246,23 @@ app.get('/logout', async (req, res) => {
 });
 
 // ========================================================================
-// 🔑 ENDPOINT UNTUK TEST-ALERT.EJS (Ambil URL GAS)
+// 🔑 ENDPOINT UNTUK TEST-ALERT.EJS
 // ========================================================================
 app.get('/api/gas-url', requireAuth('humas'), (req, res) => {
   res.json({ url: process.env.GAS_WEB_APP_ALERT });
+});
+
+// ✅ LIVE SERVER TIME (dipanggil tiap detik dari frontend)
+app.get('/api/server-time', requireAuth('humas'), (req, res) => {
+  const now = new Date();
+  res.json({
+    timestamp: now.getTime(),
+    formatted: now.toLocaleString('id-ID', { 
+      dateStyle: 'medium', 
+      timeStyle: 'medium' 
+    }),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  });
 });
 
 // ========================================================================
@@ -293,19 +306,10 @@ app.get('/dashboard', requireAuth('humas', 'admin_fakultas', 'guest'), async (re
 // ========================================================================
 // 📋 DAFTAR MITRA
 // ========================================================================
-// ========================================================================
-// 📋 DAFTAR MITRA (DENGAN PAGINATION)
-// ========================================================================
 app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // ✅ PAGINATION PARAMS
-    const page = parseInt(req.query.page) || 1;
-    const limit = 15;
-    const offset = (page - 1) * limit;
-    const search = (req.query.search || '').toLowerCase().trim();
     
     const { data: allMitra, error } = await supabase
       .from('mitra')
@@ -314,20 +318,8 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
     
     if (error) throw error;
     
-    let filteredMitra = filterMitraByFaculty(allMitra, req.session.user);
+    let filteredMitra = filterMitraByFaculty(allMitra || [], req.session.user);
     
-    // ✅ SEARCH SERVER-SIDE
-    if (search) {
-      filteredMitra = filteredMitra.filter(m =>
-        (m.nama_instansi || '').toLowerCase().includes(search) ||
-        (m.nama_kontak || '').toLowerCase().includes(search) ||
-        (m.email_fakultas || '').toLowerCase().includes(search) ||
-        (m.email_mitra_asli || '').toLowerCase().includes(search) ||
-        (m.kode_mitra || '').toLowerCase().includes(search)
-      );
-    }
-    
-    // ✅ HITUNG STATS + STATUS UNTUK SEMUA DATA
     const stats = { aktif: 0, akanBerakhir: 0, segeraBerakhir: 0, expired: 0 };
     const mitraDenganStatus = filteredMitra.map(mitra => {
       const endDate = new Date(mitra.tanggal_berakhir);
@@ -360,26 +352,15 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
       return { ...mitra, sisa_hari: diffDays, status, color, badgeClass };
     });
     
-    // ✅ PAGINATION
-    const totalItems = mitraDenganStatus.length;
-    const totalPages = Math.ceil(totalItems / limit);
-    const mitraPage = mitraDenganStatus.slice(offset, offset + limit);
-    
     const alertCount = stats.akanBerakhir + stats.segeraBerakhir;
     
     res.render('mitra-table', { 
-      mitra: mitraPage, 
+      mitra: mitraDenganStatus,
       user: req.session.user, 
       activePage: 'mitra', 
       alertCount,
-      stats,  // ✅ KIRIM STATS
-      pagination: {  // ✅ KIRIM PAGINATION
-        currentPage: page,
-        totalPages,
-        totalItems,
-        limit,
-        search
-      }
+      stats,
+      totalMitra: mitraDenganStatus.length
     });
   } catch (err) {
     console.error('❌ Error table view:', err.message);
@@ -388,7 +369,7 @@ app.get('/mitra', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, r
 });
 
 // ========================================================================
-// 📊 EXPORT CSV BACKEND
+// 📊 EXPORT CSV
 // ========================================================================
 app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
   try {
@@ -410,12 +391,11 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
         (m.nama_instansi || '').toLowerCase().includes(searchTerm) ||
         (m.nama_kontak || '').toLowerCase().includes(searchTerm) ||
         (m.email_fakultas || '').toLowerCase().includes(searchTerm) ||
-        (m.email_mitra_asli || '').toLowerCase().includes(searchTerm) ||  // ✅ TAMBAH: search email_mitra_asli
+        (m.email_mitra_asli || '').toLowerCase().includes(searchTerm) ||
         (m.kode_mitra || '').toLowerCase().includes(searchTerm)
       );
     }
     
-    // ✅ TAMBAH: 'Email Mitra Resmi' di headers
     const headers = ['Kode Mitra','Nama Instansi','Nama Kontak','Jabatan','No HP','Email Penanggung Jawab','Email Mitra Resmi','Alamat','Tanggal Mulai','Tanggal Berakhir','Sisa Hari','Status','File MoU','File MoA','File IA','File PKS'];
     const csvRows = [headers.map(escapeCsv).join(',')];
     
@@ -437,7 +417,6 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
         catch { return dateStr; }
       };
       
-      // ✅ TAMBAH: m.email_mitra_asli di row (setelah email_fakultas)
       const row = [
         m.kode_mitra || '', m.nama_instansi || '', m.nama_kontak || '', m.jabatan || '',
         m.no_hp_kontak || '', m.email_fakultas || '', m.email_mitra_asli || '',
@@ -455,7 +434,6 @@ app.get('/mitra/export/csv', requireAuth('humas', 'admin_fakultas'), async (req,
     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `mitra-dudika-${dateStr}_${timeStr}.csv`;
     
-    // ✅ AUDIT LOG: Export CSV
     await logAudit({
       action: 'EXPORT',
       tableName: 'mitra',
@@ -502,10 +480,8 @@ app.get('/mitra/tambah', requireAuth('humas'), async (req, res) => {
   }
 });
 
-// ✅ CREATE MITRA + AUDIT LOG
 app.post('/mitra', requireAuth('humas'), async (req, res) => {
   try {
-    // ✅ TAMBAH: email_mitra_asli di destructuring
     const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, email_mitra_asli, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
     
     if (fakultas_id) {
@@ -516,7 +492,6 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
     const { count } = await supabase.from('mitra').select('*', { count: 'exact', head: true });
     const kode_mitra = `MITRA-${String((count || 0) + 1).padStart(4, '0')}`;
     
-    // ✅ TAMBAH: email_mitra_asli di insertData (opsional, bisa null)
     const insertData = { 
       kode_mitra, nama_instansi, nama_kontak, jabatan, alamat, 
       no_hp_kontak, email_fakultas, 
@@ -528,7 +503,6 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
     const { data: newMitra, error } = await supabase.from('mitra').insert(insertData).select().single();
     if (error) throw error;
     
-    // ✅ AUDIT LOG: CREATE mitra
     await logAudit({
       action: 'CREATE',
       tableName: 'mitra',
@@ -548,7 +522,7 @@ app.post('/mitra', requireAuth('humas'), async (req, res) => {
 });
 
 // ========================================================================
-// 📤 UPLOAD PDF + AUDIT LOG
+// 📤 UPLOAD PDF
 // ========================================================================
 app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.single('file_pdf'), async (req, res) => {
   try {
@@ -573,35 +547,25 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
       
     if (mitraError || !mitraData) throw new Error('Data mitra tidak ditemukan');
     
-    // ✅ Ambil data lama sebelum upload (untuk audit)
     const fieldName = `file_${jenis_file}`;
     const { data: oldMitraData } = await supabase.from('mitra').select(fieldName).eq('id', id).single();
     
-    // ✅ PERBAIKAN: Hitung nomor urut per jenis dokumen
-    const jenisFile = jenis_file.toUpperCase(); // MOU, MOA, IA, atau PKS
+    const jenisFile = jenis_file.toUpperCase();
     
-    // Hitung berapa file jenis ini yang sudah ada di database
     const { count } = await supabase
       .from('mitra')
       .select('*', { count: 'exact', head: true })
       .not(fieldName, 'is', null);
     
-    // // Nomor urut berikutnya (misal: sudah ada 5 MOU, maka berikutnya = 6)
     const nextNumber = (count || 0) + 1;
-    const nomorUrut = String(nextNumber).padStart(4, '0'); // Format: 0001, 0002, dst
-    
-    // Nama file asli (misal: draft_kerjasama.pdf)
     const namaFileAsli = req.file.originalname;
-    
-    // ✅ Format nama file baru: MOU-0001-draft_kerjasama.pdf
     const newFileName = `${jenisFile}-${namaFileAsli}`;
     
     console.log(`📝 Generated filename: ${newFileName} (urutan ke-${nextNumber})`);
     
-    // ✅ Kirim nama file baru ke GAS
     const driveLink = await uploadFileToDrive(
       req.file.buffer, 
-      newFileName,              // <-- Gunakan nama file yang sudah diformat
+      newFileName,
       req.file.mimetype, 
       mitraData.nama_instansi
     );
@@ -609,7 +573,6 @@ app.post('/mitra/:id/upload', requireAuth('humas', 'admin_fakultas'), upload.sin
     const { error: dbError } = await supabase.from('mitra').update({ [fieldName]: driveLink }).eq('id', id);
     if (dbError) throw dbError;
     
-    // ✅ AUDIT LOG: UPLOAD dokumen
     await logAudit({
       action: 'UPLOAD',
       tableName: 'dokumen',
@@ -715,12 +678,10 @@ app.get('/mitra/:id/edit', requireAuth('humas', 'admin_fakultas'), async (req, r
   }
 });
 
-// ✅ UPDATE MITRA + AUDIT LOG (dengan old_data & new_data)
 app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req, res) => {
   try {
     const { id } = req.params;
     
-    // ✅ Ambil data LAMA (full) untuk audit
     const { data: currentMitra, error: checkError } = await supabase.from('mitra').select('*').eq('id', id).single();
     if (checkError || !currentMitra) return res.status(404).send('❌ Mitra tidak ditemukan');
     
@@ -730,20 +691,18 @@ app.post('/mitra/:id/update', requireAuth('humas', 'admin_fakultas'), async (req
       }
     }
     
-    // ✅ TAMBAH: email_mitra_asli di destructuring
     const { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, email_fakultas, email_mitra_asli, fakultas_id, tanggal_mulai, tanggal_berakhir } = req.body;
     
     const updateData = { nama_instansi, nama_kontak, jabatan, alamat, no_hp_kontak, tanggal_mulai, tanggal_berakhir };
     
     if (req.session.user.role === 'humas') {
       updateData.email_fakultas = email_fakultas;
-      updateData.email_mitra_asli = email_mitra_asli || null;  // ✅ TAMBAH: email_mitra_asli
+      updateData.email_mitra_asli = email_mitra_asli || null;
       updateData.fakultas_id = fakultas_id || null;
     } else {
       updateData.fakultas_id = currentMitra.fakultas_id;
     }
     
-    // ✅ AUDIT LOG: UPDATE mitra
     await logAudit({
       action: 'UPDATE',
       tableName: 'mitra',
@@ -808,6 +767,86 @@ app.get('/test-alert', requireAuth('humas'), async (req, res) => {
   }
 });
 
+// ✅ MANUAL TRIGGER CRON (buat testing)
+app.post('/api/trigger-cron', requireAuth('humas'), async (req, res) => {
+  try {
+    console.log('🧪 [MANUAL TRIGGER] Dimulai oleh:', req.session.user.email);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { data: allMitra } = await supabase
+      .from('mitra')
+      .select('*')
+      .order('tanggal_berakhir', { ascending: true });
+    
+    const mitraInRange = (allMitra || []).filter(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0);
+      const sisa = Math.ceil((endDate - today) / (1000*60*60*24));
+      return sisa >= 0 && sisa <= 30;
+    }).map(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0);
+      return { ...m, sisa_hari: Math.ceil((endDate - today) / (1000*60*60*24)) };
+    });
+    
+    const gasUrl = process.env.GAS_WEB_APP_ALERT;
+    if (!gasUrl) {
+      return res.json({ success: false, message: 'GAS_WEB_APP_ALERT belum diset di .env' });
+    }
+    
+    let successCount = 0, failCount = 0;
+    
+    for (const mitra of mitraInRange) {
+      if (!mitra.email_fakultas) { 
+        console.warn(`⚠️ Skip ${mitra.nama_instansi} - email PJ kosong`);
+        failCount++; 
+        continue; 
+      }
+      
+      try {
+        const response = await fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mitra_id: mitra.id,
+            nama_instansi: mitra.nama_instansi,
+            email_fakultas: mitra.email_fakultas,
+            email_mitra_asli: mitra.email_mitra_asli || '',
+            sisa_hari: mitra.sisa_hari,
+            source: 'manual-trigger'
+          }),
+          redirect: 'follow'
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          successCount++;
+          console.log(`✅ Email terkirim ke ${mitra.email_fakultas}`);
+        } else {
+          failCount++;
+        }
+        
+        // Delay 1 detik antar email
+        await new Promise(r => setTimeout(r, 1000));
+      } catch (err) {
+        failCount++;
+        console.error(`❌ Error kirim ke ${mitra.nama_instansi}:`, err.message);
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      total: mitraInRange.length,
+      successCount, 
+      failCount 
+    });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
 // ========================================================================
 // 👥 USERS MANAGEMENT
 // ========================================================================
@@ -840,7 +879,6 @@ app.get('/users/tambah', requireAuth('humas'), async (req, res) => {
   }
 });
 
-// ✅ CREATE USER + AUDIT LOG
 app.post('/users', requireAuth('humas'), async (req, res) => {
   try {
     const { name, email, password, role, fakultas_id } = req.body;
@@ -866,7 +904,6 @@ app.post('/users', requireAuth('humas'), async (req, res) => {
       throw error;
     }
     
-    // ✅ AUDIT LOG: CREATE user
     await logAudit({
       action: 'CREATE',
       tableName: 'users',
@@ -885,7 +922,6 @@ app.post('/users', requireAuth('humas'), async (req, res) => {
   }
 });
 
-// ✅ RESET PASSWORD + AUDIT LOG
 app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -896,7 +932,6 @@ app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (r
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(newPassword, salt);
     
-    // ✅ AUDIT LOG: RESET PASSWORD
     await logAudit({
       action: 'RESET_PASSWORD',
       tableName: 'users',
@@ -932,22 +967,58 @@ app.post('/users/:id/reset-password', apiLimiter, requireAuth('humas'), async (r
   }
 });
 
-// ✅ TOGGLE STATUS + AUDIT LOG
 app.post('/users/:id/toggle-status', apiLimiter, requireAuth('humas'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { data: currentUser } = await supabase.from('users').select('is_active, email').eq('id', id).single();
     
-    const newStatus = !currentUser.is_active;
+    const { data: targetUser, error: fetchError } = await supabase
+      .from('users')
+      .select('is_active, email, role')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError || !targetUser) {
+      return res.status(404).send('❌ User tidak ditemukan');
+    }
+    
+    if (targetUser.role === 'humas' || targetUser.role === 'admin_fakultas') {
+      console.warn(`🚫 [BLOCKED] Percobaan menonaktifkan user ${targetUser.role}: ${targetUser.email}`);
+      return res.status(403).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Akses Ditolak</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+          <style>
+            body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a3a5c 0%, #0f2439 100%); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+            .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; text-align: center; border-top: 5px solid #ef4444; }
+            .icon { font-size: 4rem; margin-bottom: 20px; }
+            h2 { color: #ef4444; margin-bottom: 15px; font-size: 1.5rem; }
+            p { color: #64748b; line-height: 1.6; margin-bottom: 25px; }
+            .btn { background: linear-gradient(135deg, #1a3a5c, #2c5282); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="icon">🚫</div>
+            <h2>Akses Ditolak</h2>
+            <p>User dengan role <strong>${targetUser.role.toUpperCase()}</strong> tidak dapat dinonaktifkan atau diaktifkan karena merupakan akun sistem yang dilindungi.</p>
+            <a href="/users" class="btn">← Kembali ke Daftar User</a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+    
+    const newStatus = !targetUser.is_active;
     const actionName = newStatus ? 'ACTIVATE' : 'DEACTIVATE';
     
-    // ✅ AUDIT LOG: TOGGLE STATUS
     await logAudit({
       action: actionName,
       tableName: 'users',
       recordId: id,
-      recordName: currentUser.email,
-      oldData: { is_active: currentUser.is_active },
+      recordName: targetUser.email,
+      oldData: { is_active: targetUser.is_active },
       newData: { is_active: newStatus },
       user: req.session.user,
       req
@@ -968,7 +1039,6 @@ app.get('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), (re
   res.render('change-password', { user: req.session.user, error: null, success: null, activePage: 'change-password', alertCount: 0 });
 });
 
-// ✅ CHANGE PASSWORD + AUDIT LOG
 app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), async (req, res) => {
   try {
     const { old_password, new_password, confirm_password } = req.body;
@@ -985,7 +1055,6 @@ app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), as
     const new_password_hash = await bcrypt.hash(new_password, salt);
     await supabase.from('users').update({ password_hash: new_password_hash }).eq('id', userId);
 
-    // ✅ AUDIT LOG: CHANGE PASSWORD (user ganti password sendiri)
     await logAudit({
       action: 'CHANGE_PASSWORD',
       tableName: 'users',
@@ -1004,7 +1073,7 @@ app.post('/change-password', requireAuth('humas', 'admin_fakultas', 'guest'), as
 });
 
 // ========================================================================
-// 📜 AUDIT LOG (KHUSUS HUMAS)
+// 📜 AUDIT LOG
 // ========================================================================
 app.get('/audit-log', requireAuth('humas'), async (req, res) => {
   try {
@@ -1045,6 +1114,121 @@ app.get('/audit-log', requireAuth('humas'), async (req, res) => {
     res.status(500).send('Gagal memuat audit log: ' + err.message);
   }
 });
+
+// ========================================================================
+// ⏰ AUTO-SEND EMAIL ALERT (CRON JOB)
+// ========================================================================
+// Cron expression: "0 8 * * *" = setiap hari jam 08:00 pagi
+// Ganti sesuai kebutuhan:
+//   "0 8 * * *"     = setiap hari jam 08:00
+//   "*/5 * * * *"   = setiap 5 menit (buat testing)
+//   "0 8 * * 1"     = setiap Senin jam 08:00
+
+cron.schedule('0 8 * * *', async () => {
+  console.log('⏰ [CRON] Auto-send alert dimulai...', new Date().toLocaleString('id-ID'));
+  
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { data: allMitra, error } = await supabase
+      .from('mitra')
+      .select('*')
+      .order('tanggal_berakhir', { ascending: true });
+    
+    if (error) throw error;
+    
+    const mitraInRange = (allMitra || []).filter(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0);
+      const sisa = Math.ceil((endDate - today) / (1000*60*60*24));
+      return sisa >= 0 && sisa <= 30;
+    }).map(m => {
+      const endDate = new Date(m.tanggal_berakhir);
+      endDate.setHours(0, 0, 0, 0);
+      return { ...m, sisa_hari: Math.ceil((endDate - today) / (1000*60*60*24)) };
+    });
+    
+    console.log(`📧 [CRON] Ditemukan ${mitraInRange.length} mitra yang perlu di-alert`);
+    
+    if (mitraInRange.length === 0) {
+      console.log('✅ [CRON] Tidak ada mitra yang perlu di-alert hari ini');
+      return;
+    }
+    
+    const gasUrl = process.env.GAS_WEB_APP_ALERT;
+    if (!gasUrl) {
+      console.error('❌ [CRON] GAS_WEB_APP_ALERT belum diset di .env');
+      return;
+    }
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const mitra of mitraInRange) {
+      if (!mitra.email_fakultas) {
+        console.warn(`⚠️ [CRON] Skip ${mitra.nama_instansi} - email PJ kosong`);
+        failCount++;
+        continue;
+      }
+      
+      try {
+        const response = await fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mitra_id: mitra.id,
+            nama_instansi: mitra.nama_instansi,
+            email_fakultas: mitra.email_fakultas,
+            email_mitra_asli: mitra.email_mitra_asli || '',
+            sisa_hari: mitra.sisa_hari,
+            source: 'auto-cron'
+          }),
+          redirect: 'follow'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          successCount++;
+          console.log(`✅ [CRON] Email terkirim ke ${mitra.email_fakultas} (${mitra.nama_instansi})`);
+          
+          await logAudit({
+            action: 'AUTO_ALERT',
+            tableName: 'mitra',
+            recordId: mitra.id,
+            recordName: mitra.nama_instansi,
+            newData: { 
+              sisa_hari: mitra.sisa_hari, 
+              email_sent_to: mitra.email_fakultas,
+              source: 'auto-cron'
+            },
+            user: { id: 'system', email: 'system@auto', role: 'system' },
+            req: { ip: '127.0.0.1', headers: { 'user-agent': 'cron-job' } }
+          });
+        } else {
+          failCount++;
+          console.error(`❌ [CRON] Gagal kirim ke ${mitra.email_fakultas}:`, result.message);
+        }
+        
+        await new Promise(r => setTimeout(r, 1000));
+        
+      } catch (err) {
+        failCount++;
+        console.error(`❌ [CRON] Error kirim ke ${mitra.nama_instansi}:`, err.message);
+      }
+    }
+    
+    console.log(`📊 [CRON] Selesai! Berhasil: ${successCount}, Gagal: ${failCount}`);
+    
+  } catch (err) {
+    console.error('❌ [CRON] Error fatal:', err);
+  }
+}, {
+  timezone: 'Asia/Jakarta'
+});
+
+console.log('⏰ Auto-send alert cron job registered (setiap hari jam 08:00 WIB)');
 
 // ========================================================================
 // 🚀 START SERVER

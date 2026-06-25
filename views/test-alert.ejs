@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test Alert Manual - SI Mitra DUDIKA | UNIBA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- ✅ FONT AWESOME 6 CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <style>
@@ -30,7 +28,9 @@
       --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
       --border: #e2e8f0;
     }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg-light);
@@ -50,7 +50,6 @@
     }
     .main-wrapper.expanded { margin-left: 0; }
 
-    /* ✅ PAGE HEADER (DIKECILKAN) */
     .page-header {
       padding: 24px 40px 8px;
       display: flex;
@@ -60,6 +59,7 @@
       gap: 16px;
       margin-bottom: 24px;
     }
+    
     .page-header h1 {
       font-family: 'Poppins', sans-serif;
       color: var(--uniba-primary);
@@ -72,6 +72,7 @@
       align-items: center;
       gap: 10px;
     }
+    
     .page-header h1::before {
       content: '';
       position: absolute;
@@ -82,51 +83,52 @@
       background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary));
       border-radius: 3px;
     }
+    
     .page-header h1 i {
       color: var(--uniba-gold);
       font-size: 1.3rem;
     }
 
-@media (max-width: 768px) {
-  .page-header {
-    padding: 23px !important;
-    padding-left: 60px !important; /* KURANGI dari 75px jadi 60px */
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px; /* KURANGI gap dari 12px jadi 8px */
-    flex-wrap: nowrap;
-  }
-  
-  .page-header h1 {
-    font-size: 1.15rem !important;
-    padding-left: 0 !important;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px; /* KURANGI gap icon-judul dari 8px jadi 6px */
-    white-space: nowrap;
-  }
-  
-  .page-header h1::before {
-    content: '';
-    position: static !important;
-    width: 3px !important;
-    height: 24px !important;
-    background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary)) !important;
-    border-radius: 2px;
-    flex-shrink: 0;
-    margin-right: 2px; /* KURANGI margin dari 4px jadi 2px */
-  }
-}
+    @media (max-width: 768px) {
+      .page-header {
+        padding: 23px !important;
+        padding-left: 78px !important;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+      }
+      
+      .page-header h1 {
+        font-size: 1.15rem !important;
+        padding-left: 0 !important;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      
+      .page-header h1::before {
+        content: '';
+        position: static !important;
+        width: 3px !important;
+        height: 24px !important;
+        background: linear-gradient(180deg, var(--uniba-gold), var(--uniba-primary)) !important;
+        border-radius: 2px;
+        flex-shrink: 0;
+        margin-right: 2px;
+      }
+    }
 
-    /* ✅ INFO GRID (DIKECILKAN) */
     .info-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 16px;
       padding: 0 40px 24px;
     }
+    
     .info-card {
       background: var(--bg-card);
       padding: 16px;
@@ -138,34 +140,47 @@
       gap: 6px;
       transition: all 0.3s;
     }
+    
     .info-card:hover {
       transform: translateY(-3px);
       box-shadow: var(--shadow-md);
     }
+    
     .info-label {
       font-size: 0.7rem;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
+    
+    .info-label i {
+      font-size: 0.75rem;
+      color: var(--uniba-gold);
+    }
+    
     .info-value {
       font-family: 'Poppins', sans-serif;
       font-size: 1rem;
       font-weight: 600;
       color: var(--uniba-primary);
     }
+    
     .info-value.highlight { color: var(--danger); }
 
-    /* ✅ TABLE SECTION (DIKECILKAN) */
     .table-section {
       padding: 0 40px 24px;
       animation: fadeIn 0.5s ease;
     }
+    
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    
     .table-container {
       background: var(--bg-card);
       border-radius: 14px;
@@ -173,16 +188,19 @@
       overflow: hidden;
       border: 1px solid var(--border);
     }
+    
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
       min-width: 1000px;
     }
+    
     thead {
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
       color: white;
     }
+    
     th {
       padding: 12px 16px;
       text-align: left;
@@ -192,16 +210,17 @@
       text-transform: uppercase;
       letter-spacing: 0.7px;
     }
+    
     td {
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
+    
     tbody tr:last-child td { border-bottom: none; }
     tbody tr { transition: all 0.2s; }
     tbody tr:hover { background: rgba(26, 58, 92, 0.04); }
     
-    /* ✅ BADGE DAYS (DIKECILKAN) */
     .badge-days {
       display: inline-flex;
       align-items: center;
@@ -213,11 +232,9 @@
       background: rgba(239, 68, 68, 0.1);
       color: var(--danger);
     }
-    .badge-days i {
-      font-size: 0.75rem;
-    }
+    
+    .badge-days i { font-size: 0.75rem; }
 
-    /* ========== EMAIL CELLS ========== */
     .email-pj {
       color: var(--uniba-primary);
       text-decoration: none;
@@ -225,10 +242,12 @@
       transition: all 0.2s;
       font-size: 12px;
     }
+    
     .email-pj:hover {
       color: var(--uniba-blue-light);
       text-decoration: underline;
     }
+    
     .email-pj-label {
       display: flex;
       align-items: center;
@@ -239,9 +258,9 @@
       letter-spacing: 0.5px;
       margin-bottom: 2px;
     }
-    .email-pj-label i {
-      font-size: 0.7rem;
-    }
+    
+    .email-pj-label i { font-size: 0.7rem; }
+    
     .email-mitra {
       color: var(--success);
       text-decoration: none;
@@ -249,17 +268,18 @@
       font-size: 12px;
       transition: all 0.2s;
     }
+    
     .email-mitra:hover {
       color: #059669;
       text-decoration: underline;
     }
+    
     .email-mitra-empty {
       color: var(--text-muted);
       font-size: 12px;
       font-style: italic;
     }
 
-    /* ✅ TOMBOL KIRIM (DIKECILKAN) */
     .btn-send {
       padding: 8px 14px;
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
@@ -278,29 +298,28 @@
       position: relative;
       overflow: hidden;
     }
+    
     .btn-send i {
       font-size: 0.8rem;
       transition: transform 0.3s ease;
     }
+    
     .btn-send:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
     }
-    .btn-send:hover:not(:disabled) i {
-      transform: scale(1.15);
-    }
-    .btn-send:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
+    
+    .btn-send:hover:not(:disabled) i { transform: scale(1.15); }
+    .btn-send:disabled { opacity: 0.7; cursor: not-allowed; }
+    
     .btn-send.sending {
       background: linear-gradient(135deg, var(--text-muted), #94a3b8);
     }
+    
     .btn-send.sent {
       background: linear-gradient(135deg, var(--success), #34d399);
     }
 
-    /* Spinner */
     .spinner {
       display: none;
       width: 12px;
@@ -310,16 +329,14 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
+    
     .btn-send.sending .spinner { display: inline-block; }
     .btn-send.sending .btn-text { display: none; }
     .btn-send.sending .btn-loading { display: inline; }
     .btn-loading { display: none; }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ✅ MODAL HASIL (DIKECILKAN) */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -334,6 +351,7 @@
       z-index: 2000;
       animation: fadeIn 0.3s ease;
     }
+    
     .modal-overlay.show { display: flex; }
 
     .modal-box {
@@ -348,6 +366,7 @@
       overflow: hidden;
       text-align: center;
     }
+    
     .modal-box::before {
       content: '';
       position: absolute;
@@ -356,9 +375,11 @@
       right: 0;
       height: 4px;
     }
+    
     .modal-box.success::before {
       background: linear-gradient(90deg, var(--success), #34d399, var(--success));
     }
+    
     .modal-box.error::before {
       background: linear-gradient(90deg, var(--danger), #f87171, var(--danger));
     }
@@ -379,15 +400,18 @@
       font-size: 2rem;
       animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
+    
     @keyframes bounceIn {
       0% { transform: scale(0); }
       50% { transform: scale(1.2); }
       100% { transform: scale(1); }
     }
+    
     .modal-icon.success {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.15));
       color: var(--success);
     }
+    
     .modal-icon.error {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(248, 113, 113, 0.15));
       color: var(--danger);
@@ -399,6 +423,7 @@
       font-weight: 700;
       margin-bottom: 8px;
     }
+    
     .modal-title.success { color: var(--success); }
     .modal-title.error { color: var(--danger); }
 
@@ -417,6 +442,7 @@
       border-left: 4px solid var(--uniba-primary);
       text-align: left;
     }
+    
     .modal-detail-row {
       display: flex;
       justify-content: space-between;
@@ -424,18 +450,22 @@
       font-size: 0.82rem;
       align-items: center;
     }
+    
     .modal-detail-row:not(:last-child) {
       border-bottom: 1px dashed rgba(226, 232, 240, 0.8);
     }
+    
     .modal-detail-row i {
       margin-right: 5px;
       font-size: 0.75rem;
     }
+    
     .modal-detail-label {
       color: var(--text-muted);
       font-weight: 500;
       flex-shrink: 0;
     }
+    
     .modal-detail-value {
       color: var(--text-dark);
       font-weight: 600;
@@ -444,9 +474,8 @@
       margin-left: 10px;
     }
 
-    .modal-actions {
-      margin-top: 20px;
-    }
+    .modal-actions { margin-top: 20px; }
+    
     .btn-close-modal {
       padding: 10px 28px;
       background: linear-gradient(135deg, var(--uniba-primary), var(--uniba-blue-light));
@@ -460,6 +489,7 @@
       font-family: 'Inter', sans-serif;
       box-shadow: 0 4px 12px rgba(26, 58, 92, 0.2);
     }
+    
     .btn-close-modal:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(26, 58, 92, 0.35);
@@ -471,29 +501,28 @@
       margin-top: 10px;
     }
 
-    /* ✅ EMPTY STATE (DIKECILKAN) */
     .empty-state {
       text-align: center;
       padding: 50px 20px;
       color: var(--text-muted);
     }
+    
     .empty-icon {
       font-size: 2.5rem;
       margin-bottom: 12px;
       opacity: 0.5;
       color: var(--success);
     }
+    
     .empty-state h3 {
       font-family: 'Poppins', sans-serif;
       color: var(--text-dark);
       margin-bottom: 6px;
       font-size: 1.1rem;
     }
-    .empty-state p {
-      font-size: 0.85rem;
-    }
+    
+    .empty-state p { font-size: 0.85rem; }
 
-    /* ✅ BTN BACK (DIKECILKAN) */
     .btn-back {
       display: inline-flex;
       align-items: center;
@@ -509,20 +538,20 @@
       margin: 0 40px 32px;
       font-size: 13px;
     }
+    
     .btn-back i {
       font-size: 0.85rem;
       transition: transform 0.3s ease;
     }
+    
     .btn-back:hover {
       border-color: var(--uniba-primary);
       background: #f8fafc;
       transform: translateX(-5px);
     }
-    .btn-back:hover i {
-      transform: translateX(-3px);
-    }
+    
+    .btn-back:hover i { transform: translateX(-3px); }
 
-    /* ✅ INFO BADGE GAS (DIKECILKAN) */
     .gas-badge {
       display: inline-flex;
       align-items: center;
@@ -535,6 +564,7 @@
       font-weight: 600;
       color: var(--success);
     }
+    
     .gas-badge::before {
       content: '';
       width: 7px;
@@ -543,9 +573,140 @@
       border-radius: 50%;
       animation: pulse 2s infinite;
     }
+    
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    /* ✅ TESTING MODE PANEL */
+    .testing-panel {
+      margin: 0 40px 24px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 191, 36, 0.08));
+      border: 2px dashed var(--warning);
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .testing-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    
+    .testing-panel-header i {
+      color: var(--warning);
+      font-size: 1.2rem;
+    }
+    
+    .testing-panel-header h3 {
+      font-family: 'Poppins', sans-serif;
+      color: var(--warning);
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .testing-panel p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    
+    .testing-panel p strong {
+      color: var(--text-dark);
+    }
+    
+    .cron-info {
+      background: rgba(255, 255, 255, 0.6);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-dark);
+      margin-bottom: 15px;
+      border-left: 3px solid var(--warning);
+    }
+    
+    .cron-info code {
+      background: var(--uniba-dark);
+      color: var(--uniba-gold);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .btn-cron {
+      padding: 10px 18px;
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: #78350f;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .btn-cron i {
+      font-size: 0.85rem;
+      transition: transform 0.3s ease;
+    }
+    
+    .btn-cron:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    }
+    
+    .btn-cron:hover:not(:disabled) i { transform: scale(1.15); }
+    
+    .btn-cron:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    
+    .btn-cron.running {
+      background: linear-gradient(135deg, var(--text-muted), #94a3b8);
+      color: white;
+    }
+    
+    .btn-cron.done {
+      background: linear-gradient(135deg, var(--success), #34d399);
+      color: white;
+    }
+    
+    .cron-result {
+      margin-top: 15px;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: none;
+      border-left: 4px solid;
+    }
+    
+    .cron-result.show { display: block; }
+    .cron-result.success { border-color: var(--success); color: var(--success); }
+    .cron-result.error { border-color: var(--danger); color: var(--danger); }
+    .cron-result.info { border-color: var(--uniba-primary); color: var(--text-muted); }
+    
+    .cron-result .stat-row {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+    
+    .cron-result .stat-row span {
+      font-weight: 600;
     }
 
     @media (max-width: 768px) {
@@ -558,9 +719,11 @@
       .table-container { overflow-x: auto; }
       .btn-back { margin: 0 20px 24px; }
       .modal-box { padding: 24px 18px; }
+      .testing-panel { margin: 0 20px 20px; padding: 16px 18px; }
     }
   </style>
 </head>
+
 <body>
   <%- include('partials/_sidebar') %>
   
@@ -577,25 +740,63 @@
       </div>
     </div>
 
+    <!-- ✅ INFO GRID -->
     <div class="info-grid">
       <div class="info-card">
-        <span class="info-label">Waktu Server</span>
-        <span class="info-value"><%= serverTime %></span>
+        <span class="info-label">
+          <i class="fa-solid fa-server"></i>
+          Waktu Server
+        </span>
+        <span class="info-value" id="serverTime"><%= serverTime %></span>
       </div>
       <div class="info-card">
-        <span class="info-label">Rentang Cek</span>
+        <span class="info-label">
+          <i class="fa-solid fa-calendar-days"></i>
+          Rentang Cek
+        </span>
         <span class="info-value"><%= todayStr %> s/d <%= maxDateStr %></span>
       </div>
       <div class="info-card">
-        <span class="info-label">Total Mitra</span>
+        <span class="info-label">
+          <i class="fa-solid fa-handshake"></i>
+          Total Mitra
+        </span>
         <span class="info-value"><%= totalMitra %></span>
       </div>
       <div class="info-card">
-        <span class="info-label">Perlu Perhatian</span>
+        <span class="info-label">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Perlu Perhatian
+        </span>
         <span class="info-value highlight"><%= inRangeCount %></span>
       </div>
     </div>
 
+    <!-- ✅ TESTING MODE PANEL (TRIGGER CRON MANUAL) -->
+    <div class="testing-panel">
+      <div class="testing-panel-header">
+        <i class="fa-solid fa-robot"></i>
+        <h3>Auto-Send Email Alert (Cron Job)</h3>
+      </div>
+      <p>
+        Sistem akan <strong>otomatis mengirim email alert</strong> ke semua Penanggung Jawab setiap hari sesuai jadwal cron job. 
+        Gunakan tombol di bawah untuk <strong>trigger manual</strong> (kirim semua sekarang) sebagai testing tanpa menunggu jadwal.
+      </p>
+      <div class="cron-info">
+        <i class="fa-solid fa-clock"></i>
+        Jadwal aktif: <code>0 8 * * *</code> — <strong>Setiap hari jam 08:00 WIB</strong>
+      </div>
+      <button type="button" class="btn-cron" id="btnTriggerCron" onclick="triggerCronNow(this)">
+        <i class="fa-solid fa-play"></i>
+        <span class="btn-text">Trigger Cron Sekarang</span>
+        <span class="btn-loading" style="display:none;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Mengirim...
+        </span>
+      </button>
+      <div class="cron-result" id="cronResult"></div>
+    </div>
+
+    <!-- ✅ TABLE MITRA PERLU ALERT -->
     <div class="table-section">
       <div class="table-container">
         <% if (mitraList && mitraList.length > 0) { %>
@@ -690,7 +891,7 @@
     </a>
   </div>
 
-  <!-- Modal Hasil -->
+  <!-- ✅ MODAL HASIL -->
   <div class="modal-overlay" id="resultModal">
     <div class="modal-box" id="modalBox">
       <div class="modal-icon" id="modalIcon">
@@ -739,17 +940,54 @@
     </div>
   </div>
 
+  <!-- ✅ JAVASCRIPT -->
   <script>
-    // ========== URL GAS WEB APP ==========
-    let GAS_WEB_APP_ALERT;
-    fetch('/api/gas-url')
-      .then(r => r.json())
-      .then(data => { GAS_WEB_APP_ALERT = data.url; })
-      .catch(err => console.error('Gagal load GAS URL:', err));
+    // ========================================
+    // 🔧 GLOBAL VARIABLES
+    // ========================================
+    let GAS_WEB_APP_ALERT = null;
+    let countdownInterval = null;
 
-    // ========== KIRIM EMAIL VIA GAS ==========
-    let countdownInterval;
+    // ========================================
+    // 🚀 INITIALIZATION
+    // ========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('🚀 Test Alert page loaded');
+      
+      // Load GAS URL
+      fetch('/api/gas-url')
+        .then(r => r.json())
+        .then(data => { 
+          GAS_WEB_APP_ALERT = data.url; 
+          console.log('✅ GAS URL loaded');
+        })
+        .catch(err => console.error('❌ Gagal load GAS URL:', err));
+      
+      // Start live server time
+      updateServerTime();
+      setInterval(updateServerTime, 1000);
+    });
 
+    // ========================================
+    // ⏰ LIVE SERVER TIME
+    // ========================================
+    function updateServerTime() {
+      fetch('/api/server-time')
+        .then(r => r.json())
+        .then(data => {
+          const timeEl = document.getElementById('serverTime');
+          if (timeEl) {
+            timeEl.textContent = data.formatted;
+          }
+        })
+        .catch(err => {
+          // Silent fail, jangan spam console
+        });
+    }
+
+    // ========================================
+    // 📧 SEND TEST EMAIL (PER MITRA)
+    // ========================================
     async function sendTestEmail(button) {
       const mitraId = button.dataset.mitraId;
       const mitraName = button.dataset.mitraName;
@@ -767,12 +1005,23 @@
         return;
       }
 
+      if (!GAS_WEB_APP_ALERT) {
+        showModal({
+          success: false,
+          title: 'GAS URL Belum Loaded',
+          message: 'URL Google Apps Script belum siap. Silakan refresh halaman dan coba lagi.',
+          data: null
+        });
+        return;
+      }
+
       button.disabled = true;
       button.classList.add('sending');
 
       try {
         const response = await fetch(GAS_WEB_APP_ALERT, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             mitra_id: mitraId,
             nama_instansi: mitraName,
@@ -795,10 +1044,10 @@
             title: 'Email Berhasil Dikirim via GAS!',
             message: 'Notifikasi peringatan telah dikirim ke Email Penanggung Jawab. Silakan cek inbox (atau folder spam) dalam beberapa menit.',
             data: {
-              email_pj: result.data.email,
+              email_pj: result.data?.email || mitraEmail,
               email_mitra: mitraEmailAsli || null,
-              nama_instansi: result.data.nama_instansi,
-              sisa_hari: result.data.sisa_hari
+              nama_instansi: result.data?.nama_instansi || mitraName,
+              sisa_hari: result.data?.sisa_hari || sisaHari
             }
           });
         } else {
@@ -828,7 +1077,74 @@
       }
     }
 
-    // ========== MODAL FUNCTIONS ==========
+    // ========================================
+    // 🤖 TRIGGER CRON MANUAL (SEMUA SEKALIGUS)
+    // ========================================
+    async function triggerCronNow(button) {
+      const btnText = button.querySelector('.btn-text');
+      const btnLoading = button.querySelector('.btn-loading');
+      const resultDiv = document.getElementById('cronResult');
+      
+      button.disabled = true;
+      button.classList.add('running');
+      btnText.style.display = 'none';
+      btnLoading.style.display = 'inline-flex';
+      
+      resultDiv.className = 'cron-result show info';
+      resultDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang mengirim ke semua mitra yang perlu alert...';
+
+      try {
+        const response = await fetch('/api/trigger-cron', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        button.classList.remove('running');
+        button.disabled = false;
+        btnLoading.style.display = 'none';
+        btnText.style.display = 'inline-flex';
+        
+        if (result.success) {
+          button.classList.add('done');
+          btnText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Selesai! Klik untuk kirim ulang';
+          
+          resultDiv.className = 'cron-result show success';
+          resultDiv.innerHTML = `
+            <div><i class="fa-solid fa-circle-check"></i> <strong>Auto-send selesai!</strong></div>
+            <div class="stat-row">
+              <span>📊 Total: ${result.total || 0}</span>
+              <span style="color: var(--success);">✅ Berhasil: ${result.successCount || 0}</span>
+              <span style="color: var(--danger);">❌ Gagal: ${result.failCount || 0}</span>
+            </div>
+          `;
+          
+          // Reset tombol setelah 5 detik
+          setTimeout(() => {
+            button.classList.remove('done');
+            btnText.innerHTML = '<i class="fa-solid fa-play"></i> Trigger Cron Sekarang';
+          }, 5000);
+        } else {
+          btnText.innerHTML = '<i class="fa-solid fa-rotate"></i> Coba Lagi';
+          resultDiv.className = 'cron-result show error';
+          resultDiv.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Gagal: ${result.message || 'Unknown error'}`;
+        }
+      } catch (err) {
+        button.classList.remove('running');
+        button.disabled = false;
+        btnLoading.style.display = 'none';
+        btnText.style.display = 'inline-flex';
+        btnText.innerHTML = '<i class="fa-solid fa-rotate"></i> Coba Lagi';
+        
+        resultDiv.className = 'cron-result show error';
+        resultDiv.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> Error: ${err.message}`;
+      }
+    }
+
+    // ========================================
+    // 💬 MODAL FUNCTIONS
+    // ========================================
     function showModal({ success, title, message, data }) {
       const modal = document.getElementById('resultModal');
       const modalBox = document.getElementById('modalBox');
@@ -889,6 +1205,7 @@
       modal.classList.remove('show');
       if (countdownInterval) {
         clearInterval(countdownInterval);
+        countdownInterval = null;
       }
     }
 
@@ -904,15 +1221,18 @@
         countdownEl.textContent = remaining;
         if (remaining <= 0) {
           clearInterval(countdownInterval);
+          countdownInterval = null;
           closeModal();
         }
       }, 1000);
     }
 
+    // Close modal on overlay click
     document.getElementById('resultModal').addEventListener('click', function(e) {
       if (e.target === this) closeModal();
     });
 
+    // Close modal on Escape key
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeModal();
     });

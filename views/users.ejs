@@ -261,7 +261,7 @@
 @media (max-width: 768px) {
   .page-header {
     padding: 23px !important;
-    padding-left: 60px !important; /* KURANGI dari 75px jadi 60px */
+    padding-left: 78px !important; /* KURANGI dari 75px jadi 60px */
     margin-bottom: 16px;
     display: flex;
     align-items: center;
@@ -448,6 +448,21 @@
         }
 
         .btn-danger:hover { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); }
+        
+        .btn-disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: linear-gradient(135deg, #94a3b8, #64748b) !important;
+            color: white !important;
+            pointer-events: none;
+            box-shadow: none !important;
+        }
+        
+        .btn-disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
 
         /* ✅ TABLE SECTION (DIKECILKAN) */
         .table-section {
@@ -964,22 +979,41 @@
                                                     <i class="fa-solid fa-key"></i> Reset PW
                                                 </button>
                                             </form>
-                                            <button type="button" 
-                                                    class="btn btn-sm <%= u.is_active ? 'btn-danger' : 'btn-success' %>"
-                                                    onclick="openModal(
-                                                        '<%= u.id %>', 
-                                                        '<%= u.name || u.email.split('@')[0] %>', 
-                                                        '<%= u.email %>', 
-                                                        <%= u.is_active %>
-                                                    )">
-                                                <% if (u.is_active) { %>
-                                                    <i class="fa-solid fa-user-slash"></i> Nonaktifkan
-                                                <% } else { %>
-                                                    <i class="fa-solid fa-user-check"></i> Aktifkan
-                                                <% } %>
-                                            </button>
+                                            
+                                            <% if (u.role === 'humas') { %>
+                                                <!-- ✅ BUTTON DISABLED UNTUK HUMAS & ADMIN -->
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-disabled" 
+                                                        disabled 
+                                                        title="User dengan role Humas tidak dapat dinonaktifkan"
+                                                        style="opacity: 0.5; cursor: not-allowed; background: #94a3b8;">
+                                                    <i class="fa-solid fa-lock"></i> 
+                                                    <% if (u.is_active) { %>
+                                                        Protected
+                                                    <% } else { %>
+                                                        Protected
+                                                    <% } %>
+                                                </button>
+                                            <% } else { %>
+                                                <!-- ✅ BUTTON NORMAL UNTUK GUEST -->
+                                                <button type="button" 
+                                                        class="btn btn-sm <%= u.is_active ? 'btn-danger' : 'btn-success' %>"
+                                                        onclick="openModal(
+                                                            '<%= u.id %>', 
+                                                            '<%= u.name || u.email.split('@')[0] %>', 
+                                                            '<%= u.email %>', 
+                                                            <%= u.is_active %>
+                                                        )">
+                                                    <% if (u.is_active) { %>
+                                                        <i class="fa-solid fa-user-slash"></i> Nonaktifkan
+                                                    <% } else { %>
+                                                        <i class="fa-solid fa-user-check"></i> Aktifkan
+                                                    <% } %>
+                                                </button>
+                                            <% } %>
                                         </div>
                                     </td>
+
                                 </tr>
                             <% }) %>
                         <% } else { %>
